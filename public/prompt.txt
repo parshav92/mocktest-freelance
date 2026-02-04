@@ -1,0 +1,136 @@
+# Summary
+
+A sophisticated design system centered on glassmorphism, depth-focused layouts, and a monochrome palette with vibrant emerald highlights. It transitions from a dark, immersive hero section to a clean, structured light-mode feature set.
+
+# Style
+
+The style relies on the Funnel_Display font family for a clean, modern look. It features two primary modes: a high-contrast dark mode using deep blacks (#000000) and translucent glass layers, and a light mode using soft zinc grays (#F4F4F5). Animations are smooth, utilizing cubic-bezier curves for entry and hover states. Key visual elements include 20px-blur glass containers and a subtle grain overlay.
+
+## Spec
+
+### Visual Foundations
+- **Color Palette:** Primary Dark (#000000), Light Background (#F4F4F5), Zinc Accent (#18181B), Emerald Highlight (#34D399), Subtle Border (rgba(255, 255, 255, 0.1)).
+- **Typography:** Font: 'Funnel_Display'.
+  - Headings: font-weight 500-700, tracking -0.05em, leading 1.05.
+  - Body: font-weight 300-400, color: Zinc-500 (#71717A).
+  - Labels: font-weight 700, size 10px, tracking 0.2em, uppercase.
+- **Glassmorphism:** 
+  - `background: rgba(255, 255, 255, 0.05)`
+  - `backdrop-filter: blur(12px)`
+  - `border: 1px solid rgba(255, 255, 255, 0.1)`
+- **Grain Overlay:** Use a noise SVG as a fixed overlay at 15% opacity to add texture to dark sections.
+- **Corner Radius:** Standardize large containers at `2.5rem (40px)` and internal cards at `1rem (16px)` to `1.5rem (24px)`.
+- **Animations:** 
+  - Entry: `fade-in-up` (TranslateY: 20px to 0, Opacity: 0 to 1) using `cubic-bezier(0.16, 1, 0.3, 1)` over 0.8s.
+  - Hover: Scaling effects (105%) and background color transitions (300ms duration).
+
+# Layout & Structure
+
+The layout is built within a max-width 1600px container. It uses a tiered structure: an immersive full-height hero section with absolute-positioned glass elements, followed by a grid-based feature section, a dark 'productivity' block, and a bento-grid pricing layout.
+
+## Navigation
+
+Floating glass navbar. Features a blur of 20px, rounded-full shape, and 1.5px padding. Links use `text-white/80` with a hover state of `bg-white/10` and rounded-full background.
+
+## Hero Section
+
+Height 92vh, rounded corners (2.5rem). Background consists of a high-resolution abstract image at 60% opacity with a gradient overlay from `zinc-950/40` to `zinc-950/90`. Includes a massive background text ('CREATE') at 22vw with 3% opacity and a blur filter. Content is split between a left-aligned typography block and a right-aligned vertical stack of glass stats cards.
+
+## About Use
+
+Full-width light section with white background (#FFFFFF). Soft, friendly academic brand aesthetic. Layout: **asymmetrical 2-column grid**.
+
+Left Column (Visual Stack):
+Masonry-style image composition made of **4 rounded-2xl image cards** with soft shadows.
+
+* Images arranged in a staggered grid (2 top, 1 tall center, 1 bottom-left).
+* All images have **large border-radius (rounded-2xl / ~24px)**.
+* Slight vertical offsets for a playful, non-uniform look.
+* Decorative abstract shapes layered behind images:
+
+  * Small orange semi-circle near top-left
+  * Blue “X” icon near bottom center
+* Images feel candid, student-focused (counseling, discussion, mentoring).
+
+**Right Column (Content):**
+Vertically centered content block with max-width constraint.
+
+**Headline:**
+  Large, bold sans-serif heading
+  Text: “Welcome to EduFor!”
+  Font size ~text-4xl / text-5xl
+  Font weight: font-bold
+  Color: near-black (#0F172A)
+
+* **Description Paragraph:**
+  Medium-width paragraph under heading
+  Subtle gray text (#475569)
+  Line height relaxed (leading-relaxed)
+  Content describes academic guidance, university selection, application success, stress-free journey.
+
+* **Primary CTA Button:**
+  Rounded-full button
+  Dark navy background (#0B2A3A)
+  White text
+  Padding: px-6 py-3
+  Inline right-arrow icon
+
+**Stats Row (Below CTA):**
+Horizontal 3-column stat grid with generous spacing.
+
+Each stat includes:
+
+* Large numeric value (text-4xl, font-bold)
+* Bright accent color per stat:
+  * Green: “200+”
+  * Blue: “50+”
+  * Orange: “$2M+”
+* Small muted label text below (text-sm, gray-500)
+
+Stats:
+
+* “200+ Students Accepted”
+* “50+ Partner Universities”
+* “$2M+ Scholarships Secured”
+
+**Spacing & Alignment:**
+
+* Section padding: py-20 px-6 (responsive)
+* Content aligned center-left
+* Image column slightly visually heavier than text column
+* Responsive behavior:
+
+  * Desktop: 2-column layout
+  * Mobile: stacked with images first, content below
+
+**Animation:**
+
+* Subtle fade-up on text content
+* Images scale in slightly on load
+* CTA arrow slides right on hover
+
+## Dark Productivity Block
+
+Full-width section with #18181B background. Features a grayscale grid lineart overlay. Layout: 2-column. Left: List of numbered steps (01, 02) in rounded-2xl boxes. Right: 3D-transformed mock-up window (rotated 3 degrees) with internal glass-morphic code snippets and a 'bounce' animated status tag at the bottom-right.
+
+## Pricing Bento Grid
+
+3-column grid of cards. Each card: White background, 2rem radius, thin zinc-100 border. Top half: 64px height image with a gradient-to-black bottom overlay. Bottom half: Padding 1.5rem, secondary text for features, and a full-width action button.
+
+# Special Components
+
+## Interactive Action Button
+
+A pill-shaped button with a nested circular icon container.
+
+Base: `bg-white`, `rounded-full`, `pl-6 pr-2 py-2`. Text: `font-medium`, `text-zinc-900`. Inner Icon: `w-10 h-10`, `bg-zinc-900`, `rounded-full`, containing a white icon. Interaction: Entire button scales to 105% on hover, inner icon background shifts to `bg-zinc-700`.
+
+## Glass Stat Card
+
+A high-transparency card used for metrics within dark sections.
+
+Dimensions: Width 72px (approx), Padding 1.25rem. Style: `background: rgba(255, 255, 255, 0.05)`, `backdrop-filter: blur(12px)`, `border: 1px solid rgba(255, 255, 255, 0.1)`. Elements: Large metric (text-3xl) and secondary description (text-white/60, size sm).
+
+# Special Notes
+
+MUST: Maintain the 2.5rem corner radius for all major section wrappers to ensure visual rhythm. MUST: Use 'grainy-gradients' noise textures on dark backgrounds to prevent banding and add 'analog' depth. MUST: Ensure all glass elements have a 1px white border with 10% opacity for edge definition. DO NOT: Use flat colors for dark backgrounds; always apply a subtle bottom-heavy gradient.
