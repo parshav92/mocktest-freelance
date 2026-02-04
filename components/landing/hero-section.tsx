@@ -47,18 +47,20 @@ const HeroSection = () => {
                     {/* CTA Buttons */}
                     <div className="flex flex-wrap gap-3 animate-fade-in-up-delay-3">
                         <button className="group relative overflow-hidden rounded-full bg-gradient-to-b from-neutral-700 via-neutral-800 to-neutral-900 px-5 py-3 pr-12 text-sm font-medium text-white transition-all duration-500 hover:bg-transparent hover:text-[#1a1a1a] border border-transparent hover:border-[#1a1a1a]">
-                            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 h-8 w-8 bg-white rounded-full transition-all duration-500 ease-out group-hover:scale-[10] group-hover:right-1/2 group-hover:translate-x-1/2" />
+                            {/* Background slide effect - expands from arrow circle position */}
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-white rounded-full transition-all duration-800 ease-out group-hover:scale-[8] group-hover:right-1/2 group-hover:translate-x-1/2" />
 
                             {/* Text */}
-                            <span className="relative z-10 transition-colors duration-500">
-                                Create Free Account
+                            <span className="relative z-10 transition-colors duration-150 text-white group-hover:text-[#1a1a1a]">
+                                Start Learning
                             </span>
 
                             {/* Arrow circle */}
-                            <span className="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1a1a1a]">
-                                <ArrowRight className="h-4 w-4" />
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1a1a1a]">
+                                <ArrowRight className="h-5 w-5" />
                             </span>
                         </button>
+
                         <button className="rounded-full px-5 py-2.5 text-sm text-zinc-900 font-medium hover:bg-white/80 transition-colors duration-300 shadow-md">
                             Learn More
                         </button>
