@@ -11,7 +11,7 @@ const HeroSection = () => {
                 <div
                     className="absolute inset-0 animate-slide-x"
                     style={{
-                        backgroundImage: "url('/landing/ribbon-bg.avif')",
+                        backgroundImage: "url('/landing/ribbon-bg.png')",
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                     }}

@@ -171,7 +171,7 @@ export default function AuthPage() {
                 <div
                     className="absolute inset-0 animate-slide-x"
                     style={{
-                        backgroundImage: "url('/landing/ribbon-bg.avif')",
+                        backgroundImage: "url('/landing/ribbon-login-bg.avif')",
                         backgroundSize: "cover",
                         backgroundPosition: "center",
                     }}
