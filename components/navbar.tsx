@@ -47,14 +47,17 @@ const Navbar = () => {
 
                     {/* CTA Button */}
                     <div className="hidden md:block">
-                        <button className="group flex items-center gap-2 bg-zinc-900 rounded-full pl-5 pr-2 py-1.5 hover:scale-105 hover:bg-zinc-800 transition-all duration-300 shadow-lg">
+                        <Link
+                            href="/auth"
+                            className="group flex items-center gap-2 bg-zinc-900 rounded-full pl-5 pr-2 py-1.5 hover:scale-105 hover:bg-zinc-800 transition-all duration-300 shadow-lg"
+                        >
                             <span className="text-white font-medium text-sm">
                                 Get Started
                             </span>
                             <div className="w-8 h-8 bg-emerald-500 group-hover:bg-emerald-400 rounded-full flex items-center justify-center transition-colors duration-300">
                                 <ArrowRight className="w-4 h-4 text-white" />
                             </div>
-                        </button>
+                        </Link>
                     </div>
 
                     {/* Mobile Menu Button */}
@@ -84,14 +87,17 @@ const Navbar = () => {
                                     {link.label}
                                 </Link>
                             ))}
-                            <button className="mt-2 group flex items-center justify-center gap-2 bg-zinc-900 rounded-full pl-5 pr-2 py-2 shadow-lg">
+                            <Link
+                                href="/auth"
+                                className="mt-2 w-full group flex items-center justify-center gap-2 bg-zinc-900 rounded-full pl-5 pr-2 py-2 shadow-lg"
+                            >
                                 <span className="text-white font-medium text-sm">
                                     Get Started
                                 </span>
                                 <div className="w-8 h-8 bg-emerald-500 rounded-full flex items-center justify-center">
                                     <ArrowRight className="w-4 h-4 text-white" />
                                 </div>
-                            </button>
+                            </Link>
                         </div>
                     </div>
                 )}

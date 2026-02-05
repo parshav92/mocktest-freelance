@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowRight, Users, Award, TrendingUp } from "lucide-react";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
 
 const HeroSection = () => {
     return (
@@ -8,7 +9,7 @@ const HeroSection = () => {
             {/* Background Image with Gradient Overlay */}
             <div className="absolute inset-0 ">
                 <div
-                    className="absolute inset-0"
+                    className="absolute inset-0 animate-slide-x"
                     style={{
                         backgroundImage: "url('/landing/ribbon-bg.avif')",
                         backgroundSize: "cover",
@@ -31,10 +32,12 @@ const HeroSection = () => {
                     </div>
 
                     {/* Main Heading */}
-                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-zinc-900 heading-tight mb-6 animate-fade-in-up-delay-1 ">
+                    <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-zinc-900  mb-6 animate-fade-in-up-delay-1 heading-tight">
                         Your Journey to{" "}
-                        <span className="text-emerald-600">Academic</span>{" "}
-                        Excellence
+                        <span className="whitespace-nowrap">
+                            <span className="text-emerald-600">Academic</span>{" "}
+                            Excellence
+                        </span>
                     </h1>
 
                     {/* Subheading */}
@@ -46,7 +49,10 @@ const HeroSection = () => {
 
                     {/* CTA Buttons */}
                     <div className="flex flex-wrap gap-3 animate-fade-in-up-delay-3">
-                        <button className="group relative overflow-hidden rounded-full bg-gradient-to-b from-neutral-700 via-neutral-800 to-neutral-900 px-5 py-3 pr-12 text-sm font-medium text-white transition-all duration-500 hover:bg-transparent hover:text-[#1a1a1a] border border-transparent hover:border-[#1a1a1a]">
+                        <Link
+                            href="/auth"
+                            className="group relative overflow-hidden rounded-full bg-linear-to-b from-neutral-700 via-neutral-800 to-neutral-900 px-5 py-3 pr-12 text-sm font-medium text-white transition-all duration-500 hover:bg-transparent hover:text-[#1a1a1a] border border-transparent hover:border-[#1a1a1a]"
+                        >
                             {/* Background slide effect - expands from arrow circle position */}
                             <span className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-white rounded-full transition-all duration-800 ease-out group-hover:scale-[8] group-hover:right-1/2 group-hover:translate-x-1/2" />
 
@@ -56,14 +62,17 @@ const HeroSection = () => {
                             </span>
 
                             {/* Arrow circle */}
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1a1a1a]">
+                            <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-[#1a1a1a]">
                                 <ArrowRight className="h-5 w-5" />
                             </span>
-                        </button>
+                        </Link>
 
-                        <button className="rounded-full px-5 py-2.5 text-sm text-zinc-900 font-medium hover:bg-white/80 transition-colors duration-300 shadow-md">
+                        <Link
+                            href="/about"
+                            className="rounded-full px-5 py-2.5 text-sm text-zinc-900 font-medium hover:bg-white/80 transition-colors duration-300 shadow-md"
+                        >
                             Learn More
-                        </button>
+                        </Link>
                     </div>
                 </div>
             </div>
