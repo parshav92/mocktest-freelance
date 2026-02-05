@@ -67,12 +67,24 @@ app/
 │   ├── page.tsx           # Main auth page (role selection → forms)
 │   └── callback/
 │       └── route.ts       # OAuth callback handler
-├── api/auth/student/
-│   ├── login/route.ts     # Student login (returns JWT)
-│   └── logout/route.ts    # Student logout (clears cookie)
+├── api/
+│   ├── auth/student/
+│   │   ├── login/route.ts   # Student login (returns JWT)
+│   │   ├── logout/route.ts  # Student logout (clears cookie)
+│   │   └── verify/route.ts  # Verify student session
+│   ├── subscriptions/
+│   │   └── route.ts       # GET list / POST create subscription
+│   └── students/
+│       └── route.ts       # GET list / POST create student
 ├── dashboard/
 │   ├── page.tsx           # Dashboard (server component, detects user type)
-│   └── dashboard-content.tsx  # Dashboard UI (client component)
+│   ├── parent-dashboard.tsx   # Parent dashboard UI
+│   ├── student-dashboard.tsx  # Student dashboard UI
+│   ├── subscribe/
+│   │   └── page.tsx       # Subscription pricing page (dummy Stripe)
+│   └── students/
+│       └── new/
+│           └── page.tsx   # Create student profile form
 
 lib/
 ├── supabase/
@@ -230,16 +242,39 @@ STUDENT_JWT_SECRET=your-super-secret-key-min-32-chars-long
 
 ## TODO / Future Work
 
-- [ ] Parent dashboard: Create student profiles
-- [ ] Parent dashboard: Purchase subscriptions (payment integration)
-- [ ] Parent dashboard: View student progress/scores
+- [ ] Implement actual Stripe payment integration
+- [ ] Parent can reset student password
+- [ ] Password reset flow for parents
+- [ ] Cron job: Run `update_subscription_statuses()` daily
+- [ ] Cron job: Run `cleanup_old_login_attempts()` daily
 - [ ] Student dashboard: Take mock tests
 - [ ] Student dashboard: View scores history
 - [ ] Admin dashboard: Manage all users
-- [ ] Cron job: Run `update_subscription_statuses()` daily
-- [ ] Cron job: Run `cleanup_old_login_attempts()` daily
-- [ ] Password reset flow for parents
-- [ ] Parent can reset student password
+- [ ] Subscription renewal flow
+
+---
+
+## Parent Flow (Implemented)
+
+```
+1. Parent signs up/logs in via Supabase Auth
+2. Dashboard shows "No Active Subscriptions" → CTA to "Add Student"
+3. Parent clicks "Add Student" → /dashboard/subscribe
+4. Selects plan (Half-yearly ₹2999 / Yearly ₹4999)
+5. Clicks "Subscribe Now" → Dummy Stripe creates subscription
+6. Redirected to /dashboard/students/new?subscription=<id>
+7. Enters student name + sets 6-digit password
+8. Student created with unique ID (STU*****)
+9. Success page shows credentials to share
+10. Dashboard now shows student card with subscription status
+```
+
+### Subscription States in Dashboard
+
+- **Unassigned** (student_id is null): Shows "Action Required" card with CTA to create student
+- **Active**: Shows student card with green "active" badge
+- **Grace Period**: Shows amber warning, student has read-only access
+- **Expired**: Shows red badge, student cannot log in
 
 ---
 

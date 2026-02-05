@@ -1,7 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { getStudentSession } from "@/lib/auth/student";
 import { redirect } from "next/navigation";
-import { DashboardContent } from "./dashboard-content";
+import { ParentDashboard } from "./parent-dashboard";
+import { StudentDashboard } from "./student-dashboard";
 
 export default async function DashboardPage() {
   // Check for parent/admin session first
@@ -16,15 +17,25 @@ export default async function DashboardPage() {
       .eq("id", user.id)
       .single();
 
+    // Fetch subscriptions with students
+    const { data: subscriptions } = await supabase
+      .from("subscriptions")
+      .select(`
+        *,
+        student:students(*)
+      `)
+      .eq("parent_id", user.id)
+      .order("created_at", { ascending: false });
+
     return (
-      <DashboardContent
-        userType="parent"
+      <ParentDashboard
         user={{
           id: user.id,
           email: user.email!,
           fullName: profile?.full_name || user.email!,
           role: profile?.role || "parent",
         }}
+        subscriptions={subscriptions || []}
       />
     );
   }
@@ -34,8 +45,7 @@ export default async function DashboardPage() {
 
   if (studentSession) {
     return (
-      <DashboardContent
-        userType="student"
+      <StudentDashboard
         user={{
           id: studentSession.student_id,
           studentCode: studentSession.student_code,

@@ -40,16 +40,18 @@ CREATE TABLE students (
     CONSTRAINT valid_student_id CHECK (student_id ~ '^STU[A-Z0-9]{5}$')
 );
 
--- 3. SUBSCRIPTIONS (one per student)
+-- 3. SUBSCRIPTIONS (one per student, student_id can be null until student is created)
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    student_id UUID UNIQUE NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+    student_id UUID UNIQUE REFERENCES students(id) ON DELETE CASCADE, -- nullable until student is assigned
     parent_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     plan subscription_plan NOT NULL,
     status subscription_status NOT NULL DEFAULT 'active',
     starts_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     expires_at TIMESTAMPTZ NOT NULL,
     grace_period_ends_at TIMESTAMPTZ, -- 1 month after expiry
+    stripe_subscription_id TEXT, -- for future Stripe integration
+    stripe_customer_id TEXT, -- for future Stripe integration
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -80,6 +82,19 @@ CREATE INDEX idx_login_attempts_time ON student_login_attempts(attempted_at);
 -- ============================================
 -- FUNCTIONS
 -- ============================================
+
+-- Check if current user is an admin (SECURITY DEFINER to bypass RLS)
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS BOOLEAN
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+    SELECT EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE id = auth.uid() AND role = 'admin'
+    );
+$$;
 
 -- Generate unique student ID (STU + 5 alphanumeric)
 CREATE OR REPLACE FUNCTION generate_student_id()
@@ -238,12 +253,7 @@ CREATE POLICY "Users can update own profile"
 
 CREATE POLICY "Admins can view all profiles"
     ON profiles FOR SELECT
-    USING (
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+    USING (is_admin());
 
 -- STUDENTS policies (parents can only see their own students)
 CREATE POLICY "Parents can view own students"
@@ -260,26 +270,24 @@ CREATE POLICY "Parents can update own students"
 
 CREATE POLICY "Admins can view all students"
     ON students FOR ALL
-    USING (
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+    USING (is_admin());
 
 -- SUBSCRIPTIONS policies
 CREATE POLICY "Parents can view own subscriptions"
     ON subscriptions FOR SELECT
     USING (parent_id = auth.uid());
 
+CREATE POLICY "Parents can insert own subscriptions"
+    ON subscriptions FOR INSERT
+    WITH CHECK (parent_id = auth.uid());
+
+CREATE POLICY "Parents can update own subscriptions"
+    ON subscriptions FOR UPDATE
+    USING (parent_id = auth.uid());
+
 CREATE POLICY "Admins can manage all subscriptions"
     ON subscriptions FOR ALL
-    USING (
-        EXISTS (
-            SELECT 1 FROM profiles 
-            WHERE id = auth.uid() AND role = 'admin'
-        )
-    );
+    USING (is_admin());
 
 -- LOGIN_ATTEMPTS policies (only accessible via service role / functions)
 CREATE POLICY "No direct access to login attempts"
