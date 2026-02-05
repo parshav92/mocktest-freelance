@@ -19,13 +19,13 @@ const ProductivitySection = () => {
     ];
 
     const codeSnippets = [
-        { label: "Profile Analysis", status: "completed" },
-        { label: "University Matching", status: "completed" },
-        { label: "Application Review", status: "in-progress" },
+        { label: "Daily MockTest", status: "completed" },
+        { label: "Weekly Reviews", status: "completed" },
+        { label: "Parental Control", status: "completed" },
     ];
 
     return (
-        <section className="w-full bg-[#18181B] py-20 px-6 relative overflow-hidden">
+        <section className="w-full bg-[#18181B] py-20 px-6  relative overflow-hidden">
             {/* Grid Pattern Overlay */}
             <div className="absolute inset-0 grid-pattern opacity-50" />
 
@@ -149,31 +149,11 @@ const ProductivitySection = () => {
                                 ))}
 
                                 {/* Progress Bar */}
-                                <div className="mt-6">
-                                    <div className="flex justify-between text-sm mb-2">
-                                        <span className="text-white/60">
-                                            Application Progress
-                                        </span>
-                                        <span className="text-emerald-400">75%</span>
-                                    </div>
-                                    <div className="h-2 bg-white/10 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-gradient-to-r from-emerald-500 to-emerald-400 rounded-full"
-                                            style={{ width: "75%" }}
-                                        />
-                                    </div>
-                                </div>
+                               
                             </div>
 
                             {/* Animated Status Tag */}
-                            <div className="absolute -bottom-4 -right-4 animate-bounce-subtle">
-                                <div className="glass rounded-full px-4 py-2 flex items-center gap-2">
-                                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
-                                    <span className="text-emerald-400 text-sm font-medium">
-                                        Live Tracking
-                                    </span>
-                                </div>
-                            </div>
+                            
                         </div>
                     </div>
                 </div>

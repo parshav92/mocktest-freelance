@@ -4,21 +4,7 @@ import { Check, ArrowRight, Sparkles } from "lucide-react";
 
 const PricingSection = () => {
     const plans = [
-        {
-            name: "Starter",
-            description: "Perfect for exploring your options",
-            price: "$99",
-            period: "one-time",
-            image: "https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=600&auto=format&fit=crop",
-            features: [
-                "Initial consultation",
-                "University shortlist (5 schools)",
-                "Basic profile review",
-                "Email support",
-            ],
-            buttonText: "Get Started",
-            popular: false,
-        },
+        
         {
             name: "Professional",
             description: "Comprehensive guidance for serious applicants",
@@ -26,11 +12,10 @@ const PricingSection = () => {
             period: "package",
             image: "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?q=80&w=600&auto=format&fit=crop",
             features: [
-                "Everything in Starter",
-                "Unlimited consultations",
-                "Essay review & editing",
-                "Interview preparation",
-                "Application tracking",
+                "...",
+                "",
+                "",
+                
             ],
             buttonText: "Most Popular",
             popular: true,
@@ -42,11 +27,10 @@ const PricingSection = () => {
             period: "package",
             image: "https://images.unsplash.com/photo-1562774053-701939374585?q=80&w=600&auto=format&fit=crop",
             features: [
-                "Everything in Professional",
-                "Scholarship guidance",
-                "Visa assistance",
-                "Post-admission support",
-                "1-year mentorship",
+                "",
+                "",
+                "",
+                "",
             ],
             buttonText: "Contact Us",
             popular: false,
@@ -74,7 +58,7 @@ const PricingSection = () => {
                 </div>
 
                 {/* Pricing Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-12 lg:ml-12 ">
                     {plans.map((plan, index) => (
                         <div
                             key={index}
