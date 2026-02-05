@@ -50,18 +50,19 @@ export async function POST(request: Request) {
     }
 
     // Find student
-    const { data: student, error: studentError } = await supabase
-      .from("students")
-      .select("id, student_id, password_hash, full_name, parent_id, is_active")
-      .eq("student_id", normalizedStudentId)
-      .single();
+    const { data: studentData, error: studentError } = await supabase.rpc(
+      "get_student_for_login",
+      { p_student_id: normalizedStudentId }
+    );
 
-    // Record login attempt (will be done regardless of success/failure)
+    const student = studentData?.[0];
+
+    // Record login attempt using SECURITY DEFINER function (bypasses RLS)
     const recordAttempt = async (success: boolean) => {
-      await supabase.from("student_login_attempts").insert({
-        student_id_input: normalizedStudentId,
-        ip_address: ip,
-        success,
+      await supabase.rpc("record_login_attempt", {
+        p_student_id_input: normalizedStudentId,
+        p_ip_address: ip,
+        p_success: success,
       });
     };
 
