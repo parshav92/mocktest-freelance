@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 const HeroSection = () => {
@@ -18,17 +18,26 @@ const HeroSection = () => {
                 />
                 {/* <div className="absolute inset-0 bg-gradient-to-b from-zinc-950/40 via-zinc-950/60 to-zinc-950/90" /> */}
             </div>
+            {/* <div className="absolute inset-0 bg-[linear-gradient(to_right,#8882_1px,transparent_1px),linear-gradient(to_bottom,#8882_1px,transparent_1px)] bg-[size:14px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)]" /> */}
+            
+            <div className="absolute top-0 -left-4 w-72 h-72 bg-emerald-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-float" />
+            <div className="absolute top-0 -right-4 w-72 h-72 bg-amber-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-float" style={{ animationDelay: '2s' }} />
+            <div className="absolute -bottom-8 left-20 w-72 h-72 bg-sky-200 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-float" style={{ animationDelay: '4s' }} />
 
             {/* Main Content */}
             <div className="relative z-10 max-w-[1600px] mx-auto px-6 md:px-12 flex flex-col md:flex-row items-center justify-between w-full">
                 {/* Left Content */}
                 <div className="flex-1 max-w-2xl">
                     {/* Label */}
-                    <div className="animate-fade-in-up">
-                        <span className="inline-flex items-center gap-2 glass rounded-full px-4 py-2 text-emerald-600 text-[10px] font-bold tracking-[0.2em] uppercase mb-6">
-                            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                            Unlock Your Potential
+                    <div className="animate-fade-in-up inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-zinc-200/80 shadow-sm mb-8 hover:shadow-md transition-shadow duration-300">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                         </span>
+                        <span className="text-sm font-medium text-zinc-600">
+                            Trusted by <span className="text-zinc-900 font-semibold">2,000+</span> students
+                        </span>
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                     </div>
 
                     {/* Main Heading */}

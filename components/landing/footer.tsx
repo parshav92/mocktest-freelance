@@ -1,125 +1,92 @@
-"use client";
-
 import Link from "next/link";
-import { BookOpenText, Twitter, Linkedin, Instagram, Mail } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
+
+const footerLinks = {
+    product: [
+        { label: "Features", href: "/#about" },
+        { label: "Pricing", href: "/#pricing" },
+        { label: "FAQ", href: "/faq" },
+    ],
+    company: [
+        { label: "About Us", href: "/about" },
+        { label: "Contact", href: "/contact" },
+        { label: "Careers", href: "/careers" },
+    ],
+    legal: [
+        { label: "Privacy Policy", href: "/privacy" },
+        { label: "Terms of Service", href: "/terms" },
+        { label: "Refund Policy", href: "/refund" },
+    ],
+};
 
 const Footer = () => {
-    const footerLinks = {
-        product: [
-            { label: "Features", href: "/features" },
-            { label: "Pricing", href: "/pricing" },
-            { label: "Courses", href: "/courses" },
-            { label: "Resources", href: "/resources" },
-        ],
-        company: [
-            { label: "About", href: "/about" },
-            { label: "Careers", href: "/careers" },
-            { label: "Blog", href: "/blog" },
-            { label: "Contact", href: "/contact" },
-        ],
-        legal: [
-            { label: "Privacy Policy", href: "/privacy-policy" },
-            { label: "Terms of Service", href: "/terms" },
-            { label: "Cookie Policy", href: "/cookies" },
-        ],
-    };
-
-    const socialLinks = [
-        { icon: Twitter, href: "https://twitter.com" },
-        { icon: Linkedin, href: "https://linkedin.com" },
-        { icon: Instagram, href: "https://instagram.com" },
-        { icon: Mail, href: "mailto:contact@company_name.com" },
-    ];
+    const currentYear = new Date().getFullYear();
 
     return (
-        <footer className="w-full bg-zinc-950 text-white py-16 px-6 relative overflow-hidden">
-            {/* Grain Overlay */}
-            <div className="grain-overlay absolute inset-0" />
-
-            <div className="relative z-10 max-w-[1600px] mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12 mb-12">
+        <footer className="bg-zinc-900 text-white">
+            <div className="max-w-6xl mx-auto px-6">
+                {/* Main Footer Content */}
+                <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
                     {/* Brand Column */}
                     <div className="lg:col-span-2">
-                        <Link
-                            href="/"
-                            className="flex items-center gap-2 text-white font-semibold text-lg mb-4"
-                        >
-                            <div className="w-10 h-10 bg-emerald-400 rounded-full flex items-center justify-center">
-                                <BookOpenText className="w-5 h-5 text-zinc-900" />
+                        <Link href="/" className="inline-flex items-center gap-2.5 mb-6">
+                            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-white text-zinc-900 font-bold text-sm">
+                                MT
                             </div>
-                            <span className="font-funnel tracking-tight text-xl">
-                                EduFor
+                            <span className="font-semibold text-lg tracking-tight">
+                                MockTest
                             </span>
                         </Link>
-                        <p className="text-white/60 max-w-sm mb-6 leading-relaxed">
-                            Empowering students worldwide to achieve their
-                            academic dreams with personalized guidance and
-                            expert mentorship.
+                        <p className="text-zinc-400 text-sm leading-relaxed mb-6 max-w-sm">
+                            Empowering students to achieve their academic goals through expertly crafted practice tests and comprehensive analytics.
                         </p>
-                        {/* Social Links */}
-                        <div className="flex gap-3">
-                            {socialLinks.map((social, index) => (
-                                <a
-                                    key={index}
-                                    href={social.href}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-10 h-10 glass rounded-full flex items-center justify-center hover:bg-white/10 transition-colors duration-300"
-                                >
-                                    <social.icon className="w-4 h-4 text-white/80" />
-                                </a>
-                            ))}
+                        <div className="space-y-3">
+                            <a href="mailto:support@mocktest.com" className="flex items-center gap-3 text-sm text-zinc-400 hover:text-white transition-colors">
+                                <Mail className="w-4 h-4" />
+                                support@mocktest.com
+                            </a>
+                            <a href="tel:+919876543210" className="flex items-center gap-3 text-sm text-zinc-400 hover:text-white transition-colors">
+                                <Phone className="w-4 h-4" />
+                                +91 98765 43210
+                            </a>
+                            <div className="flex items-start gap-3 text-sm text-zinc-400">
+                                <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
+                                Mumbai, Maharashtra, India
+                            </div>
                         </div>
                     </div>
 
-                    {/* Product Links */}
+                    {/* Links Columns */}
                     <div>
-                        <h4 className="text-white font-semibold mb-4">
-                            Product
-                        </h4>
+                        <h4 className="font-semibold text-sm mb-4">Product</h4>
                         <ul className="space-y-3">
-                            {footerLinks.product.map((link, index) => (
-                                <li key={index}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-white/60 hover:text-white transition-colors duration-300 text-sm"
-                                    >
+                            {footerLinks.product.map((link) => (
+                                <li key={link.href}>
+                                    <Link href={link.href} className="text-sm text-zinc-400 hover:text-white transition-colors">
                                         {link.label}
                                     </Link>
                                 </li>
                             ))}
                         </ul>
                     </div>
-
-                    {/* Company Links */}
                     <div>
-                        <h4 className="text-white font-semibold mb-4">
-                            Company
-                        </h4>
+                        <h4 className="font-semibold text-sm mb-4">Company</h4>
                         <ul className="space-y-3">
-                            {footerLinks.company.map((link, index) => (
-                                <li key={index}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-white/60 hover:text-white transition-colors duration-300 text-sm"
-                                    >
+                            {footerLinks.company.map((link) => (
+                                <li key={link.href}>
+                                    <Link href={link.href} className="text-sm text-zinc-400 hover:text-white transition-colors">
                                         {link.label}
                                     </Link>
                                 </li>
                             ))}
                         </ul>
                     </div>
-
-                    {/* Legal Links */}
                     <div>
-                        <h4 className="text-white font-semibold mb-4">Legal</h4>
+                        <h4 className="font-semibold text-sm mb-4">Legal</h4>
                         <ul className="space-y-3">
-                            {footerLinks.legal.map((link, index) => (
-                                <li key={index}>
-                                    <Link
-                                        href={link.href}
-                                        className="text-white/60 hover:text-white transition-colors duration-300 text-sm"
-                                    >
+                            {footerLinks.legal.map((link) => (
+                                <li key={link.href}>
+                                    <Link href={link.href} className="text-sm text-zinc-400 hover:text-white transition-colors">
                                         {link.label}
                                     </Link>
                                 </li>
@@ -129,13 +96,21 @@ const Footer = () => {
                 </div>
 
                 {/* Bottom Bar */}
-                <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-                    <p className="text-white/40 text-sm">
-                        © 2026 Company_Name. All rights reserved.
+                <div className="py-6 border-t border-zinc-800 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <p className="text-sm text-zinc-500">
+                        © {currentYear} MockTest. All rights reserved.
                     </p>
-                    <p className="text-white/40 text-sm">
-                        Made with ❤️ for students worldwide
-                    </p>
+                    <div className="flex items-center gap-6">
+                        <Link href="/privacy" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                            Privacy
+                        </Link>
+                        <Link href="/terms" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                            Terms
+                        </Link>
+                        <Link href="/cookies" className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors">
+                            Cookies
+                        </Link>
+                    </div>
                 </div>
             </div>
         </footer>

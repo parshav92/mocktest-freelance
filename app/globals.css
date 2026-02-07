@@ -50,6 +50,15 @@
     --radius-3xl: calc(var(--radius) + 12px);
     --radius-4xl: calc(var(--radius) + 16px);
 }
+html {
+    scroll-behavior: smooth;
+}
+
+/* Better selection color */
+::selection {
+    background-color: #10b95c;
+    color: white;
+}
 
 /* Custom animations */
 @keyframes fade-in-up {

@@ -179,7 +179,7 @@ export default function AuthPage() {
             </div>
 
             {/* Content */}
-            <div className="relative z-10 w-full max-w-md">
+            <div className="relative z-10 w-full max-w-md rounded-[2.5rem]">
                 <AnimatePresence mode="wait">
                     {!selectedRole ? (
                         <motion.div
