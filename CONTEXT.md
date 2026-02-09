@@ -247,10 +247,193 @@ STUDENT_JWT_SECRET=your-super-secret-key-min-32-chars-long
 - [ ] Password reset flow for parents
 - [ ] Cron job: Run `update_subscription_statuses()` daily
 - [ ] Cron job: Run `cleanup_old_login_attempts()` daily
-- [ ] Student dashboard: Take mock tests
+- [x] Student dashboard: Take mock tests (schema ready)
 - [ ] Student dashboard: View scores history
 - [ ] Admin dashboard: Manage all users
 - [ ] Subscription renewal flow
+- [ ] Admin question upload UI
+- [ ] Test-taking UI (timer, navigation)
+- [ ] Essay evaluation with Gemini API
+
+---
+
+## Test Platform Architecture
+
+### Database Tables (Test Platform)
+
+| Table | Purpose |
+|-------|---------|
+| `subjects` | Reading, Writing, Math, Thinking Skills |
+| `subject_templates` | Difficulty distribution per subject |
+| `passages` | Reading passages, poems, extracts |
+| `questions` | All questions (JSONB for flexibility) |
+| `tests` | Student test instances with answers |
+| `student_question_history` | Track seen/answered questions |
+| `student_subject_stats` | Per-subject performance for adaptive algo |
+| `question_upload_batches` | Track admin bulk uploads |
+
+### Question Types
+
+| Type | Format | Subjects |
+|------|--------|----------|
+| `mcq` | Standard multiple choice | Math, Thinking Skills |
+| `passage_mcq` | MCQ based on passage | Reading |
+| `poem_mcq` | MCQ based on poem | Reading |
+| `fill_blank_dropdown` | Fill blanks with dropdown | Reading |
+| `fill_missing_sentence` | Drag-drop sentences | Reading |
+| `essay` | Free-form writing | Writing |
+
+### Question Content Structure (JSONB)
+
+```typescript
+// MCQ
+{
+  question_text: string;
+  question_image?: string;  // Storage path
+  options: Array<{
+    key: "A" | "B" | "C" | "D";
+    text?: string;
+    image?: string;
+  }>;
+}
+
+// Fill Blank Dropdown
+{
+  passage_text: string;  // Use ___ for blanks
+  blanks: Array<{
+    position: number;
+    options: string[];
+    correct_index: number;
+  }>;
+}
+
+// Fill Missing Sentence
+{
+  passage_with_gaps: string;  // Use [GAP_1], [GAP_2] etc
+  sentences: string[];
+  correct_mapping: Record<string, number>;  // {"GAP_1": 0, "GAP_2": 2}
+}
+
+// Essay
+{
+  prompt: string;
+  word_limit: number;
+  time_limit_mins: number;
+  rubric: Record<string, number>;  // {"content": 10, "structure": 5}
+}
+```
+
+### Adaptive Algorithm
+
+```
+Difficulty distribution based on overall_accuracy:
+- accuracy < 40%  → 30 easy, 8 medium, 2 hard   (Struggling)
+- accuracy < 60%  → 25 easy, 12 medium, 3 hard  (Below average)
+- accuracy < 75%  → 20 easy, 15 medium, 5 hard  (Average)
+- accuracy < 85%  → 15 easy, 17 medium, 8 hard  (Good)
+- accuracy >= 85% → 10 easy, 18 medium, 12 hard (Excellent)
+
+First 2 tests use default: 25 easy, 10 medium, 5 hard
+```
+
+### Question Selection Priority
+
+1. **Never seen** questions (highest priority)
+2. **Previously incorrect** questions
+3. **Never show** correctly answered questions (until pool exhausted)
+
+### Test States
+
+```
+NOT_STARTED → IN_PROGRESS → SUBMITTED
+                ↓              ↓
+           ENDED_EARLY    ABANDONED
+```
+
+- `ended_early`: Student clicked "End Test" within grace period (2-3 mins)
+- `abandoned`: Browser closed, test never resumed, all answers marked wrong (0 marks)
+
+### Storage Structure
+
+```
+supabase-storage/
+├── questions/
+│   ├── {subject_slug}/
+│   │   ├── {question_code}_q.png     # Question image
+│   │   ├── {question_code}_a.png     # Option A image
+│   │   ├── {question_code}_b.png     # Option B image
+│   │   └── ...
+├── passages/
+│   └── {passage_code}.png
+└── uploads/
+    └── {batch_id}/
+        └── original_file.xlsx
+```
+
+### CSV Upload Format
+
+**MCQ Questions:**
+```csv
+code,subject,type,difficulty,question_text,option_a,option_b,option_c,option_d,correct,question_image,solution
+MR_001,mathematical-reasoning,mcq,easy,What is 5+3?,6,7,8,9,C,,Add the numbers
+```
+
+**Fill Blank Dropdown:**
+```csv
+code,subject,type,difficulty,passage_text,blanks_json,solution
+RD_FIB_001,reading,fill_blank_dropdown,easy,"The cat ___ on the mat.","[{""position"":1,""options"":[""sat"",""sit""],""correct_index"":0}]",
+```
+
+### Key Database Functions
+
+```sql
+-- Get questions for a test (adaptive selection)
+get_test_questions(p_student_id, p_subject_id, p_easy_count, p_medium_count, p_hard_count)
+
+-- Get difficulty distribution based on student performance
+get_adaptive_distribution(p_student_id, p_subject_id, p_total_questions)
+```
+
+### Triggers (Auto-execute)
+
+| Trigger | When | Action |
+|---------|------|--------|
+| `on_test_abandoned` | status → 'abandoned' | Mark all answers as wrong (0 marks) |
+| `on_test_completed` | status → 'submitted'/'abandoned' | Update student_subject_stats |
+| `on_test_completed_history` | status → 'submitted'/'abandoned' | Update student_question_history |
+
+### Essay Evaluation (Gemini - To Be Implemented)
+
+```typescript
+// Called immediately after essay submission
+const evaluation = await evaluateEssay({
+  prompt: question.content.prompt,
+  essay: studentAnswer,
+  rubric: question.content.rubric,
+  wordLimit: question.content.word_limit,
+});
+
+// Returns
+{
+  score: 15,
+  maxScore: 20,
+  feedback: "Good structure but...",
+  rubricScores: { content: 8, structure: 4, grammar: 3 }
+}
+```
+
+### Test API Endpoints (To Be Implemented)
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/subjects` | GET | List active subjects |
+| `/api/tests/start` | POST | Start a new test |
+| `/api/tests/[id]/answer` | POST | Submit answer |
+| `/api/tests/[id]/submit` | POST | Submit test |
+| `/api/tests/[id]` | GET | Get test details |
+| `/api/tests/[id]/review` | GET | Get test with solutions |
+| `/api/admin/questions/upload` | POST | Bulk upload questions |
+| `/api/admin/questions` | GET/POST | Manage questions |
 
 ---
 

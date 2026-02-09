@@ -1,0 +1,35 @@
+After, buying the subscription, student can access Selective High School Placement Practice Tests which currently has 4 subjects. 
+student clicks one of the subjects, sees option to take test on one side and see previous test performance on another.
+The questions will be fetched from supabase storage on the fly based on students performance. 
+Each question has a difficulty level to it. 
+and on each test the level of questions would be dynamically decided on that student's previous scores and metrics. 
+for the first one or two tests, it would a standard easy to medium level test consisting of 25 easy, 10 med and 5 high (temporarily decided), 40 in total to guage student's standing.
+questions on further tests will be decided on his performance.
+each test will be timed, and have end test (in case of starting test by mistake, will be shown for 2 or 3 mins) and submit(few criteria like questions attempted or time take) options.
+Test flow:
+- admin will bulk upload questions as per subjects using csv, xlsx
+- there are total 4 subjects for now (want it to be possible for more subjects to be added) each containing specific format of questions
+- each test will have a set of instruction pages explaining the ui and buttons and a page of instruction for the test(format, marks etc), each test have different timing, rules, etc
+- Reading test:
+    - one more extracts given and a few mcq questions based on them 
+    - given a passage choose the correct fill in the blanks word (dropdown) 
+    - a set of questions based on a poem on left side
+    - fill in missing sentences in a passage
+- Writing test:
+    - essay writing, editor given
+- Mathematical reasoning test:
+    - normal question and mcq
+    - questions containing images, mcq options may of may not be images
+- Thinking skills:
+    - same as Mathematical reasoning test
+- these formats of questions should not be rigidly in database but instead should be able to handle
+- After test, student should able to browse through test and see all answers and his selected option and also see a solution description (uploaded by admin on storage)
+- student sees a table containing three columns, type of question, name(link to the full page with correct option and descrription), marked correct or not
+- both student and parent should have a dashboard where they see marks, etc(parent shouldnt see the full test)
+
+
+This is the entire scenario, design schema, triggers first to setup the db and supabase storage.
+make clarifications first and then take actions. 
+
+supabase storage is for storing any files long term 
+recommend the best design to move forward with
