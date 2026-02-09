@@ -1,0 +1,6 @@
+code,difficulty,prompt,word_limit,time_mins,rubric
+WR_001,easy,Write about your best friend and why they are special to you.,150,15,content:10|structure:5|grammar:5
+WR_002,easy,Describe your favorite holiday and what makes it special.,150,15,content:10|structure:5|grammar:5
+WR_003,medium,Describe a time when you faced a challenge and how you overcame it.,250,20,content:15|structure:10|grammar:5|creativity:5
+WR_004,medium,"If you could have any superpower, what would it be and how would you use it to help others?",250,20,content:15|structure:10|grammar:5|creativity:5
+WR_005,hard,"Technology has changed the way we live. Discuss both the positive and negative effects of technology on young people today.",350,25,content:20|structure:10|grammar:5|creativity:5|argument:10

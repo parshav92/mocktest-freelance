@@ -1,0 +1,7 @@
+code,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution
+RD_MCQ_001,RD_P_001,easy,What is the main theme of the passage?,Cooking,Friendship,Sports,Travel,B,The passage is about Tom and Jerry's friendship and how Jerry stood by Tom
+RD_MCQ_002,RD_P_001,easy,Where did Tom and Jerry study together?,In a classroom,Under an old oak tree,At the library,In their homes,B,"The passage says ""studied under the old oak tree"""
+RD_MCQ_003,RD_P_001,medium,"What does ""stood tall"" mean in this passage?",Was very tall,Defended bravely,Stood on tiptoes,Grew quickly,B,Context shows Jerry defended his friend when others turned against him
+RD_MCQ_004,RD_P_001,medium,Who was the real culprit?,Tom,Jerry,The mayor,A crow,D,The passage states Jerry found the real culprit was a mischievous crow
+RD_MCQ_005,RD_P_002,easy,What was Maya curious about?,Video games,The world around her,Her homework,Her toys,B,"The passage says ""Maya was always curious about the world around her"""
+RD_MCQ_006,RD_P_002,medium,What did Maya discover behind her house?,A pond,A stream,A forest,A mountain,B,Maya discovered a small stream that no one had noticed before

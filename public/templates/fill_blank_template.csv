@@ -1,0 +1,6 @@
+code,passage_code,difficulty,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
+RD_FB_001,,easy,The cat [1] on the mat. It was [2] comfortable there.,sat|sit|set,very|much|more,,,
+RD_FB_002,,easy,The sun [1] in the east and [2] in the west.,rises|raise|rising,sets|sits|setting,,,
+RD_FB_003,,medium,Reading books [1] your vocabulary and [2] your imagination. It also [3] you learn new things.,improves|reduces|stops,expands|shrinks|limits,helps|prevents|stops,,
+RD_FB_004,,medium,"The butterfly [1] from flower to flower, [2] nectar as it [3].",flew|flow|fly,collecting|collected|collect,went|goes|going,,
+RD_FB_005,,hard,"Scientists have [1] that regular exercise [2] both physical and mental health. Studies [3] people who exercise [4] are happier and more [5].",discovered|discover|discovering,improves|improve|improved,show|shows|showed,regularly|regular|regularly,productive|production|produce

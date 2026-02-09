@@ -115,6 +115,32 @@ export default async function AdminDashboardPage() {
                         View Subscriptions
                     </Link>
                 </section>
+
+                <section className="rounded-3xl border border-slate-200/70 bg-zinc-50 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl font-semibold text-zinc-900">
+                            Question Bank
+                        </h2>
+                        <p className="text-sm text-zinc-600 mt-1">
+                            Upload, manage, and review questions for all subjects.
+                            Supports CSV bulk upload.
+                        </p>
+                    </div>
+                    <div className="flex gap-3">
+                        <Link
+                            href="/admin/upload"
+                            className="inline-flex items-center justify-center rounded-full bg-emerald-600 text-white px-5 py-2 text-sm font-medium hover:bg-emerald-700 transition-colors"
+                        >
+                            Upload Questions
+                        </Link>
+                        <Link
+                            href="/admin/questions"
+                            className="inline-flex items-center justify-center rounded-full border border-zinc-300 text-zinc-900 px-5 py-2 text-sm font-medium hover:bg-zinc-100 transition-colors"
+                        >
+                            View Questions
+                        </Link>
+                    </div>
+                </section>
             </div>
         </div>
     );

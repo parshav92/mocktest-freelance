@@ -56,7 +56,16 @@ export default async function AdminSubscriptionsPage() {
                 {subscriptions && subscriptions.length > 0 ? (
                     <div className="overflow-hidden rounded-2xl border border-slate-200/70">
                         <div className="grid grid-cols-1 divide-y divide-slate-200/70">
-                            {subscriptions.map((subscription) => (
+                            {subscriptions.map((subscription) => {
+                                // Handle Supabase returning arrays for joined relations
+                                const parent = Array.isArray(subscription.parent) 
+                                    ? subscription.parent[0] 
+                                    : subscription.parent;
+                                const student = Array.isArray(subscription.student) 
+                                    ? subscription.student[0] 
+                                    : subscription.student;
+                                
+                                return (
                                 <Link
                                     key={subscription.id}
                                     href={`/admin/subscriptions/${subscription.id}`}
@@ -68,12 +77,12 @@ export default async function AdminSubscriptionsPage() {
                                                 Parent
                                             </p>
                                             <p className="text-lg font-semibold text-zinc-900">
-                                                {subscription.parent?.full_name ||
-                                                    subscription.parent?.email ||
+                                                {parent?.full_name ||
+                                                    parent?.email ||
                                                     "Unknown"}
                                             </p>
                                             <p className="text-sm text-zinc-500">
-                                                {subscription.parent?.email ||
+                                                {parent?.email ||
                                                     "No email"}
                                             </p>
                                         </div>
@@ -82,11 +91,11 @@ export default async function AdminSubscriptionsPage() {
                                                 Student
                                             </p>
                                             <p className="text-lg font-semibold text-zinc-900">
-                                                {subscription.student?.full_name ||
+                                                {student?.full_name ||
                                                     "Unassigned"}
                                             </p>
                                             <p className="text-sm text-zinc-500">
-                                                {subscription.student?.student_id ||
+                                                {student?.student_id ||
                                                     "—"}
                                             </p>
                                         </div>
@@ -111,7 +120,8 @@ export default async function AdminSubscriptionsPage() {
                                         </div>
                                     </div>
                                 </Link>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 ) : (

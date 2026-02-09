@@ -51,6 +51,14 @@ export default async function AdminSubscriptionDetailPage({
         );
     }
 
+    // Handle Supabase returning arrays for joined relations
+    const parent = Array.isArray(subscription.parent) 
+        ? subscription.parent[0] 
+        : subscription.parent;
+    const student = Array.isArray(subscription.student) 
+        ? subscription.student[0] 
+        : subscription.student;
+
     return (
         <div className="min-h-screen bg-white px-6 py-16">
             <div className="max-w-5xl mx-auto space-y-10">
@@ -116,13 +124,13 @@ export default async function AdminSubscriptionDetailPage({
                             <div className="flex justify-between">
                                 <span>Name</span>
                                 <span className="text-zinc-900">
-                                    {subscription.parent?.full_name || "—"}
+                                    {parent?.full_name || "—"}
                                 </span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Email</span>
                                 <span className="text-zinc-900">
-                                    {subscription.parent?.email || "—"}
+                                    {parent?.email || "—"}
                                 </span>
                             </div>
                         </div>
@@ -132,24 +140,24 @@ export default async function AdminSubscriptionDetailPage({
                         <h2 className="text-lg font-semibold text-zinc-900 mb-4">
                             Student
                         </h2>
-                        {subscription.student ? (
+                        {student ? (
                             <div className="space-y-3 text-sm text-zinc-600">
                                 <div className="flex justify-between">
                                     <span>Student ID</span>
                                     <span className="text-zinc-900">
-                                        {subscription.student.student_id}
+                                        {student.student_id}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Name</span>
                                     <span className="text-zinc-900">
-                                        {subscription.student.full_name}
+                                        {student.full_name}
                                     </span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span>Status</span>
                                     <span className="text-zinc-900">
-                                        {subscription.student.is_active
+                                        {student.is_active
                                             ? "Active"
                                             : "Inactive"}
                                     </span>

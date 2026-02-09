@@ -259,6 +259,32 @@ STUDENT_JWT_SECRET=your-super-secret-key-min-32-chars-long
 
 ## Test Platform Architecture
 
+### Subscription Enforcement
+
+Tests are protected by subscription status at the database level:
+
+| Subscription Status | Start New Test | Continue Test | View Results |
+|---------------------|----------------|---------------|--------------|
+| `active` | ✅ Yes | ✅ Yes | ✅ Yes |
+| `grace_period` | ❌ No | ✅ Yes (existing only) | ✅ Yes (read-only) |
+| `expired` | ❌ No | ❌ No | ❌ No |
+
+**Key Functions:**
+```sql
+-- Check if student can start NEW tests
+can_student_take_test(student_id) → BOOLEAN
+
+-- Check access to specific test (returns can_access, is_read_only, reason)
+can_student_access_test(student_id, test_id) → TABLE
+
+-- Get subscription status for UI display
+get_student_test_access_status(student_id) → TABLE
+```
+
+**Triggers:**
+- `enforce_subscription_on_test_create` - Prevents INSERT on tests without active subscription
+- `enforce_subscription_on_test_start` - Prevents starting not_started test in grace period
+
 ### Database Tables (Test Platform)
 
 | Table | Purpose |
