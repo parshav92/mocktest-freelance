@@ -266,22 +266,33 @@ async function insertQuestions(
     throw new Error(`Duplicate question codes: ${duplicates.join(", ")}`);
   }
 
+  // Get first question's subject_id for the batch
+  const firstQuestion = questions[0];
+  const subjectSlug = firstQuestion.data.subject || "general";
+  const batchSubjectId = subjectMap.get(subjectSlug.toLowerCase().replace(/\s+/g, "-"));
+
+  if (!batchSubjectId) {
+    throw new Error(`Invalid subject: ${subjectSlug}`);
+  }
+
   // Create upload batch record
   const { data: batch, error: batchError } = await supabase
     .from("question_upload_batches")
     .insert({
       uploaded_by: uploadedBy,
-      file_name: `upload_${Date.now()}.csv`,
-      total_rows: questions.length,
-      successful_rows: 0,
-      failed_rows: 0,
+      subject_id: batchSubjectId,
+      filename: `upload_${Date.now()}.csv`,
+      total_questions: questions.length,
+      successful: 0,
+      failed: 0,
       status: "processing",
     })
     .select("id")
     .single();
 
   if (batchError || !batch) {
-    throw new Error("Failed to create upload batch");
+    console.error("Batch creation error:", batchError);
+    throw new Error(`Failed to create upload batch: ${batchError?.message || "Unknown error"}`);
   }
 
   // Prepare questions for insert
@@ -394,8 +405,8 @@ async function insertQuestions(
       .from("question_upload_batches")
       .update({
         status: "failed",
-        failed_rows: questions.length,
-        error_details: { message: error.message },
+        failed: questions.length,
+        errors: [{ message: error.message }],
       })
       .eq("id", batch.id);
 
@@ -407,7 +418,7 @@ async function insertQuestions(
     .from("question_upload_batches")
     .update({
       status: "completed",
-      successful_rows: data?.length || 0,
+      successful: data?.length || 0,
     })
     .eq("id", batch.id);
 

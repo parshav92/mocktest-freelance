@@ -1,9 +1,12 @@
-code,subject,difficulty,question,option_a,option_b,option_c,option_d,answer,solution
-MR_001,mathematical-reasoning,easy,What is 15 + 27?,32,42,52,62,B,Add tens (10+20=30) then ones (5+7=12) to get 42
-MR_002,mathematical-reasoning,easy,Which number is greater: 45 or 54?,45,54,They are equal,Cannot determine,B,54 has 5 tens while 45 has 4 tens
-MR_003,mathematical-reasoning,medium,"If a rectangle has length 8 cm and width 5 cm, what is its area?",13 sq cm,26 sq cm,40 sq cm,80 sq cm,C,Area = length × width = 8 × 5 = 40 sq cm
-MR_004,mathematical-reasoning,medium,What is 3/4 of 24?,6,12,18,21,C,3/4 × 24 = (3 × 24) ÷ 4 = 72 ÷ 4 = 18
-MR_005,mathematical-reasoning,hard,"In a class of 30 students, 40% are girls. How many boys are there?",12,14,16,18,D,Girls = 40% of 30 = 12. Boys = 30 - 12 = 18
-TS_001,thinking-skills,easy,Which shape comes next in the pattern: ○ □ ○ □ ○ ?,○,□,△,◇,B,The pattern alternates between circle and square
-TS_002,thinking-skills,easy,"If RED = 27, BED = 17, what does PED equal?",32,37,42,47,B,R=18 E=5 D=4 (18+5+4=27). P=16 so PED = 16+5+4 = 25... Actually this is a pattern question
-TS_003,thinking-skills,medium,Find the odd one out: Apple Orange Carrot Banana,Apple,Orange,Carrot,Banana,C,Carrot is a vegetable; the rest are fruits
+code,subject,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image
+MR_001,mathematical-reasoning,easy,What is 15 + 27?,32,42,52,62,B,Add tens (10+20=30) then ones (5+7=12) to get 42,no,no,no,no,no
+MR_002,mathematical-reasoning,easy,Which number is greater: 45 or 54?,45,54,They are equal,Cannot determine,B,54 has 5 tens while 45 has 4 tens,no,no,no,no,no
+MR_003,mathematical-reasoning,medium,"If a rectangle has length 8 cm and width 5 cm, what is its area?",13 sq cm,26 sq cm,40 sq cm,80 sq cm,C,Area = length × width = 8 × 5 = 40 sq cm,no,no,no,no,no
+MR_004,mathematical-reasoning,medium,What is 3/4 of 24?,6,12,18,21,C,3/4 × 24 = (3 × 24) ÷ 4 = 72 ÷ 4 = 18,no,no,no,no,no
+MR_005,mathematical-reasoning,hard,"In a class of 30 students, 40% are girls. How many boys are there?",12,14,16,18,D,Girls = 40% of 30 = 12. Boys = 30 - 12 = 18,no,no,no,no,no
+MR_006,mathematical-reasoning,medium,Look at the shape and find its area:,12 sq cm,24 sq cm,36 sq cm,48 sq cm,B,Area = length × width,yes,no,no,no,no
+MR_007,mathematical-reasoning,hard,Which fraction shows the shaded part?,1/2,1/4,3/4,2/3,C,Count shaded parts over total parts,yes,no,no,no,no
+MR_008,mathematical-reasoning,medium,What time is shown on the clock?,3:15,3:30,3:45,4:00,B,Hour hand between 3 and 4; minute hand on 6,yes,no,no,no,no
+TS_001,thinking-skills,easy,Which shape comes next in the pattern?,○,□,△,◇,B,The pattern alternates,yes,yes,yes,yes,yes
+TS_002,thinking-skills,easy,Find the missing number in the sequence: 2 4 6 8 ?,10,12,14,16,A,The sequence increases by 2,no,no,no,no,no
+TS_003,thinking-skills,medium,Find the odd one out: Apple Orange Carrot Banana,Apple,Orange,Carrot,Banana,C,Carrot is a vegetable; the rest are fruits,no,no,no,no,no
