@@ -111,7 +111,7 @@ export default function AdminLayout({
                 </nav>
 
                 <div className="p-4 border-t border-slate-800 mt-auto">
-                    <form action="/api/auth/signout" method="POST">
+                    <form action="/api/admin/signout" method="POST">
                         <button
                             type="submit"
                             className="flex items-center gap-3 px-4 py-3 w-full rounded-lg hover:bg-slate-800 transition-all text-slate-400 hover:text-white group"

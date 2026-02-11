@@ -5,6 +5,23 @@ import { requireAdminSession } from "@/lib/auth/admin";
 async function signOutAdmin() {
     "use server";
     const supabase = await requireAdminSession();
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+        // Reset MFA expiry to current time so the session is invalidated
+        const now = new Date().toISOString();
+        await supabase
+            .from("admin_mfa_sessions")
+            .update({
+                mfa_expires_at: now,
+                // mfa_verified_at: now,
+            })
+            .eq("admin_id", user.id);
+    }
+
     await supabase.auth.signOut();
     redirect("/admin-login");
 }

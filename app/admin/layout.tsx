@@ -26,7 +26,7 @@ export default async function AdminLayout({
     .single();
 
   if (!profile || profile.role !== "admin") {
-    redirect("/dashboard");
+    redirect("/admin-login");
   }
 
   return <AdminLayoutClient profile={profile}>{children}</AdminLayoutClient>;
