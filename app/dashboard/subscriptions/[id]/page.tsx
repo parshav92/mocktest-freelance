@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAdminSession } from "@/lib/auth/admin";
+import { requireAdminAccess } from "@/lib/auth/rbac";
 
 const formatDateTime = (value?: string | null) => {
     if (!value) return "—";
@@ -11,7 +11,7 @@ export default async function AdminSubscriptionDetailPage({
 }: {
     params: { id: string };
 }) {
-    const supabase = await requireAdminSession();
+    const { supabase } = await requireAdminAccess();
 
     const { data: subscription, error } = await supabase
         .from("subscriptions")
@@ -25,7 +25,7 @@ export default async function AdminSubscriptionDetailPage({
             grace_period_ends_at,
             parent:profiles(id, email, full_name),
             student:students(id, full_name, student_id, is_active)
-        `
+        `,
         )
         .eq("id", params.id)
         .single();
@@ -41,7 +41,7 @@ export default async function AdminSubscriptionDetailPage({
                         Subscription not found or access denied.
                     </p>
                     <Link
-                        href="/admin/subscriptions"
+                        href="/dashboard/subscriptions"
                         className="text-emerald-600 hover:underline text-sm"
                     >
                         Back to subscriptions
@@ -52,11 +52,11 @@ export default async function AdminSubscriptionDetailPage({
     }
 
     // Handle Supabase returning arrays for joined relations
-    const parent = Array.isArray(subscription.parent) 
-        ? subscription.parent[0] 
+    const parent = Array.isArray(subscription.parent)
+        ? subscription.parent[0]
         : subscription.parent;
-    const student = Array.isArray(subscription.student) 
-        ? subscription.student[0] 
+    const student = Array.isArray(subscription.student)
+        ? subscription.student[0]
         : subscription.student;
 
     return (
@@ -109,7 +109,7 @@ export default async function AdminSubscriptionDetailPage({
                                 <span>Grace period end</span>
                                 <span className="text-zinc-900">
                                     {formatDateTime(
-                                        subscription.grace_period_ends_at
+                                        subscription.grace_period_ends_at,
                                     )}
                                 </span>
                             </div>
@@ -172,7 +172,7 @@ export default async function AdminSubscriptionDetailPage({
                 </section>
 
                 <Link
-                    href="/admin/subscriptions"
+                    href="/dashboard/subscriptions"
                     className="inline-flex items-center text-emerald-600 hover:underline text-sm"
                 >
                     Back to subscriptions

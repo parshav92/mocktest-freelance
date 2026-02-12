@@ -9,4 +9,4 @@ MR_007,mathematical-reasoning,hard,Which fraction shows the shaded part?,1/2,1/4
 MR_008,mathematical-reasoning,medium,What time is shown on the clock?,3:15,3:30,3:45,4:00,B,Hour hand between 3 and 4; minute hand on 6,yes,no,no,no,no
 TS_001,thinking-skills,easy,Which shape comes next in the pattern?,○,□,△,◇,B,The pattern alternates,yes,yes,yes,yes,yes
 TS_002,thinking-skills,easy,Find the missing number in the sequence: 2 4 6 8 ?,10,12,14,16,A,The sequence increases by 2,no,no,no,no,no
-TS_003,thinking-skills,medium,Find the odd one out: Apple Orange Carrot Banana,Apple,Orange,Carrot,Banana,C,Carrot is a vegetable; the rest are fruits,no,no,no,no,no
+TS_003,thinking-skills,medium,Find the odd one out: Apple Orange Carrot Banana,Apple,Orange,Carrot,Banana,C,Carrot is a vegetable; the rest are fruits,no,no,yes,yes,yes

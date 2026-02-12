@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Loader2 } from "lucide-react";
 
 type Step = "credentials" | "enroll" | "verify";
 
-export default function AdminLoginPage() {
+function AdminLoginContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const supabase = useMemo(() => createClient(), []);
@@ -29,7 +29,7 @@ export default function AdminLoginPage() {
             const res = await fetch("/api/admin/mfa/status");
             const data = await res.json();
             if (data?.authenticated && data?.isAdmin && data?.mfaValid) {
-                router.replace("/admin");
+                router.replace("/dashboard");
             }
         };
         checkExisting();
@@ -44,11 +44,10 @@ export default function AdminLoginPage() {
         const email = formData.get("email") as string;
         const password = formData.get("password") as string;
 
-        const { error: signInError } =
-            await supabase.auth.signInWithPassword({
-                email,
-                password,
-            });
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
 
         if (signInError) {
             setError(signInError.message);
@@ -68,7 +67,7 @@ export default function AdminLoginPage() {
 
         const { data: factors } = await supabase.auth.mfa.listFactors();
         const existingTotp = factors?.totp?.find(
-            (factor) => factor.status === "verified"
+            (factor) => factor.status === "verified",
         );
 
         if (!existingTotp) {
@@ -140,12 +139,10 @@ export default function AdminLoginPage() {
                 return;
             }
 
-            router.replace("/admin");
+            router.replace("/dashboard");
         } catch (err) {
             setError(
-                err instanceof Error
-                    ? err.message
-                    : "MFA verification failed"
+                err instanceof Error ? err.message : "MFA verification failed",
             );
         } finally {
             setLoading(false);
@@ -182,7 +179,10 @@ export default function AdminLoginPage() {
                     </div>
 
                     {step === "credentials" && (
-                        <form className="space-y-4" onSubmit={handleCredentials}>
+                        <form
+                            className="space-y-4"
+                            onSubmit={handleCredentials}
+                        >
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
                                 <Input
@@ -246,7 +246,9 @@ export default function AdminLoginPage() {
                             )}
                             <form className="space-y-4" onSubmit={handleVerify}>
                                 <div className="space-y-2">
-                                    <Label htmlFor="code">Verification code</Label>
+                                    <Label htmlFor="code">
+                                        Verification code
+                                    </Label>
                                     <Input
                                         id="code"
                                         name="code"
@@ -316,5 +318,23 @@ export default function AdminLoginPage() {
                 </CardContent>
             </Card>
         </div>
+    );
+}
+
+export default function AdminLoginPage() {
+    return (
+        <Suspense
+            fallback={
+                <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 to-neutral-100 p-6">
+                    <Card className="w-full max-w-md shadow-2xl rounded-[2rem]">
+                        <CardContent className="p-8 flex items-center justify-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-emerald-600" />
+                        </CardContent>
+                    </Card>
+                </div>
+            }
+        >
+            <AdminLoginContent />
+        </Suspense>
     );
 }
