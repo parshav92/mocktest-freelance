@@ -448,16 +448,18 @@ const evaluation = await evaluateEssay({
 }
 ```
 
-### Test API Endpoints (To Be Implemented)
+### Test API Endpoints ✅ IMPLEMENTED
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/subjects` | GET | List active subjects |
-| `/api/tests/start` | POST | Start a new test |
-| `/api/tests/[id]/answer` | POST | Submit answer |
-| `/api/tests/[id]/submit` | POST | Submit test |
-| `/api/tests/[id]` | GET | Get test details |
-| `/api/tests/[id]/review` | GET | Get test with solutions |
+| `/api/tests` | GET | List student's tests (with filters) |
+| `/api/tests` | POST | Create & start a new test |
+| `/api/tests/access-status` | GET | Get subscription access status |
+| `/api/tests/[id]` | GET | Get test with questions |
+| `/api/tests/[id]` | PATCH | Update test (start, save_answer, end_early) |
+| `/api/tests/[id]/submit` | POST | Submit test for grading |
+| `/api/tests/[id]/review` | GET | Get completed test with solutions |
 | `/api/admin/questions/upload` | POST | Bulk upload questions |
 | `/api/admin/questions` | GET/POST | Manage questions |
 

@@ -66,27 +66,29 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {/* Mock Tests Card */}
           <Card
-            className={`hover:shadow-lg transition-shadow ${
-              user.isReadOnly ? "opacity-60" : "cursor-pointer"
-            }`}
+            className={`hover:shadow-lg transition-shadow cursor-pointer`}
+            onClick={() => router.push("/dashboard/tests")}
           >
             <CardHeader className="flex flex-row items-center gap-4">
               <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
                 <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <CardTitle>Mock Tests</CardTitle>
+              <CardTitle>Practice Tests</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground">
                 {user.isReadOnly
-                  ? "Subscription required to take tests"
+                  ? "View your previous tests"
                   : "Take practice tests and quizzes"}
               </p>
             </CardContent>
           </Card>
 
           {/* Scores Card */}
-          <Card className="hover:shadow-lg transition-shadow cursor-pointer">
+          <Card
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => router.push("/dashboard/tests?status=submitted")}
+          >
             <CardHeader className="flex flex-row items-center gap-4">
               <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
                 <BarChart3 className="h-6 w-6 text-green-600 dark:text-green-400" />
@@ -116,7 +118,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
               <p className="text-muted-foreground">
                 {user.isReadOnly
                   ? "Subscription required to access"
-                  : "Access learning resources"}
+                  : "Coming soon"}
               </p>
             </CardContent>
           </Card>
