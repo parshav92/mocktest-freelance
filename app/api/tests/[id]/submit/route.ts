@@ -4,7 +4,7 @@ import {
   requireStudent,
   errorResponse,
   successResponse,
-} from "@/lib/api/student";
+} from "@/lib/auth/student";
 import { TestService } from "@/lib/services/test.service";
 
 interface RouteParams {

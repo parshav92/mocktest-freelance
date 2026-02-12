@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { successResponse, errorResponse } from "@/lib/api/admin";
+import { successResponse, errorResponse } from "@/lib/auth/admin";
 
 // GET - List all active subjects (public for students)
 export async function GET() {

@@ -6,7 +6,7 @@ import {
   errorResponse,
   successResponse,
   subscriptionErrorResponse,
-} from "@/lib/api/student";
+} from "@/lib/auth/student";
 import { TestService } from "@/lib/services/test.service";
 import type { TestStatus } from "@/types/test";
 

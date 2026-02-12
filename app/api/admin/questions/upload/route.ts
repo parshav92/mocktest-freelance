@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { requireAdmin, errorResponse, successResponse } from "@/lib/api/admin";
+import { requireAdmin, errorResponse, successResponse } from "@/lib/auth/admin";
 import { getCSVTemplate } from "@/lib/csv/templates";
 import type { ParsedQuestion, ParsedPassage } from "@/lib/csv/parser";
 
