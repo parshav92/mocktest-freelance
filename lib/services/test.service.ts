@@ -705,7 +705,10 @@ export class TestService {
             case "passage_mcq":
             case "poem_mcq": {
                 const correct = correctAnswer as MCQAnswer;
-                return selected === correct.key;
+                // Normalize both to uppercase for comparison
+                const selectedKey = String(selected).trim().toUpperCase();
+                const correctKey = String(correct.label).trim().toUpperCase();
+                return selectedKey === correctKey;
             }
 
             case "fill_blank_dropdown": {

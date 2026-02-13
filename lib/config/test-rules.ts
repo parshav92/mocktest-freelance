@@ -6,211 +6,213 @@
 // ============================================
 
 export const TEST_CONFIG = {
-  // ============================================
-  // TIMER SETTINGS
-  // ============================================
-  timer: {
-    /** Show seconds in timer (double-click to toggle in UI) */
-    showSeconds: true,
-    /** Allow hiding the timer */
-    allowHideTimer: true,
-    /** Warning threshold in seconds (timer turns red) */
-    warningThresholdSecs: 300, // 5 minutes
-    /** Critical threshold in seconds (timer flashes) */
-    criticalThresholdSecs: 60, // 1 minute
-    /** Auto-submit when time runs out */
-    autoSubmitOnTimeout: true,
-  },
-
-  // ============================================
-  // GRACE PERIOD (End Test Early)
-  // ============================================
-  gracePeriod: {
-    /** Minutes from test start during which "End Test" is available */
-    durationMins: 3,
-    /** Show end test button */
-    showEndTestButton: true,
-  },
-
-  // ============================================
-  // QUESTION NAVIGATION
-  // ============================================
-  navigation: {
-    /** Allow navigating back to previous questions */
-    allowBackNavigation: true,
-    /** Allow jumping to any question from progress grid */
-    allowQuestionJump: true,
-    /** Auto-save answers on navigation */
-    autoSaveOnNavigate: true,
-    /** Auto-save debounce delay in ms */
-    autoSaveDebounceMs: 500,
-  },
-
-  // ============================================
-  // FLAG FEATURE
-  // ============================================
-  flag: {
-    /** Enable question flagging */
-    enabled: true,
-    /** Show flag count in header */
-    showFlagCount: true,
-  },
-
-  // ============================================
-  // PROGRESS SUMMARY
-  // ============================================
-  progressSummary: {
-    /** Show progress grid in header (click to expand) */
-    showInHeader: true,
-    /** Categories to display */
-    categories: {
-      showAll: true,
-      answered: true,
-      notAnswered: true,
-      notRead: true,     // Questions never navigated to
-      flagged: true,
+    // ============================================
+    // TIMER SETTINGS
+    // ============================================
+    timer: {
+        /** Show seconds in timer (double-click to toggle in UI) */
+        showSeconds: true,
+        /** Allow hiding the timer */
+        allowHideTimer: true,
+        /** Warning threshold in seconds (timer turns red) */
+        warningThresholdSecs: 300, // 5 minutes
+        /** Critical threshold in seconds (timer flashes) */
+        criticalThresholdSecs: 60, // 1 minute
+        /** Auto-submit when time runs out */
+        autoSubmitOnTimeout: true,
     },
-  },
 
-  // ============================================
-  // ANTI-CHEAT SETTINGS
-  // ============================================
-  antiCheat: {
-    /** Enable fullscreen mode */
-    requireFullscreen: false,
-    /** Disable right-click context menu */
-    disableRightClick: false,
-    /** Disable keyboard shortcuts (F12, Ctrl+Shift+I, etc.) */
-    disableDevTools: false,
-    /** Disable copy/paste from outside */
-    disableCopyPaste: false,
-    /** Disable text selection on question content */
-    disableTextSelection: false,
-    /** Track tab/window visibility changes */
-    detectTabSwitch: false,
-    /** Number of warnings before auto-submit */
-    maxWarnings: 5,
-    /** Warning message template */
-    warningMessage: (remaining: number) =>
-      `Warning: Switching tabs or windows is not allowed during the test. You have ${remaining} warning${remaining === 1 ? "" : "s"} remaining before your test is automatically submitted.`,
-    /** Final warning message (1 warning left) */
-    finalWarningMessage:
-      "This is your LAST warning. If you switch tabs again, your test will be automatically submitted.",
-    /** Auto-submit message */
-    autoSubmitMessage:
-      "Your test has been automatically submitted due to repeated tab switching.",
-  },
+    // ============================================
+    // GRACE PERIOD (End Test Early)
+    // ============================================
+    gracePeriod: {
+        /** Minutes from test start during which "End Test" is available */
+        durationMins: 3,
+        /** Show end test button */
+        showEndTestButton: true,
+    },
 
-  // ============================================
-  // SUBMIT RULES
-  // ============================================
-  submit: {
-    /** Minimum questions that must be attempted before allowing submit */
-    minAttemptedPercent: 0, // 0 means no minimum
-    /** Show unanswered count in submit confirmation */
-    showUnansweredWarning: true,
-    /** Show pre-submit summary page */
-    showPreSubmitSummary: true,
-    /** Show post-submit result screen */
-    showPostSubmitResult: true,
-  },
+    // ============================================
+    // QUESTION NAVIGATION
+    // ============================================
+    navigation: {
+        /** Allow navigating back to previous questions */
+        allowBackNavigation: true,
+        /** Allow jumping to any question from progress grid */
+        allowQuestionJump: true,
+        /** Auto-save answers on navigation */
+        autoSaveOnNavigate: true,
+        /** Auto-save debounce delay in ms */
+        autoSaveDebounceMs: 500,
+    },
 
-  // ============================================
-  // INSTRUCTION PAGES
-  // ============================================
-  instructions: {
-    /** Show general navigation instructions (How to navigate) */
-    showGeneralInstructions: true,
-    /** General instruction pages (shown before subject-specific) */
-    generalPages: [
-      {
-        title: "How to navigate the test?",
-        sections: [
-          {
-            heading: "Making things bigger",
-            content:
-              "You can make the questions bigger by clicking the zoom controls at the top right. You can always go back to the original view by clicking 100%.",
-          },
-          {
-            heading: "Timer",
-            content:
-              "This is your individual countdown timer. Make sure you keep checking the time so you can complete all the questions. You can click 'Hide time' if you don't want to see the time.",
-          },
-          {
-            heading: "Scrolling down and changing the view",
-            content:
-              "Sometimes, particularly in the Reading Test, you will have to scroll down using the scroll bar so that you can read the whole question or extract.",
-          },
+    // ============================================
+    // FLAG FEATURE
+    // ============================================
+    flag: {
+        /** Enable question flagging */
+        enabled: true,
+        /** Show flag count in header */
+        showFlagCount: true,
+    },
+
+    // ============================================
+    // PROGRESS SUMMARY
+    // ============================================
+    progressSummary: {
+        /** Show progress grid in header (click to expand) */
+        showInHeader: true,
+        /** Categories to display */
+        categories: {
+            showAll: true,
+            answered: true,
+            notAnswered: true,
+            notRead: true, // Questions never navigated to
+            flagged: true,
+        },
+    },
+
+    // ============================================
+    // ANTI-CHEAT SETTINGS
+    // ============================================
+    antiCheat: {
+        /** Enable fullscreen mode */
+        requireFullscreen: false,
+        /** Disable right-click context menu */
+        disableRightClick: false,
+        /** Disable keyboard shortcuts (F12, Ctrl+Shift+I, etc.) */
+        disableDevTools: false,
+        /** Disable copy/paste from outside */
+        disableCopyPaste: false,
+        /** Disable text selection on question content */
+        disableTextSelection: false,
+        /** Track tab/window visibility changes */
+        detectTabSwitch: false,
+        /** Number of warnings before auto-submit */
+        maxWarnings: 5,
+        /** Warning message template */
+        warningMessage: (remaining: number) =>
+            `Warning: Switching tabs or windows is not allowed during the test. You have ${remaining} warning${remaining === 1 ? "" : "s"} remaining before your test is automatically submitted.`,
+        /** Final warning message (1 warning left) */
+        finalWarningMessage:
+            "This is your LAST warning. If you switch tabs again, your test will be automatically submitted.",
+        /** Auto-submit message */
+        autoSubmitMessage:
+            "Your test has been automatically submitted due to repeated tab switching.",
+    },
+
+    // ============================================
+    // SUBMIT RULES
+    // ============================================
+    submit: {
+        /** Minimum questions that must be attempted before allowing submit */
+        minAttemptedPercent: 0, // 0 means no minimum
+        /** Show unanswered count in submit confirmation */
+        showUnansweredWarning: true,
+        /** Show pre-submit summary page */
+        showPreSubmitSummary: true,
+        /** Show post-submit result screen */
+        showPostSubmitResult: true,
+    },
+
+    // ============================================
+    // INSTRUCTION PAGES
+    // ============================================
+    instructions: {
+        /** Show general navigation instructions (How to navigate) */
+        showGeneralInstructions: true,
+        /** General instruction pages (shown before subject-specific) */
+        generalPages: [
+            {
+                title: "How to navigate the test?",
+                sections: [
+                    {
+                        heading: "Making things bigger",
+                        content:
+                            "You can make the questions bigger by clicking the zoom controls at the top right. You can always go back to the original view by clicking 100%.",
+                    },
+                    {
+                        heading: "Timer",
+                        content:
+                            "This is your individual countdown timer. Make sure you keep checking the time so you can complete all the questions. You can click 'Hide time' if you don't want to see the time.",
+                    },
+                    {
+                        heading: "Scrolling down and changing the view",
+                        content:
+                            "Sometimes, particularly in the Reading Test, you will have to scroll down using the scroll bar so that you can read the whole question or extract.",
+                    },
+                ],
+            },
+            {
+                title: "How to navigate the test?",
+                sections: [
+                    {
+                        heading: "Next and Back",
+                        content:
+                            "Once you've selected your answer, you will need to click 'Next' to go to the next question. The test won't automatically take you to the next question. You can use the 'Back' button to review previous questions or change your answers.",
+                    },
+                    {
+                        heading: "Flag feature",
+                        content:
+                            "If you are finding a question difficult to answer, select your best guess and then click the flag icon to remind yourself to go back to it if you have time.",
+                    },
+                    {
+                        heading: "Question number and progress summary",
+                        content:
+                            "You will always be able to see which question you are up to and how many questions there are in total. If you click the grid icon, it takes you to the progress summary. This shows you where you're up to in the test and reminds you which questions you have flagged to come back to. The progress summary also lets you jump to any question at any time.",
+                    },
+                ],
+            },
         ],
-      },
-      {
-        title: "How to navigate the test?",
-        sections: [
-          {
-            heading: "Next and Back",
-            content:
-              "Once you've selected your answer, you will need to click 'Next' to go to the next question. The test won't automatically take you to the next question. You can use the 'Back' button to review previous questions or change your answers.",
-          },
-          {
-            heading: "Flag feature",
-            content:
-              "If you are finding a question difficult to answer, select your best guess and then click the flag icon to remind yourself to go back to it if you have time.",
-          },
-          {
-            heading: "Question number and progress summary",
-            content:
-              "You will always be able to see which question you are up to and how many questions there are in total. If you click the grid icon, it takes you to the progress summary. This shows you where you're up to in the test and reminds you which questions you have flagged to come back to. The progress summary also lets you jump to any question at any time.",
-          },
-        ],
-      },
-    ],
-    /** Require confirmation before starting test */
-    requireStartConfirmation: true,
-    /** Confirmation modal text */
-    confirmationTitle: "Are you sure you have finished reading the instructions?",
-    confirmationSubtitle: "You will not be able to read them again until the test begins.",
-  },
+        /** Require confirmation before starting test */
+        requireStartConfirmation: true,
+        /** Confirmation modal text */
+        confirmationTitle:
+            "Are you sure you have finished reading the instructions?",
+        confirmationSubtitle:
+            "You will not be able to read them again until the test begins.",
+    },
 
-  // ============================================
-  // UI THEME
-  // ============================================
-  theme: {
-    /** Primary color (navy blue from reference) */
-    primary: "#1a2744",
-    /** Accent color */
-    accent: "#2563eb",
-    /** Header background */
-    headerBg: "#f0f4f8",
-    /** Question panel background */
-    questionPanelBg: "#ffffff",
-    /** Selected option border */
-    selectedBorder: "#2563eb",
-  },
+    // ============================================
+    // UI THEME
+    // ============================================
+    theme: {
+        /** Primary color (navy blue from reference) */
+        primary: "#1a2744",
+        /** Accent color */
+        accent: "#2563eb",
+        /** Header background */
+        headerBg: "#f0f4f8",
+        /** Question panel background */
+        questionPanelBg: "#ffffff",
+        /** Selected option border */
+        selectedBorder: "#2563eb",
+    },
 
-  // ============================================
-  // PRACTICE TEST OPTIONS
-  // ============================================
-  practiceTests: {
-    /** Number of practice test options to show per subject */
-    optionsPerSubject: 4,
-    /** Label template */
-    labelTemplate: (n: number) => `Practice Test ${n}`,
-  },
+    // ============================================
+    // PRACTICE TEST OPTIONS
+    // ============================================
+    practiceTests: {
+        /** Number of practice test options to show per subject */
+        optionsPerSubject: 4,
+        /** Label template */
+        labelTemplate: (n: number) => `Practice Test ${n}`,
+    },
 } as const;
 
 // Type for instruction page from DB
 export interface DBInstructionPage {
-  title: string;
-  content: string;
+    title: string;
+    content: string;
 }
 
 // Type for general instruction sections
 export interface InstructionSection {
-  heading: string;
-  content: string;
+    heading: string;
+    content: string;
 }
 
 export interface GeneralInstructionPage {
-  title: string;
-  sections: InstructionSection[];
+    title: string;
+    sections: InstructionSection[];
 }
