@@ -163,14 +163,12 @@ export class TestService {
       .eq("is_default", true)
       .single();
 
-    // 6. Calculate total marks
-    const { data: questionsData } = await this.supabase
-      .from("questions")
-      .select("marks")
-      .in("id", questionIds);
+    // 6. Calculate total marks using secure function
+    const { data: totalMarksData } = await this.supabase.rpc("calculate_total_marks", {
+      p_question_ids: questionIds,
+    });
 
-    const totalMarks =
-      questionsData?.reduce((sum, q) => sum + q.marks, 0) || questionIds.length;
+    const totalMarks = totalMarksData || questionIds.length;
 
     // 7. Create the test record
     const { data: test, error: testError } = await this.supabase
@@ -200,7 +198,7 @@ export class TestService {
     }
 
     // 8. Fetch questions for the test (without correct answers)
-    const questions = await this.getQuestionsForTest(questionIds);
+    const questions = await this.getQuestionsForTest(studentId, questionIds);
 
     return { test, questions };
   }
@@ -333,41 +331,79 @@ export class TestService {
 
   /**
    * Get questions for a test (without correct answers for in-progress tests)
+   * Uses SECURITY DEFINER function to validate subscription
    */
   async getQuestionsForTest(
+    studentId: string,
     questionIds: string[],
     includeAnswers = false
   ): Promise<QuestionForTest[]> {
-    // Build select query - use separate queries to avoid parser issues
-    const baseSelect = "id, code, question_type, difficulty, content, marks";
-    const passageSelect = "passage:passages(id, code, passage_type, title, content, image_url)";
-    
-    let query;
-    if (includeAnswers) {
-      query = this.supabase
-        .from("questions")
-        .select(`${baseSelect}, correct_answer, solution_text, ${passageSelect}`)
-        .in("id", questionIds);
-    } else {
-      query = this.supabase
-        .from("questions")
-        .select(`${baseSelect}, ${passageSelect}`)
-        .in("id", questionIds);
-    }
-
-    const { data, error } = await query;
+    // Use the secure function that validates subscription
+    const { data, error } = await this.supabase.rpc("get_questions_for_student", {
+      p_student_id: studentId,
+      p_question_ids: questionIds,
+      p_include_answers: includeAnswers,
+    });
 
     if (error) {
       console.error("Error fetching questions:", error);
       throw new Error("Failed to fetch questions");
     }
 
-    // Sort questions in the order they appear in questionIds
+    // If no data returned, subscription may have expired
+    if (!data || data.length === 0) {
+      // Check if it's due to subscription issue
+      const subCheck = await this.supabase
+        .from("subscriptions")
+        .select("status, expires_at, grace_period_ends_at")
+        .eq("student_id", studentId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (subCheck.data) {
+        const now = new Date();
+        const expiresAt = new Date(subCheck.data.expires_at);
+        const gracePeriodEndsAt = subCheck.data.grace_period_ends_at 
+          ? new Date(subCheck.data.grace_period_ends_at) 
+          : null;
+        
+        if (expiresAt < now && (!gracePeriodEndsAt || gracePeriodEndsAt < now)) {
+          throw new Error("Your subscription has expired. Please renew to access test content.");
+        }
+      }
+      
+      return [];
+    }
+
+    // Transform RPC result to QuestionForTest format
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const questionMap = new Map((data || []).map((q: any) => [q.id, q]));
+    const questions = data.map((row: any) => ({
+      id: row.id,
+      code: row.code,
+      question_type: row.question_type,
+      difficulty: row.difficulty,
+      content: row.content,
+      marks: row.marks,
+      ...(includeAnswers && row.correct_answer && { correct_answer: row.correct_answer }),
+      ...(includeAnswers && row.solution_text && { solution_text: row.solution_text }),
+      ...(row.passage_id && {
+        passage: {
+          id: row.passage_id,
+          code: row.passage_code,
+          passage_type: row.passage_type,
+          title: row.passage_title,
+          content: row.passage_content,
+          image_url: row.passage_image_url,
+        },
+      }),
+    }));
+
+    // Sort questions in the order they appear in questionIds
+    const questionMap = new Map(questions.map((q: QuestionForTest) => [q.id, q]));
     const sortedQuestions = questionIds
       .map((id) => questionMap.get(id))
-      .filter(Boolean) as unknown as QuestionForTest[];
+      .filter(Boolean) as QuestionForTest[];
 
     return sortedQuestions;
   }
@@ -567,6 +603,7 @@ export class TestService {
 
     // Fetch questions with correct answers for grading
     const questions = await this.getQuestionsForTest(
+      studentId,
       test.questions_order,
       true
     );

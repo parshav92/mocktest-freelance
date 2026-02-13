@@ -2,71 +2,27 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  BookOpen,
-  Calculator,
-  Brain,
-  PenTool,
-  ArrowRight,
-  Clock,
-  HelpCircle,
-  Loader2,
-  AlertCircle,
-} from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import type { Subject } from "@/types/test";
 
-interface SubjectWithCount extends Subject {
-  question_count: number;
-}
-
-interface AccessStatus {
-  can_take_new_tests: boolean;
-  is_in_grace_period: boolean;
-  subscription_status: string | null;
-  message: string;
-}
-
-const iconMap: Record<string, React.ReactNode> = {
-  "book-open": <BookOpen className="h-6 w-6" />,
-  calculator: <Calculator className="h-6 w-6" />,
-  brain: <Brain className="h-6 w-6" />,
-  pencil: <PenTool className="h-6 w-6" />,
-};
-
-export default function TestSubjectsPage() {
+export default function SubjectSelectionPage() {
   const router = useRouter();
-  const [subjects, setSubjects] = useState<SubjectWithCount[]>([]);
-  const [accessStatus, setAccessStatus] = useState<AccessStatus | null>(null);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [startingTest, setStartingTest] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchData();
+    fetchSubjects();
   }, []);
 
-  const fetchData = async () => {
+  const fetchSubjects = async () => {
     try {
-      // Fetch subjects and access status in parallel
-      const [subjectsRes, accessRes] = await Promise.all([
-        fetch("/api/subjects"),
-        fetch("/api/tests/access-status"),
-      ]);
-
-      if (!subjectsRes.ok) {
-        throw new Error("Failed to fetch subjects");
-      }
-
-      const subjectsData = await subjectsRes.json();
-      setSubjects(subjectsData.subjects || []);
-
-      if (accessRes.ok) {
-        const accessData = await accessRes.json();
-        setAccessStatus(accessData);
-      }
+      const res = await fetch("/api/subjects");
+      if (!res.ok) throw new Error("Failed to fetch subjects");
+      const data = await res.json();
+      setSubjects(data.subjects || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -74,154 +30,78 @@ export default function TestSubjectsPage() {
     }
   };
 
-  const handleStartTest = async (subjectId: string) => {
-    if (!accessStatus?.can_take_new_tests) {
-      setError("You cannot start new tests. Please check your subscription.");
-      return;
-    }
-
-    setStartingTest(subjectId);
-    setError(null);
-
-    try {
-      const res = await fetch("/api/tests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          subject_id: subjectId,
-          start_immediately: true,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to start test");
-      }
-
-      // Navigate to the test page
-      router.push(`/dashboard/tests/${data.test.id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to start test");
-      setStartingTest(null);
-    }
+  const handleSelectSubject = (subject: Subject) => {
+    router.push(`/dashboard/tests/select/${subject.slug}`);
   };
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen bg-[#e8eef3] flex items-center justify-center font-[family-name:var(--font-inter)]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#1a2744]" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Practice Tests</h1>
-        <p className="text-muted-foreground mt-2">
-          Select a subject to start your practice test
-        </p>
-      </div>
+    <div className="min-h-screen bg-[#e8eef3] font-[family-name:var(--font-inter)]">
+      {/* Header */}
+      <header className="bg-[#1a2744] text-white py-3">
+        <div className="container mx-auto px-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/dashboard")}
+            className="text-white hover:bg-white/10"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Dashboard
+          </Button>
+        </div>
+      </header>
 
-      {/* Access Status Banner */}
-      {accessStatus && !accessStatus.can_take_new_tests && (
-        <div className="p-4 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 border border-yellow-300 dark:border-yellow-700">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
-            <div>
-              <p className="font-medium text-yellow-800 dark:text-yellow-200">
-                {accessStatus.is_in_grace_period
-                  ? "Subscription in Grace Period"
-                  : "Subscription Required"}
-              </p>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                {accessStatus.message}
-              </p>
+      {/* Main Content */}
+      <main className="flex items-center justify-center min-h-[calc(100vh-56px)] p-6">
+        <Card className="w-full max-w-md bg-white shadow-lg">
+          <CardContent className="p-8">
+            {/* Title */}
+            <div className="text-center mb-8">
+              <h1 className="text-2xl font-bold text-[#1a2744] leading-tight">
+                Selective High School Placement
+              </h1>
+              <h2 className="text-2xl font-bold text-[#1a2744]">
+                Practice Test
+              </h2>
+              <div className="w-full h-1 bg-gradient-to-r from-red-500 via-red-400 to-red-500 mt-4" />
             </div>
-          </div>
-        </div>
-      )}
 
-      {/* Error Message */}
-      {error && (
-        <div className="p-4 rounded-lg bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700">
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-        </div>
-      )}
-
-      {/* Subjects Grid */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {subjects.map((subject) => (
-          <Card key={subject.id} className="relative overflow-hidden">
-            <CardHeader className="flex flex-row items-start justify-between">
-              <div className="flex items-center gap-4">
-                <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400">
-                  {iconMap[subject.icon || "book-open"] || (
-                    <BookOpen className="h-6 w-6" />
-                  )}
-                </div>
-                <div>
-                  <CardTitle>{subject.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {subject.description}
-                  </p>
-                </div>
+            {error && (
+              <div className="mb-6 p-3 rounded bg-red-100 text-red-700 text-sm text-center">
+                {error}
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
-                <div className="flex items-center gap-1">
-                  <Clock className="h-4 w-4" />
-                  <span>{subject.duration_mins} mins</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <HelpCircle className="h-4 w-4" />
-                  <span>{subject.total_questions} questions</span>
-                </div>
-              </div>
+            )}
 
-              {subject.question_count < subject.total_questions && (
-                <Badge variant="secondary" className="mb-4">
-                  {subject.question_count} questions available
-                </Badge>
-              )}
+            {/* Subject Buttons */}
+            <div className="space-y-3">
+              {subjects.map((subject) => (
+                <button
+                  key={subject.id}
+                  onClick={() => handleSelectSubject(subject)}
+                  className="w-full py-4 px-6 bg-[#1a2744] text-white font-medium rounded-md
+                    hover:bg-[#1a2744]/90 transition-colors text-center"
+                >
+                  {subject.name}
+                </button>
+              ))}
+            </div>
 
-              <Button
-                className="w-full"
-                onClick={() => handleStartTest(subject.id)}
-                disabled={
-                  !accessStatus?.can_take_new_tests ||
-                  startingTest === subject.id ||
-                  subject.question_count === 0
-                }
-              >
-                {startingTest === subject.id ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Starting...
-                  </>
-                ) : (
-                  <>
-                    Start Test
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </>
-                )}
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {subjects.length === 0 && (
-        <div className="text-center py-12">
-          <BookOpen className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-          <h3 className="text-lg font-medium">No Subjects Available</h3>
-          <p className="text-muted-foreground">
-            Please check back later for available tests.
-          </p>
-        </div>
-      )}
+            {subjects.length === 0 && !error && (
+              <p className="text-center text-gray-500">
+                No subjects available at the moment.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </main>
     </div>
   );
 }

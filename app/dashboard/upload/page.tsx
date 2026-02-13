@@ -283,7 +283,7 @@ export default function AdminUploadPage() {
                 formData.append("imagePaths", img.storagePath);
             });
 
-            const response = await fetch("/api/dashboard/questions/upload", {
+            const response = await fetch("/api/admin/questions/upload", {
                 method: "POST",
                 body: formData,
             });

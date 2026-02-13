@@ -1,0 +1,24 @@
+We are now starting with buildinf the actual test taking environment where student first select subject and take a test.
+The student dashboard is divided into haves, one where he sees his previous test scores and an option for detailed view, and options to click and view detailed solution for the tests he has taken (upon clicking it shows the same test like ui but with correct option and description/solution for the answer and the option he has selected).
+on the other half he sees prompt to take test, a title and a few lines with a button that says "Take practice test"
+When he clicks Take practice test, he sees a new page which shows options to select subject for the test he wants to take,
+after selecting the subject, he can choose from a few tests like practice test 1, ...practice test 4.
+But these practice test options however are just for the UI, to show student has options, the Test will only be created upon clicking one and not created beforehand. Remember, test creation is supposed to be dynamic based on our algorithm for the student.
+Names are not important, any UI option where it shows a few options to take a test from works.
+upon creating a test, apis are called and all data like questions etc are called from db.
+He sees instruction pages, and a regular test environment with question on the left side and options or answer related fields on the right. 
+For each question, he has 3 options, back, next and flag(for coming back to the question).
+he should also see option for "show all" where he can navigate.
+First he sees general instructions for the test environment, followed by instruction for the particular subject test, then a confirmation to start test and then the test.
+The entire test environment should have a easy to use, intuitive and simple design with white blue theme
+I have attached images for test platform inspiration, refer the images for detailed features like timer, questions etc. 
+It is just a general guide for how test platform should feel and not a rigid ui requirement.
+Student must also see end test and submit according to the test states decided earlier.
+Test should have few anti copy features like right click disabled, f12 disabled (cannot open dev tools), no copy paste from outside the environment, full screen and no tab switching.
+He should recieve 5 warnings before test is auto submitted.
+All of these options for test rules should be manageable from a single file so i can easily configure them later.
+after the last question he should see test progress summmary, test submission confirmation and then final screen(finish or sees result).
+Take inspiration from popular platforms like Hackerrank and other such practice platforms.
+I have also attached context and images
+After the final screen, he sees solutions page where he can navigate the test with solution and description like decided
+Use inter as font for the test environment

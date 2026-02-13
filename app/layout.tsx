@@ -1,11 +1,17 @@
 import type { Metadata } from "next";
-import { Funnel_Display } from "next/font/google";
+import { Funnel_Display, Inter } from "next/font/google";
 import "./globals.css";
 
 const funnelDisplay = Funnel_Display({
     subsets: ["latin"],
     weight: ["300", "400", "500", "600", "700"],
     variable: "--font-funnel-display",
+});
+
+const inter = Inter({
+    subsets: ["latin"],
+    weight: ["300", "400", "500", "600", "700"],
+    variable: "--font-inter",
 });
 
 export const metadata: Metadata = {
@@ -21,7 +27,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body
-                className={`${funnelDisplay.className} antialiased bg-neutral-200/20`}
+                className={`${funnelDisplay.className} ${inter.variable} antialiased bg-neutral-200/20`}
             >
                 {children}
             </body>

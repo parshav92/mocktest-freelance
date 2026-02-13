@@ -48,8 +48,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // Determine if we should include correct answers
     const isCompleted = ["submitted", "ended_early", "abandoned"].includes(test.status);
     
-    // Fetch questions
+    // Fetch questions (validates subscription)
     const questions = await testService.getQuestionsForTest(
+      auth.session.student_id,
       test.questions_order,
       isCompleted // Include answers only for completed tests
     );
@@ -108,6 +109,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       case "start": {
         const test = await testService.startTest(testId, auth.session.student_id);
         const questions = await testService.getQuestionsForTest(
+          auth.session.student_id,
           test.questions_order,
           false
         );

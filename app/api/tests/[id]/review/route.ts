@@ -58,8 +58,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    // Fetch questions with answers and solutions
+    // Fetch questions with answers and solutions (validates subscription)
     const questions = await testService.getQuestionsForTest(
+      auth.session.student_id,
       test.questions_order,
       true // Include correct answers
     );

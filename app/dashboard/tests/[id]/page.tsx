@@ -3,117 +3,194 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  ArrowLeft,
+  ArrowRight,
+  Flag,
   Clock,
-  ChevronLeft,
-  ChevronRight,
-  Send,
-  X,
+  Eye,
+  EyeOff,
   Loader2,
-  AlertTriangle,
-  CheckCircle,
+  LogOut,
+  Send,
 } from "lucide-react";
-import type { Test, QuestionForTest, TestAnswer } from "@/types/test";
+import { TEST_CONFIG } from "@/lib/config/test-rules";
+import { InstructionPages } from "@/components/test/instruction-pages";
+import { QuestionRenderer } from "@/components/test/question-renderers";
+import { ProgressSummary, PreSubmitSummary } from "@/components/test/progress-summary";
+import { StartConfirmation, AntiCheatWarning } from "@/components/test/confirmation-modal";
+import { PostSubmitResult } from "@/components/test/post-submit-result";
+import { useTimer } from "@/hooks/use-timer";
+import { useAntiCheat } from "@/hooks/use-anti-cheat";
+import type { Test, QuestionForTest, Passage, InstructionPage } from "@/types/test";
 
-interface TestData {
-  test: Test;
-  questions: QuestionForTest[];
-  is_read_only: boolean;
-  can_continue: boolean;
-}
+// ============================================
+// TEST PHASES
+// ============================================
+type TestPhase =
+  | "loading"
+  | "instructions"
+  | "confirmation"
+  | "testing"
+  | "pre-submit"
+  | "submitting"
+  | "result";
 
-export default function TestPage() {
+export default function TestEnvironmentPage() {
   const router = useRouter();
   const params = useParams();
   const testId = params.id as string;
 
-  const [testData, setTestData] = useState<TestData | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, TestAnswer["selected"]>>({});
-  const [timeLeft, setTimeLeft] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [saving, setSaving] = useState(false);
+  // ============================================
+  // STATE
+  // ============================================
+  const [phase, setPhase] = useState<TestPhase>("loading");
   const [error, setError] = useState<string | null>(null);
-  const [showEndConfirm, setShowEndConfirm] = useState(false);
-  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const autoSaveRef = useRef<NodeJS.Timeout | null>(null);
+  // Test data
+  const [test, setTest] = useState<Test | null>(null);
+  const [questions, setQuestions] = useState<QuestionForTest[]>([]);
+  const [subject, setSubject] = useState<{
+    name: string;
+    instructions: InstructionPage[] | null;
+    duration_mins: number;
+  } | null>(null);
 
-  // Fetch test data
+  // Question state
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [answers, setAnswers] = useState<
+    Record<string, string | number[] | Record<string, number>>
+  >({});
+  const [flaggedSet, setFlaggedSet] = useState<Set<string>>(new Set());
+  const [visitedSet, setVisitedSet] = useState<Set<string>>(new Set());
+
+  // UI state
+  const [warningMessage, setWarningMessage] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Refs for auto-save debouncing
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedRef = useRef<Record<string, unknown>>({});
+
+  // ============================================
+  // CURRENT QUESTION
+  // ============================================
+  const currentQuestion = questions[currentIndex] || null;
+  const currentAnswer = currentQuestion
+    ? answers[currentQuestion.id] ?? null
+    : null;
+  const answeredSet = new Set(Object.keys(answers));
+  const questionsOrder = test?.questions_order || [];
+
+  // ============================================
+  // TIMER
+  // ============================================
+  const timer = useTimer({
+    durationMins: test?.duration_mins || 0,
+    startedAt: test?.started_at || null,
+    isRunning: phase === "testing",
+    onTimeout: () => handleAutoSubmit("Time is up! Your test has been automatically submitted."),
+  });
+
+  // ============================================
+  // ANTI-CHEAT
+  // ============================================
+  const antiCheat = useAntiCheat({
+    enabled: phase === "testing",
+    onAutoSubmit: () =>
+      handleAutoSubmit(TEST_CONFIG.antiCheat.autoSubmitMessage),
+    onWarning: (message) => setWarningMessage(message),
+  });
+
+  // ============================================
+  // LOAD TEST DATA
+  // ============================================
   useEffect(() => {
-    fetchTest();
+    loadTest();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testId]);
 
-  // Start timer when test loads
-  useEffect(() => {
-    if (testData?.test.status === "in_progress" && testData.test.started_at) {
-      const startTime = new Date(testData.test.started_at).getTime();
-      const duration = testData.test.duration_mins * 60 * 1000;
-      const endTime = startTime + duration;
-
-      const updateTimer = () => {
-        const now = Date.now();
-        const remaining = Math.max(0, Math.floor((endTime - now) / 1000));
-        setTimeLeft(remaining);
-
-        if (remaining === 0) {
-          // Time's up - auto submit
-          handleSubmit();
-        }
-      };
-
-      updateTimer();
-      timerRef.current = setInterval(updateTimer, 1000);
-
-      return () => {
-        if (timerRef.current) clearInterval(timerRef.current);
-      };
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [testData?.test.status, testData?.test.started_at]);
-
-  // Load existing answers
-  useEffect(() => {
-    if (testData?.test.answers) {
-      const existingAnswers: Record<string, TestAnswer["selected"]> = {};
-      for (const answer of testData.test.answers) {
-        existingAnswers[answer.question_id] = answer.selected;
-      }
-      setAnswers(existingAnswers);
-    }
-  }, [testData?.test.answers]);
-
-  const fetchTest = async () => {
+  const loadTest = async () => {
     try {
       const res = await fetch(`/api/tests/${testId}`);
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to load test");
+      if (!res.ok) throw new Error(data.error || "Failed to load test");
+
+      const testData: Test = data.test;
+      const questionsData: QuestionForTest[] = data.questions;
+
+      setTest(testData);
+      setQuestions(questionsData);
+      setSubject(
+        testData.subject
+          ? {
+              name: testData.subject.name,
+              instructions: testData.subject.instructions,
+              duration_mins: testData.subject.duration_mins,
+            }
+          : null
+      );
+
+      // Restore answers if resuming
+      if (testData.answers?.length) {
+        const restoredAnswers: Record<string, string | number[] | Record<string, number>> = {};
+        for (const a of testData.answers) {
+          if (a.selected !== null && a.selected !== undefined) {
+            restoredAnswers[a.question_id] = a.selected as string | number[] | Record<string, number>;
+          }
+        }
+        setAnswers(restoredAnswers);
       }
 
-      setTestData(data);
-
-      // If test is completed, redirect to review
-      if (["submitted", "ended_early", "abandoned"].includes(data.test.status)) {
-        router.replace(`/dashboard/tests/${testId}/review`);
-        return;
+      // Determine starting phase
+      if (testData.status === "in_progress") {
+        // Resuming an in-progress test
+        setPhase("testing");
+        // Mark all as visited since we can't track from before
+        setVisitedSet(new Set(testData.questions_order));
+      } else if (
+        testData.status === "submitted" ||
+        testData.status === "ended_early"
+      ) {
+        // Already completed — show result
+        setPhase("result");
+      } else {
+        // Not started — show instructions
+        setPhase("instructions");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load test");
-    } finally {
-      setLoading(false);
+      setPhase("loading");
     }
   };
 
+  // ============================================
+  // MARK VISITED ON INDEX CHANGE
+  // ============================================
+  useEffect(() => {
+    if (phase === "testing" && currentQuestion) {
+      setVisitedSet((prev) => {
+        const next = new Set(prev);
+        next.add(currentQuestion.id);
+        return next;
+      });
+    }
+  }, [currentIndex, currentQuestion, phase]);
+
+  // ============================================
+  // AUTO-SAVE ANSWER
+  // ============================================
   const saveAnswer = useCallback(
-    async (questionId: string, selected: TestAnswer["selected"]) => {
-      setSaving(true);
+    async (questionId: string, selected: string | number[] | Record<string, number>) => {
+      // Skip if same as last saved
+      if (JSON.stringify(lastSavedRef.current[questionId]) === JSON.stringify(selected)) {
+        return;
+      }
+
       try {
         await fetch(`/api/tests/${testId}`, {
           method: "PATCH",
@@ -122,29 +199,148 @@ export default function TestPage() {
             action: "save_answer",
             question_id: questionId,
             selected,
-            time_spent_secs: 0, // TODO: Track per-question time
+            time_spent_secs: 0,
           }),
         });
-      } catch (err) {
-        console.error("Failed to save answer:", err);
-      } finally {
-        setSaving(false);
+        lastSavedRef.current[questionId] = selected;
+      } catch {
+        // Silent fail for auto-save — answer is preserved in state
       }
     },
     [testId]
   );
 
-  const handleAnswerChange = (questionId: string, selected: TestAnswer["selected"]) => {
-    setAnswers((prev) => ({ ...prev, [questionId]: selected }));
+  const debouncedSave = useCallback(
+    (questionId: string, selected: string | number[] | Record<string, number>) => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = setTimeout(() => {
+        saveAnswer(questionId, selected);
+      }, TEST_CONFIG.navigation.autoSaveDebounceMs);
+    },
+    [saveAnswer]
+  );
 
-    // Debounce auto-save
-    if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
-    autoSaveRef.current = setTimeout(() => {
-      saveAnswer(questionId, selected);
-    }, 500);
+  // ============================================
+  // HANDLERS
+  // ============================================
+  const handleAnswer = (value: string | number[] | Record<string, number>) => {
+    if (!currentQuestion) return;
+    setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
+    if (TEST_CONFIG.navigation.autoSaveOnNavigate) {
+      debouncedSave(currentQuestion.id, value);
+    }
   };
 
-  const handleEndEarly = async () => {
+  const handleNavigate = (direction: "prev" | "next") => {
+    // Save current answer before navigating
+    if (currentQuestion && answers[currentQuestion.id] !== undefined) {
+      saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
+    }
+
+    if (direction === "next") {
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex((i) => i + 1);
+      } else {
+        // Last question — go to pre-submit
+        if (TEST_CONFIG.submit.showPreSubmitSummary) {
+          setPhase("pre-submit");
+        }
+      }
+    } else {
+      if (currentIndex > 0 && TEST_CONFIG.navigation.allowBackNavigation) {
+        setCurrentIndex((i) => i - 1);
+      }
+    }
+  };
+
+  const handleJumpTo = (index: number) => {
+    if (TEST_CONFIG.navigation.allowQuestionJump) {
+      // Save current answer before jumping
+      if (currentQuestion && answers[currentQuestion.id] !== undefined) {
+        saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
+      }
+      setCurrentIndex(index);
+    }
+  };
+
+  const handleToggleFlag = () => {
+    if (!currentQuestion || !TEST_CONFIG.flag.enabled) return;
+    setFlaggedSet((prev) => {
+      const next = new Set(prev);
+      if (next.has(currentQuestion.id)) {
+        next.delete(currentQuestion.id);
+      } else {
+        next.add(currentQuestion.id);
+      }
+      return next;
+    });
+  };
+
+  const handleInstructionsComplete = () => {
+    if (TEST_CONFIG.instructions.requireStartConfirmation) {
+      setPhase("confirmation");
+    } else {
+      handleStartTest();
+    }
+  };
+
+  const handleStartTest = async () => {
+    try {
+      const res = await fetch(`/api/tests/${testId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "start" }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to start test");
+
+      setTest(data.test);
+      setQuestions(data.questions);
+      setPhase("testing");
+
+      // Enter fullscreen
+      antiCheat.enterFullscreen();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to start test");
+    }
+  };
+
+  const handleSubmitTest = async () => {
+    setIsSubmitting(true);
+    setPhase("submitting");
+
+    try {
+      // Save any pending answer
+      if (currentQuestion && answers[currentQuestion.id] !== undefined) {
+        await saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
+      }
+
+      const res = await fetch(`/api/tests/${testId}/submit`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit test");
+
+      setTest(data.test);
+      antiCheat.exitFullscreen();
+      setPhase("result");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit test");
+      setPhase("testing");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleAutoSubmit = async (reason: string) => {
+    setWarningMessage(null);
+    setError(reason);
+    await handleSubmitTest();
+  };
+
+  const handleEndTestEarly = async () => {
     try {
       const res = await fetch(`/api/tests/${testId}`, {
         method: "PATCH",
@@ -152,550 +348,416 @@ export default function TestPage() {
         body: JSON.stringify({ action: "end_early" }),
       });
 
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to end test");
-      }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to end test");
 
-      router.push("/dashboard/tests");
+      setTest(data.test);
+      antiCheat.exitFullscreen();
+      setPhase("result");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to end test");
-      setShowEndConfirm(false);
     }
   };
 
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    setShowSubmitConfirm(false);
-
-    try {
-      const res = await fetch(`/api/tests/${testId}/submit`, {
-        method: "POST",
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to submit test");
-      }
-
-      router.push(`/dashboard/tests/${testId}/review`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to submit test");
-      setSubmitting(false);
+  // ============================================
+  // PASSAGE DATA
+  // ============================================
+  const getPassageData = (): Passage | null => {
+    if (!currentQuestion) return null;
+    if (
+      currentQuestion.question_type === "passage_mcq" ||
+      currentQuestion.question_type === "poem_mcq"
+    ) {
+      return currentQuestion.passage || null;
     }
+    return null;
   };
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  const passage = getPassageData();
+
+  // Check if adjacent questions share the same passage (for passage group indicator)
+  const getPassageGroup = (): { start: number; end: number } | null => {
+    if (!passage || !currentQuestion?.passage) return null;
+    const passageId = currentQuestion.passage.id;
+
+    let start = currentIndex;
+    let end = currentIndex;
+
+    while (start > 0 && questions[start - 1]?.passage?.id === passageId) {
+      start--;
+    }
+    while (
+      end < questions.length - 1 &&
+      questions[end + 1]?.passage?.id === passageId
+    ) {
+      end++;
+    }
+
+    return { start, end };
   };
 
-  const currentQuestion = testData?.questions[currentIndex];
-  const answeredCount = Object.keys(answers).filter(
-    (id) => answers[id] !== null && answers[id] !== undefined
-  ).length;
+  // ============================================
+  // RENDER PHASES
+  // ============================================
 
-  // Check if within grace period (first 3 minutes)
-  const isInGracePeriod = () => {
-    if (!testData?.test.started_at || !testData.test.duration_mins) return false;
-    const startTime = new Date(testData.test.started_at).getTime();
-    const elapsed = (Date.now() - startTime) / (1000 * 60);
-    return elapsed <= 3;
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (error && !testData) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="pt-6 text-center">
-            <AlertTriangle className="h-12 w-12 mx-auto text-red-500 mb-4" />
-            <h2 className="text-xl font-semibold mb-2">Error</h2>
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={() => router.push("/dashboard/tests")}>
+  // LOADING
+  if (phase === "loading") {
+    if (error) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-[#e8eef3] font-[family-name:var(--font-inter)]">
+          <div className="bg-white p-8 rounded-xl shadow-sm border max-w-md text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button
+              onClick={() => router.push("/dashboard/tests")}
+              className="bg-[#1a2744]"
+            >
               Back to Tests
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#e8eef3] font-[family-name:var(--font-inter)]">
+        <Loader2 className="h-8 w-8 animate-spin text-[#1a2744]" />
       </div>
     );
   }
 
-  if (!testData || !currentQuestion) {
-    return null;
+  // INSTRUCTIONS
+  if (phase === "instructions" && subject) {
+    return (
+      <InstructionPages
+        subjectName={subject.name}
+        subjectInstructions={subject.instructions}
+        onComplete={handleInstructionsComplete}
+      />
+    );
   }
 
+  // CONFIRMATION MODAL (shown over instructions background)
+  if (phase === "confirmation" && subject) {
+    return (
+      <>
+        <InstructionPages
+          subjectName={subject.name}
+          subjectInstructions={subject.instructions}
+          onComplete={() => {}}
+        />
+        <StartConfirmation
+          open={true}
+          onConfirm={handleStartTest}
+          onCancel={() => setPhase("instructions")}
+          loading={false}
+        />
+      </>
+    );
+  }
+
+  // PRE-SUBMIT SUMMARY
+  if (phase === "pre-submit") {
+    return (
+      <PreSubmitSummary
+        totalQuestions={questions.length}
+        answeredSet={answeredSet}
+        flaggedSet={flaggedSet}
+        questionsOrder={questionsOrder}
+        onGoBack={() => setPhase("testing")}
+        onSubmit={handleSubmitTest}
+        isSubmitting={isSubmitting}
+      />
+    );
+  }
+
+  // SUBMITTING
+  if (phase === "submitting") {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#e8eef3] font-[family-name:var(--font-inter)] gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-[#1a2744]" />
+        <p className="text-gray-600 font-medium">Submitting your test...</p>
+      </div>
+    );
+  }
+
+  // RESULT
+  if (phase === "result" && test) {
+    return (
+      <PostSubmitResult
+        test={test}
+        onViewSolutions={() =>
+          router.push(`/dashboard/tests/${testId}/review`)
+        }
+        onBackToDashboard={() => router.push("/dashboard")}
+      />
+    );
+  }
+
+  // ============================================
+  // MAIN TEST ENVIRONMENT
+  // ============================================
+  if (phase !== "testing" || !currentQuestion || !test) return null;
+
+  const passageGroup = getPassageGroup();
+  const isFlagged = flaggedSet.has(currentQuestion.id);
+  const hasPassage = !!passage;
+
   return (
-    <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white dark:bg-neutral-900 border-b shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="font-semibold">
-                {testData.test.subject?.name || "Test"}
-              </h1>
-              <Badge variant="outline">
-                Question {currentIndex + 1} of {testData.questions.length}
-              </Badge>
+    <div className="h-screen flex flex-col bg-[#e8eef3] font-[family-name:var(--font-inter)] select-none">
+      {/* Anti-cheat warning */}
+      <AntiCheatWarning
+        open={!!warningMessage}
+        message={warningMessage || ""}
+        onDismiss={() => setWarningMessage(null)}
+      />
+
+      {/* ============================================ */}
+      {/* HEADER BAR */}
+      {/* ============================================ */}
+      <header className="bg-[#1a2744] text-white px-4 py-2.5 flex items-center justify-between z-10 shrink-0">
+        {/* Left: Subject name + question counter */}
+        <div className="flex items-center gap-4">
+          <h1 className="text-sm font-semibold hidden md:block">
+            {subject?.name}
+          </h1>
+          <Badge
+            variant="outline"
+            className="border-white/30 text-white text-xs"
+          >
+            Q {currentIndex + 1} / {questions.length}
+          </Badge>
+          {passageGroup && (
+            <span className="text-xs text-white/60">
+              Passage Q{passageGroup.start + 1}-{passageGroup.end + 1}
+            </span>
+          )}
+        </div>
+
+        {/* Center: Timer */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={timer.toggleHidden}
+            className="p-1 rounded hover:bg-white/10 transition-colors"
+            title={timer.isHidden ? "Show timer" : "Hide timer"}
+          >
+            {timer.isHidden ? (
+              <EyeOff className="h-4 w-4 text-white/60" />
+            ) : (
+              <Eye className="h-4 w-4 text-white/60" />
+            )}
+          </button>
+          {!timer.isHidden && (
+            <div
+              className={`flex items-center gap-1.5 font-mono text-lg font-bold ${
+                timer.isCritical
+                  ? "text-red-400 animate-pulse"
+                  : timer.isWarning
+                  ? "text-amber-400"
+                  : "text-white"
+              }`}
+            >
+              <Clock className="h-4 w-4" />
+              {timer.formatted}
             </div>
+          )}
+        </div>
 
-            <div className="flex items-center gap-4">
-              {/* Timer */}
-              <div
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
-                  timeLeft < 300
-                    ? "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400"
-                    : "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
-                }`}
-              >
-                <Clock className="h-4 w-4" />
-                <span className="font-mono font-semibold">
-                  {formatTime(timeLeft)}
-                </span>
-              </div>
+        {/* Right: Progress + Actions */}
+        <div className="flex items-center gap-2">
+          <ProgressSummary
+            totalQuestions={questions.length}
+            currentIndex={currentIndex}
+            answeredSet={answeredSet}
+            visitedSet={visitedSet}
+            flaggedSet={flaggedSet}
+            questionsOrder={questionsOrder}
+            onJumpTo={handleJumpTo}
+          />
 
-              {/* Save indicator */}
-              {saving && (
-                <span className="text-sm text-muted-foreground">Saving...</span>
-              )}
-
-              {/* End Early (only in grace period) */}
-              {isInGracePeriod() && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowEndConfirm(true)}
-                >
-                  <X className="h-4 w-4 mr-2" />
-                  End Test
-                </Button>
-              )}
-
-              {/* Submit */}
-              <Button
-                onClick={() => setShowSubmitConfirm(true)}
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Send className="h-4 w-4 mr-2" />
-                )}
-                Submit
-              </Button>
-            </div>
-          </div>
+          {timer.isInGracePeriod && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleEndTestEarly}
+              className="text-white/70 hover:text-white hover:bg-white/10 text-xs"
+            >
+              <LogOut className="h-3.5 w-3.5 mr-1" />
+              End Test
+            </Button>
+          )}
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Question Panel */}
-          <div className="lg:col-span-3">
-            <Card>
-              <CardContent className="p-6">
-                {/* Passage (if any) */}
-                {currentQuestion.passage && (
-                  <div className="mb-6 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
-                    <h3 className="font-semibold mb-2">
-                      {currentQuestion.passage.title || "Passage"}
-                    </h3>
-                    <div className="prose dark:prose-invert max-w-none">
-                      <p className="whitespace-pre-wrap">
-                        {currentQuestion.passage.content}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Question */}
-                <div className="mb-6">
-                  <div className="flex items-start gap-3 mb-4">
-                    <Badge variant="secondary">
-                      Q{currentIndex + 1}
-                    </Badge>
-                    <Badge variant="outline" className="capitalize">
-                      {currentQuestion.difficulty}
-                    </Badge>
-                    <Badge variant="outline">
-                      {currentQuestion.marks} mark{currentQuestion.marks > 1 ? "s" : ""}
-                    </Badge>
-                  </div>
-
-                  <QuestionRenderer
-                    question={currentQuestion}
-                    selectedAnswer={answers[currentQuestion.id]}
-                    onAnswerChange={(selected) =>
-                      handleAnswerChange(currentQuestion.id, selected)
-                    }
-                  />
+      {/* ============================================ */}
+      {/* SPLIT PANEL CONTENT */}
+      {/* ============================================ */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* LEFT PANEL: Passage (if applicable) */}
+        {hasPassage && (
+          <div className="w-1/2 border-r bg-white flex flex-col">
+            {/* Passage tabs if multiple extracts with same passage */}
+            {passage && (
+              <Tabs defaultValue="extract" className="flex flex-col h-full">
+                <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
+                  <TabsList className="bg-transparent h-auto p-0 gap-0">
+                    <TabsTrigger
+                      value="extract"
+                      className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
+                    >
+                      {passage.passage_type === "poem"
+                        ? "Poem"
+                        : passage.title || "Extract"}
+                    </TabsTrigger>
+                  </TabsList>
                 </div>
-
-                {/* Navigation */}
-                <div className="flex items-center justify-between pt-4 border-t">
-                  <Button
-                    variant="outline"
-                    onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}
-                    disabled={currentIndex === 0}
-                  >
-                    <ChevronLeft className="h-4 w-4 mr-2" />
-                    Previous
-                  </Button>
-
-                  <Button
-                    onClick={() =>
-                      setCurrentIndex((i) =>
-                        Math.min(testData.questions.length - 1, i + 1)
-                      )
-                    }
-                    disabled={currentIndex === testData.questions.length - 1}
-                  >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Question Navigator */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-24">
-              <CardContent className="p-4">
-                <h3 className="font-semibold mb-3">Questions</h3>
-                <div className="text-sm text-muted-foreground mb-4">
-                  {answeredCount} of {testData.questions.length} answered
-                </div>
-
-                <div className="grid grid-cols-5 gap-2">
-                  {testData.questions.map((q, idx) => {
-                    const isAnswered =
-                      answers[q.id] !== null && answers[q.id] !== undefined;
-                    const isCurrent = idx === currentIndex;
-
-                    return (
-                      <button
-                        key={q.id}
-                        onClick={() => setCurrentIndex(idx)}
-                        className={`
-                          w-full aspect-square rounded-lg text-sm font-medium
-                          flex items-center justify-center transition-colors
-                          ${
-                            isCurrent
-                              ? "bg-blue-600 text-white"
-                              : isAnswered
-                              ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
-                              : "bg-neutral-100 dark:bg-neutral-800 hover:bg-neutral-200 dark:hover:bg-neutral-700"
-                          }
-                        `}
+                <TabsContent value="extract" className="flex-1 m-0">
+                  <ScrollArea className="h-full">
+                    <div className="p-6 md:p-8">
+                      {passage.title && (
+                        <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                          {passage.title}
+                        </h3>
+                      )}
+                      {passage.image_url && (
+                        <div className="mb-4">
+                          <img
+                            src={passage.image_url}
+                            alt={passage.title || "Passage image"}
+                            className="max-w-full rounded-lg"
+                          />
+                        </div>
+                      )}
+                      <div
+                        className={`leading-relaxed text-gray-800 ${
+                          passage.passage_type === "poem"
+                            ? "whitespace-pre-line italic"
+                            : ""
+                        }`}
                       >
-                        {idx + 1}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-4 pt-4 border-t space-y-2 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-green-100 dark:bg-green-900/30" />
-                    <span>Answered</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-neutral-100 dark:bg-neutral-800" />
-                    <span>Not answered</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded bg-blue-600" />
-                    <span>Current</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-
-      {/* End Early Confirmation Modal */}
-      {showEndConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <Card className="max-w-md w-full">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <AlertTriangle className="h-12 w-12 mx-auto text-yellow-500 mb-4" />
-                <h2 className="text-xl font-semibold mb-2">End Test Early?</h2>
-                <p className="text-muted-foreground mb-6">
-                  You are still within the grace period. Ending now will discard
-                  all your answers. Are you sure?
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowEndConfirm(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button variant="destructive" onClick={handleEndEarly}>
-                    Yes, End Test
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Submit Confirmation Modal */}
-      {showSubmitConfirm && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <Card className="max-w-md w-full">
-            <CardContent className="pt-6">
-              <div className="text-center">
-                <CheckCircle className="h-12 w-12 mx-auto text-blue-500 mb-4" />
-                <h2 className="text-xl font-semibold mb-2">Submit Test?</h2>
-                <p className="text-muted-foreground mb-2">
-                  You have answered {answeredCount} of{" "}
-                  {testData.questions.length} questions.
-                </p>
-                {answeredCount < testData.questions.length && (
-                  <p className="text-yellow-600 dark:text-yellow-400 text-sm mb-4">
-                    {testData.questions.length - answeredCount} questions are
-                    unanswered!
-                  </p>
-                )}
-                <div className="flex gap-3 justify-center mt-6">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowSubmitConfirm(false)}
-                  >
-                    Review Answers
-                  </Button>
-                  <Button onClick={handleSubmit}>Submit Test</Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Question Renderer Component
-function QuestionRenderer({
-  question,
-  selectedAnswer,
-  onAnswerChange,
-}: {
-  question: QuestionForTest;
-  selectedAnswer: TestAnswer["selected"];
-  onAnswerChange: (selected: TestAnswer["selected"]) => void;
-}) {
-  const content = question.content as unknown as Record<string, unknown>;
-
-  switch (question.question_type) {
-    case "mcq":
-    case "passage_mcq":
-    case "poem_mcq":
-      return (
-        <MCQQuestion
-          questionText={content.question_text as string}
-          questionImage={content.question_image as string | undefined}
-          options={content.options as Array<{ key: string; text?: string; image?: string }>}
-          selectedAnswer={selectedAnswer as string | null}
-          onAnswerChange={onAnswerChange}
-        />
-      );
-
-    case "fill_blank_dropdown":
-      return (
-        <FillBlankQuestion
-          passageText={content.passage_text as string}
-          blanks={content.blanks as Array<{ position: number; options: string[] }>}
-          selectedAnswers={selectedAnswer as number[] | null}
-          onAnswerChange={onAnswerChange}
-        />
-      );
-
-    case "essay":
-      return (
-        <EssayQuestion
-          prompt={content.prompt as string}
-          wordLimit={content.word_limit as number}
-          currentText={selectedAnswer as string | null}
-          onAnswerChange={onAnswerChange}
-        />
-      );
-
-    default:
-      return (
-        <div className="text-muted-foreground">
-          Question type not supported: {question.question_type}
-        </div>
-      );
-  }
-}
-
-// MCQ Question Component
-function MCQQuestion({
-  questionText,
-  questionImage,
-  options,
-  selectedAnswer,
-  onAnswerChange,
-}: {
-  questionText: string;
-  questionImage?: string;
-  options: Array<{ key: string; text?: string; image?: string }>;
-  selectedAnswer: string | null;
-  onAnswerChange: (selected: string) => void;
-}) {
-  return (
-    <div>
-      <p className="text-lg mb-4">{questionText}</p>
-      {questionImage && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={questionImage}
-          alt="Question"
-          className="max-w-md mb-4 rounded-lg"
-        />
-      )}
-      <div className="space-y-3">
-        {options.map((option) => (
-          <button
-            key={option.key}
-            onClick={() => onAnswerChange(option.key)}
-            className={`
-              w-full p-4 rounded-lg border text-left transition-colors
-              ${
-                selectedAnswer === option.key
-                  ? "border-blue-500 bg-blue-50 dark:bg-blue-900/20"
-                  : "border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-              }
-            `}
-          >
-            <div className="flex items-start gap-3">
-              <span
-                className={`
-                  w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                  ${
-                    selectedAnswer === option.key
-                      ? "bg-blue-500 text-white"
-                      : "bg-neutral-200 dark:bg-neutral-700"
-                  }
-                `}
-              >
-                {option.key}
-              </span>
-              <div className="flex-1">
-                {option.text && <span>{option.text}</span>}
-                {option.image && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={option.image}
-                    alt={`Option ${option.key}`}
-                    className="max-w-xs mt-2 rounded"
-                  />
-                )}
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-// Fill in the Blank Question Component
-function FillBlankQuestion({
-  passageText,
-  blanks,
-  selectedAnswers,
-  onAnswerChange,
-}: {
-  passageText: string;
-  blanks: Array<{ position: number; options: string[] }>;
-  selectedAnswers: number[] | null;
-  onAnswerChange: (selected: number[]) => void;
-}) {
-  const handleBlankChange = (position: number, optionIndex: number) => {
-    const newAnswers = [...(selectedAnswers || new Array(blanks.length).fill(-1))];
-    newAnswers[position - 1] = optionIndex;
-    onAnswerChange(newAnswers);
-  };
-
-  // Replace blanks with dropdowns
-  const parts = passageText.split(/___/);
-
-  return (
-    <div className="prose dark:prose-invert max-w-none">
-      <p className="text-lg leading-relaxed">
-        {parts.map((part, idx) => (
-          <span key={idx}>
-            {part}
-            {idx < blanks.length && (
-              <select
-                value={selectedAnswers?.[idx] ?? -1}
-                onChange={(e) =>
-                  handleBlankChange(idx + 1, parseInt(e.target.value))
-                }
-                className="mx-1 px-2 py-1 rounded border bg-white dark:bg-neutral-800 border-neutral-300 dark:border-neutral-600"
-              >
-                <option value={-1}>Select...</option>
-                {blanks[idx]?.options.map((option, optIdx) => (
-                  <option key={optIdx} value={optIdx}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+                        {passage.content}
+                      </div>
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+              </Tabs>
             )}
-          </span>
-        ))}
-      </p>
-    </div>
-  );
-}
+          </div>
+        )}
 
-// Essay Question Component
-function EssayQuestion({
-  prompt,
-  wordLimit,
-  currentText,
-  onAnswerChange,
-}: {
-  prompt: string;
-  wordLimit: number;
-  currentText: string | null;
-  onAnswerChange: (selected: string) => void;
-}) {
-  const wordCount = (currentText || "").trim().split(/\s+/).filter(Boolean).length;
+        {/* RIGHT PANEL (or full width): Question + Options */}
+        <div
+          className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white`}
+        >
+          <ScrollArea className="flex-1">
+            <div className="p-6 md:p-8 max-w-3xl mx-auto">
+              {/* Question number + marks */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
+                    Q{currentIndex + 1}
+                  </span>
+                  <Badge variant="outline" className="text-xs">
+                    {currentQuestion.marks} mark
+                    {currentQuestion.marks !== 1 ? "s" : ""}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${
+                      currentQuestion.difficulty === "easy"
+                        ? "border-green-300 text-green-700"
+                        : currentQuestion.difficulty === "medium"
+                        ? "border-amber-300 text-amber-700"
+                        : "border-red-300 text-red-700"
+                    }`}
+                  >
+                    {currentQuestion.difficulty}
+                  </Badge>
+                </div>
+              </div>
 
-  return (
-    <div>
-      <p className="text-lg mb-4">{prompt}</p>
-      <div className="mb-2 text-sm text-muted-foreground">
-        Word limit: {wordLimit} words | Current: {wordCount} words
+              {/* Question content */}
+              <QuestionRenderer
+                question={currentQuestion}
+                answer={currentAnswer}
+                onAnswer={handleAnswer}
+              />
+            </div>
+          </ScrollArea>
+        </div>
       </div>
-      <textarea
-        value={currentText || ""}
-        onChange={(e) => onAnswerChange(e.target.value)}
-        placeholder="Write your essay here..."
-        className="w-full h-64 p-4 rounded-lg border bg-white dark:bg-neutral-900 border-neutral-300 dark:border-neutral-600 resize-none"
-      />
-      {wordCount > wordLimit && (
-        <p className="text-red-500 text-sm mt-2">
-          You have exceeded the word limit!
-        </p>
+
+      {/* ============================================ */}
+      {/* BOTTOM NAVIGATION BAR */}
+      {/* ============================================ */}
+      <footer className="border-t bg-white px-4 py-3 flex items-center justify-between shrink-0">
+        {/* Left: Back */}
+        <Button
+          variant="outline"
+          onClick={() => handleNavigate("prev")}
+          disabled={currentIndex === 0 || !TEST_CONFIG.navigation.allowBackNavigation}
+          className="gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+
+        {/* Center: Flag + Submit (on last question) */}
+        <div className="flex items-center gap-3">
+          {TEST_CONFIG.flag.enabled && (
+            <Button
+              variant={isFlagged ? "default" : "outline"}
+              onClick={handleToggleFlag}
+              className={`gap-2 ${
+                isFlagged ? "bg-amber-500 hover:bg-amber-600 text-white" : ""
+              }`}
+            >
+              <Flag className={`h-4 w-4 ${isFlagged ? "fill-current" : ""}`} />
+              {isFlagged ? "Flagged" : "Flag"}
+            </Button>
+          )}
+
+          {currentIndex === questions.length - 1 && (
+            <Button
+              onClick={() => {
+                if (TEST_CONFIG.submit.showPreSubmitSummary) {
+                  // Save current answer first
+                  if (currentQuestion && answers[currentQuestion.id] !== undefined) {
+                    saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
+                  }
+                  setPhase("pre-submit");
+                } else {
+                  handleSubmitTest();
+                }
+              }}
+              className="gap-2 bg-green-600 hover:bg-green-700"
+            >
+              <Send className="h-4 w-4" />
+              Submit Test
+            </Button>
+          )}
+        </div>
+
+        {/* Right: Next */}
+        <Button
+          onClick={() => handleNavigate("next")}
+          disabled={currentIndex === questions.length - 1}
+          className="gap-2 bg-[#1a2744] hover:bg-[#1a2744]/90"
+        >
+          Next
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+      </footer>
+
+      {/* Error toast */}
+      {error && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-lg shadow-lg">
+          {error}
+          <button
+            onClick={() => setError(null)}
+            className="ml-3 text-white/70 hover:text-white"
+          >
+            ×
+          </button>
+        </div>
       )}
     </div>
   );

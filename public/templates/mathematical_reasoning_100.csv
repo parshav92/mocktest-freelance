@@ -1,0 +1,101 @@
+code,subject,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image
+MR_001,mathematical-reasoning,easy,What is 15 + 27?,32,42,52,62,B,Add tens: 10+20=30. Add ones: 5+7=12. Total: 30+12=42,no,no,no,no,no
+MR_002,mathematical-reasoning,easy,What is 56 - 23?,23,33,43,53,B,Subtract: 56 - 23 = 33,no,no,no,no,no
+MR_003,mathematical-reasoning,easy,What is 7 × 8?,48,54,56,64,C,7 × 8 = 56,no,no,no,no,no
+MR_004,mathematical-reasoning,easy,What is 72 ÷ 9?,6,7,8,9,C,72 ÷ 9 = 8,no,no,no,no,no
+MR_005,mathematical-reasoning,easy,Which number is greater: 345 or 354?,345,354,They are equal,Cannot determine,B,354 has more tens (5) than 345 (4),no,no,no,no,no
+MR_006,mathematical-reasoning,easy,What is 100 - 37?,53,63,73,83,B,100 - 37 = 63,no,no,no,no,no
+MR_007,mathematical-reasoning,easy,What is 25 × 4?,80,90,100,110,C,25 × 4 = 100,no,no,no,no,no
+MR_008,mathematical-reasoning,easy,What is half of 84?,32,42,52,62,B,Half of 84 = 84 ÷ 2 = 42,no,no,no,no,no
+MR_009,mathematical-reasoning,easy,What is 18 + 45 + 12?,65,75,85,95,B,18 + 45 = 63. 63 + 12 = 75,no,no,no,no,no
+MR_010,mathematical-reasoning,easy,What is 150 ÷ 5?,20,25,30,35,C,150 ÷ 5 = 30,no,no,no,no,no
+MR_011,mathematical-reasoning,easy,Round 467 to the nearest hundred,400,450,470,500,D,467 is closer to 500 than 400,no,no,no,no,no
+MR_012,mathematical-reasoning,easy,What is double 35?,60,65,70,75,C,Double 35 = 35 × 2 = 70,no,no,no,no,no
+MR_013,mathematical-reasoning,easy,How many minutes are in 2 hours?,60,90,120,180,C,2 hours × 60 minutes = 120 minutes,no,no,no,no,no
+MR_014,mathematical-reasoning,easy,What is 99 + 1?,99,100,101,110,B,99 + 1 = 100,no,no,no,no,no
+MR_015,mathematical-reasoning,easy,What is 6 × 7?,35,42,48,49,B,6 × 7 = 42,no,no,no,no,no
+MR_016,mathematical-reasoning,easy,What is 81 ÷ 9?,7,8,9,10,C,81 ÷ 9 = 9,no,no,no,no,no
+MR_017,mathematical-reasoning,easy,"If you have 24 apples and eat 7, how many are left?",15,16,17,18,C,24 - 7 = 17 apples,no,no,no,no,no
+MR_018,mathematical-reasoning,easy,What is 50 × 3?,100,130,150,180,C,50 × 3 = 150,no,no,no,no,no
+MR_019,mathematical-reasoning,easy,What number comes after 999?,1000,1001,1010,9910,A,999 + 1 = 1000,no,no,no,no,no
+MR_020,mathematical-reasoning,easy,What is 64 ÷ 8?,6,7,8,9,C,64 ÷ 8 = 8,no,no,no,no,no
+MR_021,mathematical-reasoning,easy,How many days are in 2 weeks?,7,10,12,14,D,2 weeks × 7 days = 14 days,no,no,no,no,no
+MR_022,mathematical-reasoning,easy,What is 45 + 38?,73,83,93,103,B,45 + 38 = 83,no,no,no,no,no
+MR_023,mathematical-reasoning,easy,What is 9 × 9?,72,81,90,99,B,9 × 9 = 81,no,no,no,no,no
+MR_024,mathematical-reasoning,easy,What is 200 - 85?,105,115,125,135,B,200 - 85 = 115,no,no,no,no,no
+MR_025,mathematical-reasoning,easy,How many tens are in 470?,4,7,47,470,C,470 = 47 tens,no,no,no,no,no
+MR_026,mathematical-reasoning,easy,What is 12 × 5?,50,55,60,65,C,12 × 5 = 60,no,no,no,no,no
+MR_027,mathematical-reasoning,easy,What is 1000 - 1?,99,999,1001,9999,B,1000 - 1 = 999,no,no,no,no,no
+MR_028,mathematical-reasoning,easy,"If a book costs $15, how much do 3 books cost?",$30,$35,$40,$45,D,3 × $15 = $45,no,no,no,no,no
+MR_029,mathematical-reasoning,easy,What is 36 ÷ 4?,7,8,9,10,C,36 ÷ 4 = 9,no,no,no,no,no
+MR_030,mathematical-reasoning,easy,What is 78 + 22?,90,100,110,120,B,78 + 22 = 100,no,no,no,no,no
+MR_031,mathematical-reasoning,easy,How many centimeters are in 1 meter?,10,50,100,1000,C,1 meter = 100 centimeters,no,no,no,no,no
+MR_032,mathematical-reasoning,easy,What is 8 × 8?,56,62,64,72,C,8 × 8 = 64,no,no,no,no,no
+MR_033,mathematical-reasoning,easy,What is 144 ÷ 12?,10,11,12,13,C,144 ÷ 12 = 12,no,no,no,no,no
+MR_034,mathematical-reasoning,easy,Round 834 to the nearest ten,830,834,835,840,A,834 rounds down to 830,no,no,no,no,no
+MR_035,mathematical-reasoning,easy,What is triple 15?,30,35,40,45,D,Triple 15 = 15 × 3 = 45,no,no,no,no,no
+MR_036,mathematical-reasoning,easy,"If today is Monday, what day was it 3 days ago?",Thursday,Friday,Saturday,Sunday,B,Monday - 3 days = Friday,no,no,no,no,no
+MR_037,mathematical-reasoning,easy,What is 90 ÷ 10?,8,9,10,11,B,90 ÷ 10 = 9,no,no,no,no,no
+MR_038,mathematical-reasoning,easy,What is 67 - 29?,28,38,48,58,B,67 - 29 = 38,no,no,no,no,no
+MR_039,mathematical-reasoning,easy,How many hours are in a day?,12,18,24,30,C,A day has 24 hours,no,no,no,no,no
+MR_040,mathematical-reasoning,easy,What is 11 × 11?,111,121,131,141,B,11 × 11 = 121,no,no,no,no,no
+MR_041,mathematical-reasoning,easy,What is 500 + 350?,750,800,850,900,C,500 + 350 = 850,no,no,no,no,no
+MR_042,mathematical-reasoning,easy,What is 7 × 6?,36,42,48,54,B,7 × 6 = 42,no,no,no,no,no
+MR_043,mathematical-reasoning,easy,How many sides does a hexagon have?,4,5,6,8,C,A hexagon has 6 sides,no,no,no,no,no
+MR_044,mathematical-reasoning,easy,What is 1000 ÷ 4?,200,250,300,400,B,1000 ÷ 4 = 250,no,no,no,no,no
+MR_045,mathematical-reasoning,easy,"If you save $8 each week, how much do you save in 5 weeks?",$35,$40,$45,$50,B,5 × $8 = $40,no,no,no,no,no
+MR_046,mathematical-reasoning,easy,What is 456 + 344?,700,800,900,1000,B,456 + 344 = 800,no,no,no,no,no
+MR_047,mathematical-reasoning,easy,What is 12 × 12?,124,134,144,154,C,12 × 12 = 144,no,no,no,no,no
+MR_048,mathematical-reasoning,easy,How many months have 31 days?,4,5,6,7,D,January-March-May-July-August-October-December = 7 months,no,no,no,no,no
+MR_049,mathematical-reasoning,easy,What is 180 ÷ 6?,25,28,30,35,C,180 ÷ 6 = 30,no,no,no,no,no
+MR_050,mathematical-reasoning,easy,What is 999 + 111?,1010,1100,1110,1200,C,999 + 111 = 1110,no,no,no,no,no
+MR_051,mathematical-reasoning,medium,"If a rectangle has length 12 cm and width 7 cm, what is its area?",38 sq cm,74 sq cm,84 sq cm,96 sq cm,C,Area = length × width = 12 × 7 = 84 sq cm,no,no,no,no,no
+MR_052,mathematical-reasoning,medium,What is 3/4 of 48?,32,36,40,44,B,3/4 × 48 = (3 × 48) ÷ 4 = 144 ÷ 4 = 36,no,no,no,no,no
+MR_053,mathematical-reasoning,medium,What is 2.5 + 3.7?,5.2,6.0,6.2,6.5,C,2.5 + 3.7 = 6.2,no,no,no,no,no
+MR_054,mathematical-reasoning,medium,What is 25% of 80?,15,18,20,25,C,25% of 80 = 0.25 × 80 = 20,no,no,no,no,no
+MR_055,mathematical-reasoning,medium,"A bag has 5 red, 3 blue, and 2 green marbles. What fraction are blue?",1/2,3/10,3/5,1/3,B,Blue marbles = 3 out of 10 total = 3/10,no,no,no,no,no
+MR_056,mathematical-reasoning,medium,What is 156 × 4?,564,604,624,644,C,156 × 4 = 624,no,no,no,no,no
+MR_057,mathematical-reasoning,medium,What is 5/8 - 1/4?,1/4,1/8,3/8,1/2,C,5/8 - 2/8 = 3/8 (convert 1/4 to 2/8),no,no,no,no,no
+MR_058,mathematical-reasoning,medium,"If 3 notebooks cost $9, how much do 7 notebooks cost?",$18,$21,$24,$27,B,1 notebook = $3. 7 notebooks = 7 × $3 = $21,no,no,no,no,no
+MR_059,mathematical-reasoning,medium,What is the perimeter of a square with side 9 cm?,27 cm,36 cm,45 cm,81 cm,B,Perimeter = 4 × side = 4 × 9 = 36 cm,no,no,no,no,no
+MR_060,mathematical-reasoning,medium,What is 7.2 - 3.8?,3.0,3.2,3.4,3.6,C,7.2 - 3.8 = 3.4,no,no,no,no,no
+MR_061,mathematical-reasoning,medium,Simplify: 12/16,2/3,3/4,4/5,5/6,B,12/16 = 3/4 (divide both by 4),no,no,no,no,no
+MR_062,mathematical-reasoning,medium,What is 1/3 + 1/6?,1/9,1/3,1/2,2/3,C,1/3 = 2/6. So 2/6 + 1/6 = 3/6 = 1/2,no,no,no,no,no
+MR_063,mathematical-reasoning,medium,"If a train travels 60 km/h, how far does it go in 2.5 hours?",120 km,130 km,140 km,150 km,D,Distance = speed × time = 60 × 2.5 = 150 km,no,no,no,no,no
+MR_064,mathematical-reasoning,medium,What is 15% of 200?,20,25,30,35,C,15% of 200 = 0.15 × 200 = 30,no,no,no,no,no
+MR_065,mathematical-reasoning,medium,Which fraction is equivalent to 0.75?,1/2,2/3,3/4,4/5,C,0.75 = 75/100 = 3/4,no,no,no,no,no
+MR_066,mathematical-reasoning,medium,What is 432 ÷ 8?,52,53,54,55,C,432 ÷ 8 = 54,no,no,no,no,no
+MR_067,mathematical-reasoning,medium,"A pizza is cut into 8 slices. If 3 people each eat 2 slices, how many slices are left?",1,2,3,4,B,8 - (3 × 2) = 8 - 6 = 2 slices,no,no,no,no,no
+MR_068,mathematical-reasoning,medium,What is 2/5 × 3/4?,3/10,6/20,6/9,1/2,A,2/5 × 3/4 = 6/20 = 3/10,no,no,no,no,no
+MR_069,mathematical-reasoning,medium,Convert 3.25 hours to hours and minutes,3 hours 15 minutes,3 hours 20 minutes,3 hours 25 minutes,3 hours 30 minutes,A,0.25 hours = 0.25 × 60 = 15 minutes,no,no,no,no,no
+MR_070,mathematical-reasoning,medium,What is 18 × 25?,400,425,450,475,C,18 × 25 = 18 × 100 ÷ 4 = 1800 ÷ 4 = 450,no,no,no,no,no
+MR_071,mathematical-reasoning,medium,"The angles in a triangle add up to 180°. If two angles are 45° and 65°, what is the third?",60°,70°,80°,90°,B,180° - 45° - 65° = 70°,no,no,no,no,no
+MR_072,mathematical-reasoning,medium,What is 6.4 × 5?,30.0,31.0,32.0,33.0,C,6.4 × 5 = 32.0,no,no,no,no,no
+MR_073,mathematical-reasoning,medium,"If you buy 4 items at $12.50 each, what is the total cost?",$45.00,$48.00,$50.00,$52.00,C,4 × $12.50 = $50.00,no,no,no,no,no
+MR_074,mathematical-reasoning,medium,What is the value of 5² + 3²?,24,28,32,34,D,25 + 9 = 34,no,no,no,no,no
+MR_075,mathematical-reasoning,medium,A recipe needs 2/3 cup of flour. How much flour is needed for half the recipe?,1/6 cup,1/3 cup,1/2 cup,2/3 cup,B,1/2 × 2/3 = 2/6 = 1/3 cup,no,no,no,no,no
+MR_076,mathematical-reasoning,medium,What is 1008 ÷ 12?,82,84,86,88,B,1008 ÷ 12 = 84,no,no,no,no,no
+MR_077,mathematical-reasoning,medium,"If the temperature rises from -5°C to 8°C, by how many degrees did it change?",3°C,8°C,13°C,15°C,C,8 - (-5) = 8 + 5 = 13°C,no,no,no,no,no
+MR_078,mathematical-reasoning,medium,What is 40% of 125?,45,48,50,55,C,40% of 125 = 0.4 × 125 = 50,no,no,no,no,no
+MR_079,mathematical-reasoning,medium,How many vertices does a rectangular prism have?,4,6,8,12,C,A rectangular prism has 8 vertices,no,no,no,no,no
+MR_080,mathematical-reasoning,medium,What is 3/4 ÷ 1/2?,1/2,3/8,3/2,2,C,3/4 ÷ 1/2 = 3/4 × 2/1 = 6/4 = 3/2,no,no,no,no,no
+MR_081,mathematical-reasoning,medium,"A shop gives 20% off. If the original price is $85, what is the sale price?",$65,$68,$70,$72,B,20% of $85 = $17. Sale price = $85 - $17 = $68,no,no,no,no,no
+MR_082,mathematical-reasoning,medium,What is 0.6 × 0.4?,0.10,0.20,0.24,0.30,C,0.6 × 0.4 = 0.24,no,no,no,no,no
+MR_083,mathematical-reasoning,medium,Express 7/8 as a decimal,0.825,0.850,0.875,0.900,C,7 ÷ 8 = 0.875,no,no,no,no,no
+MR_084,mathematical-reasoning,medium,"The ratio of boys to girls is 3:5. If there are 15 boys, how many girls are there?",20,25,30,35,B,15 ÷ 3 = 5 (multiplier). Girls = 5 × 5 = 25,no,no,no,no,no
+MR_085,mathematical-reasoning,medium,What is the area of a triangle with base 10 cm and height 6 cm?,30 sq cm,40 sq cm,50 sq cm,60 sq cm,A,Area = 1/2 × base × height = 1/2 × 10 × 6 = 30 sq cm,no,no,no,no,no
+MR_086,mathematical-reasoning,hard,"In a class of 40 students, 35% are boys. How many girls are there?",14,20,24,26,D,Boys = 35% of 40 = 14. Girls = 40 - 14 = 26,no,no,no,no,no
+MR_087,mathematical-reasoning,hard,"A shirt costs $45 after a 25% discount. What was the original price?",$54,$56,$58,$60,D,If sale = 75% of original → $45 = 0.75 × original → original = $45 ÷ 0.75 = $60,no,no,no,no,no
+MR_088,mathematical-reasoning,hard,"The sum of three consecutive numbers is 84. What is the largest number?",26,27,28,29,D,Let numbers be n, n+1, n+2. Sum = 3n + 3 = 84. n = 27. Largest = 29,no,no,no,no,no
+MR_089,mathematical-reasoning,hard,"A tank is 2/5 full. After adding 30 liters, it becomes 3/4 full. What is the tank's capacity?",80 L,85 L,90 L,100 L,B,3/4 - 2/5 = 15/20 - 8/20 = 7/20. 7/20 of capacity = 30L. Capacity = 30 × 20/7 ≈ 85.7L,no,no,no,no,no
+MR_090,mathematical-reasoning,hard,"Two numbers are in ratio 4:7. If their sum is 88, what is the smaller number?",28,32,36,40,B,4 + 7 = 11 parts. 88 ÷ 11 = 8. Smaller = 4 × 8 = 32,no,no,no,no,no
+MR_091,mathematical-reasoning,hard,"A car travels 240 km using 20 liters of fuel. How far can it travel with 35 liters?",380 km,400 km,420 km,450 km,C,240 ÷ 20 = 12 km/L. Distance = 12 × 35 = 420 km,no,no,no,no,no
+MR_092,mathematical-reasoning,hard,What is 15% of 15% of 400?,6,8,9,10,C,15% of 400 = 60. 15% of 60 = 9,no,no,no,no,no
+MR_093,mathematical-reasoning,hard,"If A can complete a job in 6 days and B in 12 days, how many days for both together?",3,4,5,6,B,A does 1/6 per day. B does 1/12 per day. Together: 1/6 + 1/12 = 3/12 = 1/4 per day. Days = 4,no,no,no,no,no
+MR_094,mathematical-reasoning,hard,"A square and a rectangle have the same perimeter. The square has side 12 cm. If the rectangle's length is 16 cm, what is its width?",6 cm,8 cm,10 cm,12 cm,B,Square perimeter = 4 × 12 = 48 cm. Rectangle: 2(16 + w) = 48 → 16 + w = 24 → w = 8 cm,no,no,no,no,no
+MR_095,mathematical-reasoning,hard,What is the value of √144 + √81?,21,22,23,24,A,√144 = 12. √81 = 9. Sum = 21,no,no,no,no,no
+MR_096,mathematical-reasoning,hard,"A number increased by 20% gives 72. What is the number?",54,58,60,66,C,Let n be the number. 1.2n = 72. n = 72 ÷ 1.2 = 60,no,no,no,no,no
+MR_097,mathematical-reasoning,hard,"In a sale, prices drop by 30%. What percentage increase brings it back to original?",30%,35%,40%,about 43%,D,After 30% drop: 0.7 of original. To return: need 1/0.7 = 1.4286. Increase = 42.86% ≈ 43%,no,no,no,no,no
+MR_098,mathematical-reasoning,hard,"The average of 5 numbers is 18. When a 6th number is added, the average becomes 20. What is the 6th number?",22,28,30,32,C,Sum of 5 = 5 × 18 = 90. Sum of 6 = 6 × 20 = 120. 6th number = 120 - 90 = 30,no,no,no,no,no
+MR_099,mathematical-reasoning,hard,"A profit of 25% is made when an item sells for $75. What was the cost price?",$50,$55,$58,$60,D,Cost × 1.25 = $75. Cost = $75 ÷ 1.25 = $60,no,no,no,no,no
+MR_100,mathematical-reasoning,hard,"The perimeter of a rectangle is 56 cm. If the length is 3 times the width, what is the area?",84 sq cm,108 sq cm,147 sq cm,168 sq cm,C,"Let width = w. Length = 3w. Perimeter: 2(w + 3w) = 56 → 8w = 56 → w = 7. Length = 21. Area = 7 × 21 = 147 sq cm",no,no,no,no,no

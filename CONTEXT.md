@@ -542,3 +542,61 @@ export async function GET() {
   // session.student_id, session.is_read_only, etc.
 }
 ```
+
+---
+
+## Question Access Security (Migration: 20260210000000)
+
+### Problem
+
+The original schema only had admin RLS policy on `questions` table. Students couldn't read questions directly, but the system uses custom JWT auth (not Supabase Auth), so RLS policies based on `auth.uid()` don't work for students.
+
+### Solution: SECURITY DEFINER Functions
+
+All student question access goes through these secure functions:
+
+| Function | Purpose | Validates Subscription |
+|----------|---------|------------------------|
+| `get_questions_for_student(student_id, question_ids, include_answers)` | Fetch questions with optional answers | ✅ Yes |
+| `calculate_total_marks(question_ids)` | Get total marks for questions | ❌ No (doesn't expose content) |
+
+### Subscription Enforcement for Questions
+
+```sql
+-- Only returns questions if:
+-- 1. Subscription expires_at > NOW() (active)
+-- 2. OR grace_period_ends_at > NOW() (grace period)
+-- Returns empty array if expired beyond grace period
+```
+
+| User Type | Can View Questions |
+|-----------|-------------------|
+| Student (active subscription) | ✅ Yes |
+| Student (grace period) | ✅ Yes (review only) |
+| Student (expired) | ❌ No |
+| Parent | ❌ No (no student_id in context) |
+
+### Service Method Signature
+
+```typescript
+// OLD (before migration)
+getQuestionsForTest(questionIds: string[], includeAnswers?: boolean)
+
+// NEW (after migration)
+getQuestionsForTest(studentId: string, questionIds: string[], includeAnswers?: boolean)
+```
+
+### API Calls Updated
+
+All test API routes now pass `student_id` to validate subscription:
+
+```typescript
+// GET /api/tests/[id]
+await testService.getQuestionsForTest(auth.session.student_id, test.questions_order, isCompleted);
+
+// PATCH /api/tests/[id] (action: start)
+await testService.getQuestionsForTest(auth.session.student_id, test.questions_order, false);
+
+// GET /api/tests/[id]/review
+await testService.getQuestionsForTest(auth.session.student_id, test.questions_order, true);
+```
