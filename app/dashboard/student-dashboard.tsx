@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,26 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
   const router = useRouter();
   const [recentTests, setRecentTests] = useState<Test[]>([]);
   const [loading, setLoading] = useState(true);
+  const [leftHeight, setLeftHeight] = useState<number | null>(null);
+  const rightCardRef = useRef<HTMLDivElement>(null);
+
+  // Sync left section height to the right card
+  const syncHeight = useCallback(() => {
+    if (rightCardRef.current) {
+      setLeftHeight(rightCardRef.current.offsetHeight);
+    }
+  }, []);
+
+  useEffect(() => {
+    syncHeight();
+    const observer = new ResizeObserver(syncHeight);
+    if (rightCardRef.current) observer.observe(rightCardRef.current);
+    window.addEventListener("resize", syncHeight);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncHeight);
+    };
+  }, [syncHeight, loading]);
 
   useEffect(() => {
     fetchRecentTests();
@@ -109,17 +129,19 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
             </p>
           </div>
         )}
+        <div className="mb-4">
+              <h2 className="text-2xl font-bold text-[#1a2744]">Your Scores <span className="text-gray-600 text-sm mt-1 ">
+                Recent test performance and results
+              </span></h2>
+              
+            </div>
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* LEFT HALF: Previous Test Scores */}
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold text-[#1a2744]">Your Scores</h2>
-              <p className="text-gray-600 mt-1">
-                Recent test performance and results
-              </p>
-            </div>
-
+          <div
+            className="relative"
+            style={leftHeight ? { height: leftHeight, overflow: "hidden" } : undefined}
+          >
             {loading ? (
               <div className="flex justify-center py-12">
                 <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
@@ -135,13 +157,13 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                 </CardContent>
               </Card>
             ) : (
-              <div className="space-y-3">
+              <div className="flex flex-col gap-3">
                 {recentTests.map((test) => (
                   <Card
                     key={test.id}
-                    className="bg-white hover:shadow-md transition-shadow"
+                    className="bg-white hover:shadow-md transition-shadow shrink-0"
                   >
-                    <CardContent className="p-4">
+                    <CardContent className="p-3">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
@@ -188,23 +210,37 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                     </CardContent>
                   </Card>
                 ))}
+              </div>
+            )}
 
-                {recentTests.length >= 5 && (
-                  <Button
-                    variant="link"
-                    className="w-full text-[#1a2744]"
-                    onClick={() => router.push("/dashboard/scores")}
-                  >
-                    View all scores
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Button>
-                )}
+            {/* Gradient overlay with View All Tests button */}
+            {!loading && recentTests.length > 0 && leftHeight && (
+              <div
+                className="absolute bottom-0 left-0 right-0 flex items-end justify-center pb-4 pointer-events-none"
+                style={{ height: 120 }}
+              >
+                {/* Gradient background */}
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom, rgba(232,238,243,0) 0%, rgba(232,238,243,0.6) 30%, rgba(232,238,243,0.3) 70%, rgba(232,238,243,1) 50%)",
+                    backdropFilter: "blur(1px)",
+                  }}
+                />
+                <Button
+                  className="relative pointer-events-auto bg-[#1a2744] hover:bg-[#1a2744]/90 shadow-lg px-6"
+                  onClick={() => router.push("/dashboard/scores")}
+                >
+                  View All scores
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
               </div>
             )}
           </div>
 
           {/* RIGHT HALF: Take Practice Test CTA */}
-          <div className="flex items-start">
+          <div ref={rightCardRef} className="flex items-start">
             <Card className="bg-white w-full">
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[#1a2744]/10 flex items-center justify-center">

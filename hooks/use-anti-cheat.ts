@@ -40,20 +40,35 @@ export function useAntiCheat({
 
   // Enter fullscreen
   const enterFullscreen = useCallback(async () => {
-    if (!config.requireFullscreen || !enabled) return;
+    if (!config.requireFullscreen) return;
     try {
       if (!document.fullscreenElement) {
         await document.documentElement.requestFullscreen();
         isFullscreenRef.current = true;
+        // Lock Escape key to prevent easy fullscreen exit (Chrome/Edge)
+        try {
+          if ("keyboard" in navigator) {
+            await (navigator as unknown as { keyboard: { lock: (keys: string[]) => Promise<void> } }).keyboard.lock(["Escape"]);
+          }
+        } catch {
+          // Keyboard Lock API not supported or denied
+        }
       }
     } catch {
-      // Fullscreen not supported or blocked
       console.warn("Fullscreen request failed");
     }
-  }, [config.requireFullscreen, enabled]);
+  }, [config.requireFullscreen]);
 
   // Exit fullscreen
   const exitFullscreen = useCallback(() => {
+    // Unlock keyboard first
+    try {
+      if ("keyboard" in navigator) {
+        (navigator as unknown as { keyboard: { unlock: () => void } }).keyboard.unlock();
+      }
+    } catch {
+      // ignore
+    }
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
       isFullscreenRef.current = false;
@@ -117,6 +132,15 @@ export function useAntiCheat({
         document.removeEventListener("paste", handlePaste);
       });
     }
+
+    // -- Prevent closing tab during test --
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    handlers.push(() =>
+      window.removeEventListener("beforeunload", handleBeforeUnload)
+    );
 
     // -- Tab switch / visibility detection --
     if (config.detectTabSwitch) {

@@ -50,10 +50,16 @@ export function StartConfirmation({
               <span className="text-[#1a2744] font-bold">•</span>
               Do not switch tabs or windows during the test.
             </li>
+            {TEST_CONFIG.antiCheat.requireFullscreen && (
+              <li className="flex items-start gap-2">
+                <span className="text-[#1a2744] font-bold">•</span>
+                The test will open in fullscreen mode. Do not exit fullscreen.
+              </li>
+            )}
           </ul>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        <DialogFooter className="gap-4 flex flex-row  sm:gap-4">
           <Button variant="outline" onClick={onCancel} disabled={loading}>
             Go Back
           </Button>

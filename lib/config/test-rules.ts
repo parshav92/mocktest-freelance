@@ -77,19 +77,21 @@ export const TEST_CONFIG = {
     // ============================================
     antiCheat: {
         /** Enable fullscreen mode */
-        requireFullscreen: false,
+        requireFullscreen: true,
+        /** Open test in a new browser tab */
+        openInNewTab: true,
         /** Disable right-click context menu */
-        disableRightClick: false,
+        disableRightClick: true,
         /** Disable keyboard shortcuts (F12, Ctrl+Shift+I, etc.) */
-        disableDevTools: false,
+        disableDevTools: true,
         /** Disable copy/paste from outside */
-        disableCopyPaste: false,
+        disableCopyPaste: true,
         /** Disable text selection on question content */
-        disableTextSelection: false,
+        disableTextSelection: true,
         /** Track tab/window visibility changes */
-        detectTabSwitch: false,
+        detectTabSwitch: true,
         /** Number of warnings before auto-submit */
-        maxWarnings: 5,
+        maxWarnings: 3,
         /** Warning message template */
         warningMessage: (remaining: number) =>
             `Warning: Switching tabs or windows is not allowed during the test. You have ${remaining} warning${remaining === 1 ? "" : "s"} remaining before your test is automatically submitted.`,
@@ -129,17 +131,20 @@ export const TEST_CONFIG = {
                     {
                         heading: "Making things bigger",
                         content:
-                            "You can make the questions bigger by clicking the zoom controls at the top right. You can always go back to the original view by clicking 100%.",
+                            "You can make the questions bigger by clicking the magnifying glass and selecting how big you want them to be. You can always go back to the original view if you want, by clicking the magnifying glass again and clicking '100%'.",
+                        visualType: "zoom",
                     },
                     {
                         heading: "Timer",
                         content:
-                            "This is your individual countdown timer. Make sure you keep checking the time so you can complete all the questions. You can click 'Hide time' if you don't want to see the time.",
+                            "This is your individual countdown timer. Make sure you keep checking the time so that you can complete all the questions. You can click 'Hide time' if you don't want to see the time. Just make sure you are careful in managing your time though! You can double click the timer if you want to see the seconds count down.",
+                        visualType: "timer",
                     },
                     {
                         heading: "Scrolling down and changing the view",
                         content:
-                            "Sometimes, particularly in the Reading Test, you will have to scroll down using the scroll bar so that you can read the whole question or extract.",
+                            "Sometimes, particularly in the Reading Test, you will have to scroll down using the scroll bar so that you can read the whole question or extract, like in this picture. If you just want to see the question on its own, without the answers, you can click on the arrow you see in the middle of the screen. You can always click the same arrow again to show the answers again.",
+                        visualType: "scroll",
                     },
                 ],
             },
@@ -150,16 +155,19 @@ export const TEST_CONFIG = {
                         heading: "Next and Back",
                         content:
                             "Once you've selected your answer, you will need to click 'Next' to go to the next question. The test won't automatically take you to the next question. You can use the 'Back' button to review previous questions or change your answers.",
+                        visualType: "navigation",
                     },
                     {
                         heading: "Flag feature",
                         content:
                             "If you are finding a question difficult to answer, select your best guess and then click the flag icon to remind yourself to go back to it if you have time.",
+                        visualType: "flag",
                     },
                     {
                         heading: "Question number and progress summary",
                         content:
                             "You will always be able to see which question you are up to and how many questions there are in total. If you click the grid icon, it takes you to the progress summary. This shows you where you're up to in the test and reminds you which questions you have flagged to come back to. The progress summary also lets you jump to any question at any time.",
+                        visualType: "progress",
                     },
                 ],
             },
@@ -210,6 +218,7 @@ export interface DBInstructionPage {
 export interface InstructionSection {
     heading: string;
     content: string;
+    visualType?: "navigation" | "flag" | "progress" | "timer" | "scroll" | "zoom";
 }
 
 export interface GeneralInstructionPage {

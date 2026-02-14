@@ -16,6 +16,7 @@ import {
     EyeOff,
     Loader2,
     LogOut,
+    Maximize,
     Send,
 } from "lucide-react";
 import { TEST_CONFIG } from "@/lib/config/test-rules";
@@ -46,6 +47,7 @@ type TestPhase =
     | "loading"
     | "instructions"
     | "confirmation"
+    | "enter-fullscreen"
     | "testing"
     | "pre-submit"
     | "submitting"
@@ -144,7 +146,17 @@ export default function TestEnvironmentPage() {
                 testData.subject
                     ? {
                           name: testData.subject.name,
-                          instructions: testData.subject.instructions,
+                          instructions: (() => {
+                              const raw = testData.subject.instructions as unknown;
+                              if (!raw) return null;
+                              // DB stores { pages: [...] } JSONB
+                              if (typeof raw === "object" && raw !== null && "pages" in raw) {
+                                  return (raw as { pages: InstructionPage[] }).pages;
+                              }
+                              // Already an array
+                              if (Array.isArray(raw)) return raw as InstructionPage[];
+                              return null;
+                          })(),
                           duration_mins: testData.subject.duration_mins,
                       }
                     : null,
@@ -169,8 +181,12 @@ export default function TestEnvironmentPage() {
 
             // Determine starting phase
             if (testData.status === "in_progress") {
-                // Resuming an in-progress test
-                setPhase("testing");
+                // Resuming — require fullscreen gate if configured
+                if (TEST_CONFIG.antiCheat.requireFullscreen) {
+                    setPhase("enter-fullscreen");
+                } else {
+                    setPhase("testing");
+                }
                 // Mark all as visited since we can't track from before
                 setVisitedSet(new Set(testData.questions_order));
             } else if (
@@ -333,17 +349,35 @@ export default function TestEnvironmentPage() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to start test");
 
+            // Open test in a new browser tab if configured
+            if (TEST_CONFIG.antiCheat.openInNewTab) {
+                const testUrl = `/dashboard/tests/${testId}?mode=test`;
+                const newWindow = window.open(testUrl, "_blank");
+                if (newWindow) {
+                    router.replace("/dashboard/tests");
+                    return;
+                }
+                // Popup blocked — fall through to same-tab fullscreen
+            }
+
             setTest(data.test);
             setQuestions(data.questions);
-            setPhase("testing");
 
-            // Enter fullscreen
-            antiCheat.enterFullscreen();
+            if (TEST_CONFIG.antiCheat.requireFullscreen) {
+                setPhase("enter-fullscreen");
+            } else {
+                setPhase("testing");
+            }
         } catch (err) {
             setError(
                 err instanceof Error ? err.message : "Failed to start test",
             );
         }
+    };
+
+    const handleEnterFullscreen = async () => {
+        await antiCheat.enterFullscreen();
+        setPhase("testing");
     };
 
     const handleSubmitTest = async () => {
@@ -449,7 +483,7 @@ export default function TestEnvironmentPage() {
     if (phase === "loading") {
         if (error) {
             return (
-                <div className="min-h-screen flex items-center justify-center bg-[#e8eef3] font-[family-name:var(--font-inter)]">
+                <div className="min-h-screen  flex items-center justify-center bg-[#e8eef3] font-[family-name:var(--font-inter)]">
                     <div className="bg-white p-8 rounded-xl shadow-sm border max-w-md text-center">
                         <p className="text-red-600 mb-4">{error}</p>
                         <Button
@@ -496,6 +530,36 @@ export default function TestEnvironmentPage() {
                     loading={false}
                 />
             </>
+        );
+    }
+
+    // ENTER FULLSCREEN GATE
+    if (phase === "enter-fullscreen") {
+        return (
+            <div className="min-h-screen flex flex-col items-center justify-center bg-[#1a2744] font-[family-name:var(--font-inter)]">
+                <div className="text-center max-w-md mx-auto p-8">
+                    <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <Maximize className="h-8 w-8 text-white" />
+                    </div>
+                    <h2 className="text-white text-2xl font-bold mb-3">
+                        Enter Fullscreen Mode
+                    </h2>
+                    <p className="text-white/60 text-sm mb-2 leading-relaxed">
+                        This test must be taken in fullscreen mode. You will
+                        receive warnings if you exit fullscreen or switch tabs.
+                    </p>
+                    <p className="text-white/40 text-xs mb-8">
+                        After {TEST_CONFIG.antiCheat.maxWarnings} warnings your
+                        test will be automatically submitted.
+                    </p>
+                    <Button
+                        onClick={handleEnterFullscreen}
+                        className="bg-white text-[#1a2744] hover:bg-white/90 font-semibold text-base px-8 py-3 h-auto"
+                    >
+                        Enter Fullscreen & Start Test
+                    </Button>
+                </div>
+            </div>
         );
     }
 
