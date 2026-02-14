@@ -258,7 +258,7 @@ export class TestService {
             .select(
                 `
         *,
-        subject:subjects(id, name, slug, icon, duration_mins)
+        subject:subjects(id, name, slug, icon, duration_mins, instructions)
       `,
             )
             .eq("id", testId)

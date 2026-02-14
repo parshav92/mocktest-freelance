@@ -722,12 +722,8 @@ INSERT INTO subjects (name, slug, description, icon, duration_mins, total_questi
     '{
         "pages": [
             {
-                "title": "Test Instructions",
-                "content": "This test contains 40 questions to be completed in 45 minutes."
-            },
-            {
-                "title": "Question Types",
-                "content": "You will encounter: MCQ based on passages, Fill in the blanks, Poem comprehension, and Missing sentence questions."
+                "title": "Selective High School Placement Practice Test",
+                "content": "<p>You have <strong>45 minutes</strong> to complete <strong>17 questions</strong> in this test.</p><br/><p>For Questions 1–8, choose <strong>one</strong> correct answer to each question.</p><p>For Question 9, choose the <strong>eight</strong> correct answers.</p><p>For Questions 10–15, choose <strong>one</strong> correct answer to each question.</p><p>For Question 16, choose the <strong>six</strong> correct answers.</p><p>For Question 17, choose the <strong>ten</strong> correct answers.</p><p>You will <strong>not</strong> lose marks for incorrect answers, so you should attempt <strong>all</strong> questions.</p><br/><p>Please note that some words and phrases are in <strong>bold</strong> in the texts as they are referred to in some questions.</p><p>Calculators and dictionaries are <strong>not</strong> allowed.</p><br/><p><em>Every reasonable effort has been made by the publisher to trace copyright holders, but if any items requiring clearance have unwittingly been included, the publisher will be pleased to make amends at the earliest possible opportunity.</em></p>"
             }
         ]
     }'::JSONB
@@ -743,12 +739,8 @@ INSERT INTO subjects (name, slug, description, icon, duration_mins, total_questi
     '{
         "pages": [
             {
-                "title": "Test Instructions",
-                "content": "You will be given one essay prompt. Write a well-structured essay within the word limit."
-            },
-            {
-                "title": "Evaluation",
-                "content": "Your essay will be evaluated on content, structure, and grammar."
+                "title": "Selective High School Placement Practice Test",
+                "content": "<p>You have <strong>30 minutes</strong> to complete this test.</p><p>This test contains <strong>one</strong> task.</p><br/><p><em>The task provides an opportunity for you to show how well you can choose, develop and organise ideas and communicate them effectively in writing.</em></p><p><em>Before you begin writing, take time to think carefully about what you need to say and the ways in which the organisation and layout of your response might help express your message.</em></p><p>You will receive a <strong>higher mark</strong> if you produce an original and engaging response to the writing task.</p><p>You will receive a <strong>lower mark</strong> if your writing does not address the topic outlined in the writing task.</p><br/><p>Calculators and dictionaries are <strong>not</strong> allowed.</p><p>This test will <strong>not</strong> be marked.</p>"
             }
         ]
     }'::JSONB
@@ -764,12 +756,8 @@ INSERT INTO subjects (name, slug, description, icon, duration_mins, total_questi
     '{
         "pages": [
             {
-                "title": "Test Instructions",
-                "content": "This test contains 40 multiple choice questions. Some questions may include images or diagrams."
-            },
-            {
-                "title": "Tips",
-                "content": "Read each question carefully. You can skip and return to questions later."
+                "title": "Selective High School Placement Practice Test",
+                "content": "<p>You have <strong>40 minutes</strong> to complete <strong>35 questions</strong> in this test.</p><p>For each question there are five possible answers. Choose the <strong>one</strong> correct answer.</p><p>You will <strong>not</strong> lose marks for incorrect answers, so you should attempt <strong>all</strong> questions.</p><br/><p>Calculators and dictionaries are <strong>not</strong> allowed.</p>"
             }
         ]
     }'::JSONB
@@ -785,12 +773,8 @@ INSERT INTO subjects (name, slug, description, icon, duration_mins, total_questi
     '{
         "pages": [
             {
-                "title": "Test Instructions",
-                "content": "This test contains 40 multiple choice questions testing your critical thinking abilities."
-            },
-            {
-                "title": "Question Types",
-                "content": "Questions may involve patterns, sequences, spatial reasoning, and logical deduction."
+                "title": "Selective High School Placement Practice Test",
+                "content": "<p>You have <strong>40 minutes</strong> to complete <strong>40 questions</strong> in this test.</p><p>For each question there are four possible answers. Choose the <strong>one</strong> correct answer.</p><p>You will <strong>not</strong> lose marks for incorrect answers, so you should attempt <strong>all</strong> questions.</p><br/><p>Calculators and dictionaries are <strong>not</strong> allowed.</p>"
             }
         ]
     }'::JSONB

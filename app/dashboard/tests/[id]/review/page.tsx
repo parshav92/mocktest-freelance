@@ -3,19 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
     ArrowLeft,
     CheckCircle,
     XCircle,
-    Clock,
-    Trophy,
-    Target,
     Loader2,
     AlertTriangle,
     ChevronDown,
     ChevronUp,
+    BarChart3,
+    Minus,
 } from "lucide-react";
 
 interface ReviewQuestion {
@@ -124,302 +121,284 @@ export default function TestReviewPage() {
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
         const secs = seconds % 60;
-        return `${mins}m ${secs}s`;
+        return `${mins}m ${String(secs).padStart(2, "0")}s`;
     };
 
-    const getPercentageColor = (percentage: number) => {
-        if (percentage >= 80) return "text-green-600 dark:text-green-400";
-        if (percentage >= 60) return "text-yellow-600 dark:text-yellow-400";
-        return "text-red-600 dark:text-red-400";
+    const getHeadline = (pct: number) => {
+        if (pct >= 90) return "Outstanding performance.";
+        if (pct >= 75) return "Strong result overall.";
+        if (pct >= 60) return "Solid effort, room to grow.";
+        if (pct >= 40) return "Accuracy needs improvement.";
+        return "Keep practicing consistently.";
+    };
+
+    const getSubtext = (pct: number, correct: number, total: number) => {
+        if (pct >= 90)
+            return `You answered ${correct} out of ${total} correctly. Excellent command across all levels.`;
+        if (pct >= 75)
+            return `${correct} of ${total} correct. A few tricky ones slipped through — review them below.`;
+        if (pct >= 60)
+            return `${correct} of ${total} correct. Good foundation — focus on the gaps highlighted below.`;
+        if (pct >= 40)
+            return `${correct} of ${total} correct. Spend time reviewing incorrect answers to improve.`;
+        return `${correct} of ${total} correct. Review each solution carefully before your next attempt.`;
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
             </div>
         );
     }
 
     if (error || !reviewData) {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <Card className="max-w-md">
-                    <CardContent className="pt-6 text-center">
-                        <AlertTriangle className="h-12 w-12 mx-auto text-red-500 mb-4" />
-                        <h2 className="text-xl font-semibold mb-2">Error</h2>
-                        <p className="text-muted-foreground mb-4">{error}</p>
-                        <Button onClick={() => router.push("/dashboard/tests")}>
-                            Back to Tests
-                        </Button>
-                    </CardContent>
-                </Card>
+            <div className="min-h-screen flex items-center justify-center bg-slate-50">
+                <div className="max-w-sm text-center">
+                    <AlertTriangle className="h-10 w-10 mx-auto text-slate-400 mb-4" />
+                    <h2 className="text-lg font-semibold text-slate-800 mb-2">
+                        Unable to load review
+                    </h2>
+                    <p className="text-sm text-slate-500 mb-6">{error}</p>
+                    <Button
+                        onClick={() => router.push("/dashboard/tests")}
+                        className="bg-[#1a2744] hover:bg-[#1a2744]/90"
+                    >
+                        Back to Tests
+                    </Button>
+                </div>
             </div>
         );
     }
 
     const { test, questions, summary } = reviewData;
+    const barColor = (pct: number) =>
+        pct >= 75 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-400" : "bg-rose-400";
 
     return (
-        <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950">
-            {/* Header */}
-            <header className="bg-white dark:bg-neutral-900 border-b">
-                <div className="container mx-auto px-4 py-4">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => router.push("/dashboard/tests")}
-                        className="mb-4"
-                    >
-                        <ArrowLeft className="h-4 w-4 mr-2" />
-                        Back to Tests
-                    </Button>
+        <div className="min-h-screen bg-slate-50">
+            {/* Thin accent bar */}
+            <div className="h-1 bg-[#1a2744]" />
 
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div>
-                            <h1 className="text-2xl font-bold">
-                                {test.subject.name} - Results
+            <div className="w-full max-w-6xl mx-auto px-6 md:px-10">
+                {/* Nav */}
+                <div className="pt-6 pb-2">
+                    <button
+                        onClick={() => router.push("/dashboard/tests")}
+                        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors"
+                    >
+                        <ArrowLeft className="h-3.5 w-3.5" />
+                        Back to Tests
+                    </button>
+                </div>
+
+                {/* ============================================
+                    HERO SUMMARY
+                ============================================ */}
+                <section className="py-8 md:py-10">
+                    <p className="text-xs font-medium uppercase tracking-widest text-slate-400 mb-6">
+                        {test.subject.name} — Review
+                    </p>
+
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div className="min-w-0">
+                            <div className="flex items-baseline gap-3 mb-2">
+                                <span className="text-6xl md:text-7xl font-extrabold text-slate-900 tabular-nums tracking-tight">
+                                    {Math.round(summary.percentage)}
+                                    <span className="text-3xl font-bold text-slate-400">
+                                        %
+                                    </span>
+                                </span>
+                            </div>
+                            <h1 className="text-xl md:text-2xl font-semibold text-slate-800 mb-1.5">
+                                {getHeadline(summary.percentage)}
                             </h1>
-                            <p className="text-muted-foreground">
-                                {new Date(test.ended_at).toLocaleDateString(
-                                    "en-AU",
-                                    {
-                                        day: "numeric",
-                                        month: "long",
-                                        year: "numeric",
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                    },
+                            <p className="text-sm text-slate-500 leading-relaxed max-w-lg">
+                                {getSubtext(
+                                    summary.percentage,
+                                    summary.correct,
+                                    summary.total_questions,
                                 )}
                             </p>
                         </div>
 
-                        <Badge
-                            variant={
-                                test.status === "submitted"
-                                    ? "default"
-                                    : "secondary"
-                            }
-                            className="w-fit"
-                        >
-                            {test.status === "submitted"
-                                ? "Completed"
-                                : test.status === "ended_early"
-                                  ? "Ended Early"
-                                  : "Abandoned"}
-                        </Badge>
-                    </div>
-                </div>
-            </header>
-
-            <main className="container mx-auto px-4 py-8">
-                {/* Summary Cards */}
-                <div className="grid gap-4 md:grid-cols-4 mb-8">
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900/30">
-                                    <Trophy className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Score
-                                    </p>
-                                    <p
-                                        className={`text-2xl font-bold ${getPercentageColor(summary.percentage)}`}
-                                    >
-                                        {summary.percentage.toFixed(1)}%
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-full bg-green-100 dark:bg-green-900/30">
-                                    <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Correct
-                                    </p>
-                                    <p className="text-2xl font-bold">
-                                        {summary.correct}/
-                                        {summary.total_questions}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-full bg-purple-100 dark:bg-purple-900/30">
-                                    <Target className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Marks
-                                    </p>
-                                    <p className="text-2xl font-bold">
-                                        {summary.marks_obtained}/
-                                        {summary.total_marks}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent className="pt-6">
-                            <div className="flex items-center gap-4">
-                                <div className="p-3 rounded-full bg-orange-100 dark:bg-orange-900/30">
-                                    <Clock className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground">
-                                        Time
-                                    </p>
-                                    <p className="text-2xl font-bold">
-                                        {formatTime(summary.time_spent_secs)}
-                                    </p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                {/* Difficulty Breakdown */}
-                <Card className="mb-8">
-                    <CardHeader>
-                        <CardTitle>Performance by Difficulty</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-4 md:grid-cols-3">
-                            {(["easy", "medium", "hard"] as const).map(
-                                (level) => {
-                                    const data = summary.score_breakdown[level];
-                                    return (
-                                        <div
-                                            key={level}
-                                            className="p-4 rounded-lg bg-neutral-100 dark:bg-neutral-800"
-                                        >
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className="font-medium capitalize">
-                                                    {level}
-                                                </span>
-                                                <Badge variant="outline">
-                                                    {data.correct}/{data.total}
-                                                </Badge>
-                                            </div>
-                                            <div className="w-full bg-neutral-200 dark:bg-neutral-700 rounded-full h-2">
-                                                <div
-                                                    className={`h-2 rounded-full ${
-                                                        data.percentage >= 80
-                                                            ? "bg-green-500"
-                                                            : data.percentage >=
-                                                                60
-                                                              ? "bg-yellow-500"
-                                                              : "bg-red-500"
-                                                    }`}
-                                                    style={{
-                                                        width: `${data.percentage}%`,
-                                                    }}
-                                                />
-                                            </div>
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                {data.percentage}% correct
-                                            </p>
-                                        </div>
-                                    );
+                        <p className="text-xs text-slate-400 shrink-0">
+                            {new Date(test.ended_at).toLocaleDateString(
+                                "en-AU",
+                                {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
                                 },
                             )}
+                        </p>
+                    </div>
+
+                    {/* Stat row */}
+                    <div className="mt-8 flex flex-wrap gap-8">
+                        <div>
+                            <p className="text-xs text-slate-500 mb-0.5">Correct</p>
+                            <p className="text-lg font-semibold text-slate-900 tabular-nums">
+                                {summary.correct}
+                                <span className="text-slate-400 font-normal">
+                                    /{summary.total_questions}
+                                </span>
+                            </p>
                         </div>
-                    </CardContent>
-                </Card>
+                        <div>
+                            <p className="text-xs text-slate-500 mb-0.5">Marks</p>
+                            <p className="text-lg font-semibold text-slate-900 tabular-nums">
+                                {summary.marks_obtained}
+                                <span className="text-slate-400 font-normal">
+                                    /{summary.total_marks}
+                                </span>
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-slate-500 mb-0.5">Time</p>
+                            <p className="text-lg font-semibold text-slate-900 tabular-nums">
+                                {formatTime(summary.time_spent_secs)}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-slate-500 mb-0.5">Unattempted</p>
+                            <p className="text-lg font-semibold text-slate-900 tabular-nums">
+                                {summary.unattempted}
+                            </p>
+                        </div>
+                    </div>
+                </section>
 
-                {/* Questions List */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Question Review</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        {questions.map((item, idx) => (
-                            <div
-                                key={item.question.id}
-                                className={`border rounded-lg overflow-hidden ${
-                                    item.is_correct
-                                        ? "border-green-200 dark:border-green-800"
-                                        : "border-red-200 dark:border-red-800"
-                                }`}
-                            >
-                                {/* Question Header */}
-                                <button
-                                    onClick={() => toggleQuestion(idx)}
-                                    className="w-full p-4 flex items-center justify-between hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors"
+                <div className="h-px bg-slate-200" />
+
+                {/* ============================================
+                    DIFFICULTY BREAKDOWN
+                ============================================ */}
+                <section className="py-10">
+                    <h2 className="text-lg font-medium text-slate-800 mb-6 flex items-center gap-2">
+                        <BarChart3 className="h-4.5 w-4.5 text-slate-400" />
+                        Performance by Difficulty
+                    </h2>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                        {(["easy", "medium", "hard"] as const).map((level) => {
+                            const data = summary.score_breakdown[level];
+                            return (
+                                <div key={level}>
+                                    <div className="flex items-center justify-between mb-2">
+                                        <span className="text-sm font-medium text-slate-700 capitalize">
+                                            {level}
+                                        </span>
+                                        <span className="text-sm text-slate-500 tabular-nums">
+                                            {data.correct}/{data.total}
+                                        </span>
+                                    </div>
+                                    <div className="w-full bg-slate-200 rounded-full h-1.5">
+                                        <div
+                                            className={`h-1.5 rounded-full transition-all duration-500 ${barColor(data.percentage)}`}
+                                            style={{
+                                                width: `${data.total > 0 ? data.percentage : 0}%`,
+                                            }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-slate-400 mt-1.5 tabular-nums">
+                                        {Math.round(data.percentage)}% correct
+                                    </p>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </section>
+
+                <div className="h-px bg-slate-200" />
+
+                {/* ============================================
+                    QUESTION REVIEW
+                ============================================ */}
+                <section className="py-10">
+                    <h2 className="text-lg font-medium text-slate-800 mb-6">
+                        Question Review
+                    </h2>
+
+                    <div className="space-y-3">
+                        {questions.map((item, idx) => {
+                            const isOpen = expandedQuestions.has(idx);
+                            return (
+                                <div
+                                    key={item.question.id}
+                                    className={`bg-white rounded-xl shadow-sm overflow-hidden border-l-[3px] ${
+                                        !item.was_attempted
+                                            ? "border-l-slate-300"
+                                            : item.is_correct
+                                              ? "border-l-emerald-500"
+                                              : "border-l-rose-400"
+                                    }`}
                                 >
-                                    <div className="flex items-center gap-3">
-                                        {item.is_correct ? (
-                                            <CheckCircle className="h-5 w-5 text-green-500" />
-                                        ) : (
-                                            <XCircle className="h-5 w-5 text-red-500" />
-                                        )}
-                                        <span className="font-medium">
-                                            Question {item.question_number}
-                                        </span>
-                                        <Badge
-                                            variant="outline"
-                                            className="capitalize"
-                                        >
-                                            {item.question.difficulty}
-                                        </Badge>
-                                        <Badge variant="outline">
-                                            {item.question.question_type.replace(
-                                                /_/g,
-                                                " ",
+                                    {/* Question row */}
+                                    <button
+                                        onClick={() => toggleQuestion(idx)}
+                                        className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left hover:bg-slate-50/60 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <span className="text-sm font-semibold text-slate-900 shrink-0">
+                                                Q{item.question_number}
+                                            </span>
+                                            {!item.was_attempted ? (
+                                                <Minus className="h-4 w-4 text-slate-400 shrink-0" />
+                                            ) : item.is_correct ? (
+                                                <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                                            ) : (
+                                                <XCircle className="h-4 w-4 text-rose-400 shrink-0" />
                                             )}
-                                        </Badge>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className="text-sm text-muted-foreground">
-                                            {item.marks_earned}/
-                                            {item.question.marks} marks
-                                        </span>
-                                        {expandedQuestions.has(idx) ? (
-                                            <ChevronUp className="h-5 w-5" />
-                                        ) : (
-                                            <ChevronDown className="h-5 w-5" />
-                                        )}
-                                    </div>
-                                </button>
+                                            <span className="text-xs text-slate-400 capitalize shrink-0">
+                                                {item.question.difficulty}
+                                            </span>
+                                            <span className="text-xs text-slate-300 shrink-0">
+                                                /
+                                            </span>
+                                            <span className="text-xs text-slate-400 shrink-0">
+                                                {item.question.question_type.replace(
+                                                    /_/g,
+                                                    " ",
+                                                )}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-4 shrink-0">
+                                            <span className="text-sm text-slate-500 tabular-nums">
+                                                {item.marks_earned}/
+                                                {item.question.marks}
+                                            </span>
+                                            {isOpen ? (
+                                                <ChevronUp className="h-4 w-4 text-slate-400" />
+                                            ) : (
+                                                <ChevronDown className="h-4 w-4 text-slate-400" />
+                                            )}
+                                        </div>
+                                    </button>
 
-                                {/* Question Details */}
-                                {expandedQuestions.has(idx) && (
-                                    <div className="p-4 pt-0 border-t">
-                                        {/* Passage */}
-                                        {item.question.passage && (
-                                            <div className="mb-4 p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
-                                                <h4 className="font-medium mb-2">
-                                                    {item.question.passage
-                                                        .title || "Passage"}
-                                                </h4>
-                                                <p className="text-sm whitespace-pre-wrap">
-                                                    {
-                                                        item.question.passage
-                                                            .content
-                                                    }
-                                                </p>
-                                            </div>
-                                        )}
+                                    {/* Expanded content */}
+                                    {isOpen && (
+                                        <div className="px-5 pb-5 pt-1 border-t border-slate-100">
+                                            {/* Passage */}
+                                            {item.question.passage && (
+                                                <div className="mb-5 p-4 bg-slate-50 rounded-lg">
+                                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
+                                                        {item.question.passage
+                                                            .title || "Passage"}
+                                                    </p>
+                                                    <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                                                        {
+                                                            item.question
+                                                                .passage.content
+                                                        }
+                                                    </p>
+                                                </div>
+                                            )}
 
-                                        {/* Question Content */}
-                                        <div className="mb-4">
-                                            <h4 className="font-medium mb-2">
-                                                Question:
-                                            </h4>
+                                            {/* Question */}
                                             <QuestionDisplay
                                                 question={item.question}
                                                 studentAnswer={
@@ -429,34 +408,56 @@ export default function TestReviewPage() {
                                                     item.was_attempted
                                                 }
                                             />
-                                        </div>
 
-                                        {/* Solution */}
-                                        {item.question.solution_text && (
-                                            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                                                <h4 className="font-medium mb-2 text-blue-700 dark:text-blue-300">
-                                                    Solution:
-                                                </h4>
-                                                <p className="text-sm">
-                                                    {
-                                                        item.question
-                                                            .solution_text
-                                                    }
-                                                </p>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </CardContent>
-                </Card>
-            </main>
+                                            {/* Solution */}
+                                            {item.question.solution_text && (
+                                                <div className="mt-5 p-4 bg-slate-50 rounded-lg">
+                                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
+                                                        Solution
+                                                    </p>
+                                                    <p className="text-sm text-slate-700 leading-relaxed">
+                                                        {
+                                                            item.question
+                                                                .solution_text
+                                                        }
+                                                    </p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </section>
+
+                {/* ============================================
+                    ACTIONS
+                ============================================ */}
+                <div className="pb-14 flex flex-col-reverse sm:flex-row items-center justify-end gap-3">
+                    <Button
+                        variant="outline"
+                        onClick={() => router.push("/dashboard/tests")}
+                        className="w-full sm:w-auto border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-colors"
+                    >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Back to Tests
+                    </Button>
+                    <Button
+                        onClick={() => router.push("/dashboard")}
+                        className="w-full sm:w-auto bg-[#1a2744] hover:bg-[#1a2744]/90 shadow-sm transition-colors"
+                    >
+                        Back to Dashboard
+                    </Button>
+                </div>
+            </div>
         </div>
     );
 }
 
-// Question Display Component
+// ============================================
+// QUESTION DISPLAY
+// ============================================
 function QuestionDisplay({
     question,
     studentAnswer,
@@ -486,7 +487,9 @@ function QuestionDisplay({
 
             return (
                 <div>
-                    <p className="mb-4">{questionText}</p>
+                    <p className="text-sm text-slate-800 mb-4 leading-relaxed">
+                        {questionText}
+                    </p>
                     <div className="space-y-2">
                         {options.map((option, index) => {
                             const optionLabel = option.label.toUpperCase();
@@ -496,42 +499,38 @@ function QuestionDisplay({
                             return (
                                 <div
                                     key={`mcq-opt-${index}`}
-                                    className={`p-3 rounded-lg border ${
+                                    className={`flex items-center gap-3 p-3 rounded-lg text-sm transition-colors ${
                                         isCorrect
-                                            ? "bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-700"
+                                            ? "bg-emerald-50 text-slate-800"
                                             : isSelected
-                                              ? "bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700"
-                                              : "bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700"
+                                              ? "bg-rose-50 text-slate-800"
+                                              : "bg-slate-50 text-slate-600"
                                     }`}
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <span
-                                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium ${
-                                                isCorrect
-                                                    ? "bg-green-500 text-white"
-                                                    : isSelected
-                                                      ? "bg-red-500 text-white"
-                                                      : "bg-neutral-300 dark:bg-neutral-600 text-white"
-                                            }`}
-                                        >
-                                            {optionLabel}
-                                        </span>
-                                        <span className="flex-1">
-                                            {option.text}
-                                        </span>
-                                        {isCorrect && (
-                                            <CheckCircle className="h-4 w-4 text-green-500 ml-auto" />
-                                        )}
-                                        {isSelected && !isCorrect && (
-                                            <XCircle className="h-4 w-4 text-red-500 ml-auto" />
-                                        )}
-                                    </div>
+                                    <span
+                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
+                                            isCorrect
+                                                ? "bg-emerald-500 text-white"
+                                                : isSelected
+                                                  ? "bg-rose-400 text-white"
+                                                  : "bg-slate-200 text-slate-500"
+                                        }`}
+                                    >
+                                        {optionLabel}
+                                    </span>
+                                    <span className="flex-1">{option.text}</span>
+                                    {isCorrect && (
+                                        <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
+                                    )}
+                                    {isSelected && !isCorrect && (
+                                        <XCircle className="h-4 w-4 text-rose-400 shrink-0" />
+                                    )}
                                 </div>
                             );
                         })}
                     </div>
                     {!wasAttempted && (
-                        <p className="text-sm text-muted-foreground mt-2 italic">
+                        <p className="text-xs text-slate-400 mt-3 italic">
                             Not attempted
                         </p>
                     )}
@@ -552,11 +551,12 @@ function QuestionDisplay({
 
             return (
                 <div>
-                    <p className="mb-4">Fill in the blanks:</p>
-                    <p className="mb-4 text-muted-foreground">{passageText}</p>
+                    <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+                        {passageText}
+                    </p>
                     <div className="space-y-2">
                         {blanks.map((blank, idx) => {
-                            const isCorrect =
+                            const isCorrectBlank =
                                 studentAnswers[idx] === correctAnswers[idx];
                             const studentOption =
                                 blank.options[studentAnswers[idx]];
@@ -568,22 +568,24 @@ function QuestionDisplay({
                                     key={idx}
                                     className="flex items-center gap-2 text-sm"
                                 >
-                                    <span className="font-medium">
-                                        Blank {idx + 1}:
+                                    <span className="text-xs font-medium text-slate-500 w-16 shrink-0">
+                                        Blank {idx + 1}
                                     </span>
                                     <span
                                         className={
-                                            isCorrect
-                                                ? "text-green-600"
-                                                : "text-red-600 line-through"
+                                            isCorrectBlank
+                                                ? "text-emerald-600 font-medium"
+                                                : "text-rose-500 line-through"
                                         }
                                     >
-                                        {studentOption || "Not answered"}
+                                        {studentOption || "Skipped"}
                                     </span>
-                                    {!isCorrect && (
+                                    {!isCorrectBlank && (
                                         <>
-                                            <span>→</span>
-                                            <span className="text-green-600">
+                                            <span className="text-slate-300">
+                                                →
+                                            </span>
+                                            <span className="text-emerald-600 font-medium">
                                                 {correctOption}
                                             </span>
                                         </>
@@ -602,13 +604,15 @@ function QuestionDisplay({
 
             return (
                 <div>
-                    <p className="mb-4 font-medium">{prompt}</p>
-                    <div className="p-4 bg-neutral-100 dark:bg-neutral-800 rounded-lg">
-                        <p className="whitespace-pre-wrap">
-                            {essayText || "No response"}
+                    <p className="text-sm text-slate-800 font-medium mb-3">
+                        {prompt}
+                    </p>
+                    <div className="p-4 bg-slate-50 rounded-lg">
+                        <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                            {essayText || "No response submitted."}
                         </p>
                     </div>
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-xs text-slate-400 mt-2">
                         Essays are evaluated by AI. Score may vary.
                     </p>
                 </div>
@@ -617,8 +621,8 @@ function QuestionDisplay({
 
         default:
             return (
-                <p className="text-muted-foreground">
-                    Question type not supported for review
+                <p className="text-sm text-slate-400">
+                    Review not available for this question type.
                 </p>
             );
     }
