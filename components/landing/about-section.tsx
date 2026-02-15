@@ -22,7 +22,7 @@ const AboutSection = () => {
     ];
 
     return (
-        <section id="about" className="w-full bg-white py-48 px-6">
+        <section id="about" className="w-full bg-slate-50 py-48 px-6">
             <div className="max-w-6xl mx-auto">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
                     {/* Left Column - Bento Grid */}

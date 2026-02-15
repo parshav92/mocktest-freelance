@@ -9,16 +9,25 @@ export default function UnauthorizedPage() {
     const router = useRouter();
 
     return (
-        <div className="min-h-screen bg-white relative overflow-hidden flex items-center justify-center px-6">
-            {/* Background Image */}
-            <div className="absolute inset-0 z-0" />
+        <div
+            className="min-h-screen relative overflow-hidden flex items-center justify-center px-6"
+            style={{
+                background:
+                    "linear-gradient(180deg, #7DD3FC 0%, #BAE6FD 40%, #E0F2FE 70%, #f0f9ff 100%)",
+            }}
+        >
+            {/* Decorative Elements */}
+            <div className="absolute inset-0 overflow-hidden">
+                <div className="absolute top-20 left-10 w-72 h-72 bg-white/30 rounded-full blur-3xl" />
+                <div className="absolute bottom-20 right-10 w-96 h-96 bg-white/20 rounded-full blur-3xl" />
+            </div>
 
-            {/* Glassmorphism Container */}
+            {/* Container */}
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5 }}
-                className="relative z-10 max-w-2xl w-full glass-strong rounded-3xl p-8 md:p-12 shadow-2xl"
+                className="relative z-10 max-w-lg w-full bg-white/80 backdrop-blur-xl rounded-3xl p-8 md:p-12 shadow-xl border border-slate-200/50"
             >
                 {/* Icon */}
                 <motion.div
@@ -27,8 +36,8 @@ export default function UnauthorizedPage() {
                     transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
                     className="flex justify-center mb-6"
                 >
-                    <div className="rounded-full bg-red-100 dark:bg-red-900/30 p-6">
-                        <ShieldAlert className="h-16 w-16 text-red-600 dark:text-red-400" />
+                    <div className="rounded-full bg-amber-100 p-5">
+                        <ShieldAlert className="h-12 w-12 text-amber-600" />
                     </div>
                 </motion.div>
 
@@ -37,7 +46,8 @@ export default function UnauthorizedPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.3 }}
-                    className="text-8xl md:text-9xl font-bold text-center bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-4"
+                    className="text-7xl md:text-8xl font-bold text-center bg-gradient-to-r from-amber-500 to-orange-500 bg-clip-text text-transparent mb-4"
+                    style={{ letterSpacing: "-0.04em" }}
                 >
                     403
                 </motion.h1>
@@ -47,7 +57,8 @@ export default function UnauthorizedPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.4 }}
-                    className="text-2xl md:text-3xl font-bold text-center text-zinc-900 mb-3"
+                    className="text-2xl md:text-3xl font-bold text-center text-slate-900 mb-3"
+                    style={{ letterSpacing: "-0.04em" }}
                 >
                     Access Denied
                 </motion.h2>
@@ -57,11 +68,10 @@ export default function UnauthorizedPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.5 }}
-                    className="text-center text-zinc-600 mb-8 max-w-md mx-auto"
+                    className="text-center text-slate-600 mb-8"
                 >
-                    You don't have permission to access this resource. If you
-                    believe this is an error, please contact support or sign in
-                    with an authorized account.
+                    You don&apos;t have permission to access this resource.
+                    Please sign in with an authorized account.
                 </motion.p>
 
                 {/* Action Buttons */}
@@ -73,23 +83,23 @@ export default function UnauthorizedPage() {
                 >
                     <button
                         onClick={() => router.back()}
-                        className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-zinc-300 text-zinc-900 px-6 py-3 text-sm font-medium hover:bg-zinc-100 transition-all hover:scale-105"
+                        className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-slate-300 text-slate-900 px-6 py-3 text-sm font-medium hover:bg-slate-100 transition-all hover:scale-[0.97]"
                     >
                         <ArrowLeft className="h-4 w-4" />
                         Go Back
                     </button>
 
                     <Link
-                        href="/dashboard"
-                        className="inline-flex items-center justify-center gap-2 rounded-full bg-zinc-900 text-white px-6 py-3 text-sm font-medium hover:bg-zinc-800 transition-all hover:scale-105 shadow-lg"
+                        href="/"
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-slate-900 text-white px-6 py-3 text-sm font-medium hover:bg-slate-800 transition-all shadow-lg"
                     >
                         <Home className="h-4 w-4" />
-                        Dashboard
+                        Home
                     </Link>
 
                     <Link
                         href="/auth"
-                        className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 text-white px-6 py-3 text-sm font-medium hover:bg-emerald-700 transition-all hover:scale-105 shadow-lg"
+                        className="inline-flex items-center justify-center gap-2 rounded-full bg-sky-600 text-white px-6 py-3 text-sm font-medium hover:bg-sky-700 transition-all shadow-lg"
                     >
                         <LogIn className="h-4 w-4" />
                         Sign In
@@ -101,12 +111,12 @@ export default function UnauthorizedPage() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.7 }}
-                    className="text-center text-sm text-zinc-500 mt-8"
+                    className="text-center text-sm text-slate-500 mt-8"
                 >
                     Need help?{" "}
                     <Link
                         href="/contact"
-                        className="text-emerald-600 hover:text-emerald-700 font-medium hover:underline"
+                        className="text-sky-600 hover:text-sky-700 font-medium"
                     >
                         Contact Support
                     </Link>

@@ -92,7 +92,7 @@ const HeroSection = () => {
                         >
                             {/* Clip outer */}
                             <div
-                                className="w-10 h-20 border-2 border-slate-400 rounded-full bg-transparent"
+                                className="w-10 h-20 border-3 border-slate-400 rounded-full bg-transparent"
                                 style={{
                                     borderBottomLeftRadius: 0,
                                     borderBottomRightRadius: 0,
