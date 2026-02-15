@@ -21,4 +21,4 @@ after the last question he should see test progress summmary, test submission co
 Take inspiration from popular platforms like Hackerrank and other such practice platforms.
 I have also attached context and images
 After the final screen, he sees solutions page where he can navigate the test with solution and description like decided
-Use inter as font for the test environment
+Use inter as font for the test environment..
