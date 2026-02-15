@@ -181,8 +181,9 @@ export default function TestEnvironmentPage() {
 
             // Determine starting phase
             if (testData.status === "in_progress") {
-                // Resuming — require fullscreen gate if configured
+                // Resuming — enter fullscreen directly
                 if (TEST_CONFIG.antiCheat.requireFullscreen) {
+                    // Will enter fullscreen once component mounts and user interacts
                     setPhase("enter-fullscreen");
                 } else {
                     setPhase("testing");
@@ -363,11 +364,11 @@ export default function TestEnvironmentPage() {
             setTest(data.test);
             setQuestions(data.questions);
 
+            // Enter fullscreen automatically
             if (TEST_CONFIG.antiCheat.requireFullscreen) {
-                setPhase("enter-fullscreen");
-            } else {
-                setPhase("testing");
+                await antiCheat.enterFullscreen();
             }
+            setPhase("testing");
         } catch (err) {
             setError(
                 err instanceof Error ? err.message : "Failed to start test",
@@ -378,6 +379,14 @@ export default function TestEnvironmentPage() {
     const handleEnterFullscreen = async () => {
         await antiCheat.enterFullscreen();
         setPhase("testing");
+    };
+
+    const handleWarningDismiss = async () => {
+        setWarningMessage(null);
+        // Re-enter fullscreen after user acknowledges the warning
+        if (TEST_CONFIG.antiCheat.requireFullscreen) {
+            await antiCheat.enterFullscreen();
+        }
     };
 
     const handleSubmitTest = async () => {
@@ -626,7 +635,7 @@ export default function TestEnvironmentPage() {
             <AntiCheatWarning
                 open={!!warningMessage}
                 message={warningMessage || ""}
-                onDismiss={() => setWarningMessage(null)}
+                onDismiss={handleWarningDismiss}
             />
 
             {/* ============================================ */}
@@ -798,20 +807,7 @@ export default function TestEnvironmentPage() {
                                         {currentQuestion.marks} mark
                                         {currentQuestion.marks !== 1 ? "s" : ""}
                                     </Badge>
-                                    <Badge
-                                        variant="outline"
-                                        className={`text-xs ${
-                                            currentQuestion.difficulty ===
-                                            "easy"
-                                                ? "border-green-300 text-green-700"
-                                                : currentQuestion.difficulty ===
-                                                    "medium"
-                                                  ? "border-amber-300 text-amber-700"
-                                                  : "border-red-300 text-red-700"
-                                        }`}
-                                    >
-                                        {currentQuestion.difficulty}
-                                    </Badge>
+                                    
                                 </div>
                             </div>
 

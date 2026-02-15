@@ -3,17 +3,23 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 import {
     ArrowLeft,
+    ArrowRight,
     CheckCircle,
     XCircle,
     Loader2,
     AlertTriangle,
-    ChevronDown,
-    ChevronUp,
     BarChart3,
     Minus,
+    Clock,
+    Lightbulb,
 } from "lucide-react";
+import {Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 interface ReviewQuestion {
     question_number: number;
@@ -29,6 +35,8 @@ interface ReviewQuestion {
         passage?: {
             title: string;
             content: string;
+            image_url?: string;
+            passage_type?: string;
         };
     };
     student_answer: unknown;
@@ -78,9 +86,8 @@ export default function TestReviewPage() {
     const [reviewData, setReviewData] = useState<ReviewData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(
-        new Set(),
-    );
+    const [openIndex, setOpenIndex] = useState<number | null>(null);
+    const [showSolution, setShowSolution] = useState(false);
 
     useEffect(() => {
         fetchReview();
@@ -104,18 +111,6 @@ export default function TestReviewPage() {
         } finally {
             setLoading(false);
         }
-    };
-
-    const toggleQuestion = (index: number) => {
-        setExpandedQuestions((prev) => {
-            const next = new Set(prev);
-            if (next.has(index)) {
-                next.delete(index);
-            } else {
-                next.add(index);
-            }
-            return next;
-        });
     };
 
     const formatTime = (seconds: number) => {
@@ -173,6 +168,9 @@ export default function TestReviewPage() {
     }
 
     const { test, questions, summary } = reviewData;
+    const openItem = openIndex !== null ? questions[openIndex] : null;
+    const openHasPassage = !!openItem?.question.passage;
+
     const barColor = (pct: number) =>
         pct >= 75
             ? "bg-emerald-500"
@@ -328,118 +326,61 @@ export default function TestReviewPage() {
                 <div className="h-px bg-slate-200" />
 
                 {/* ============================================
-                    QUESTION REVIEW
+                    QUESTION NAVIGATOR — GRID
                 ============================================ */}
                 <section className="py-10">
-                    <h2 className="text-lg font-medium text-slate-800 mb-6">
+                    <h2 className="text-lg font-medium text-slate-800 mb-2">
                         Question Review
                     </h2>
+                    <p className="text-sm text-slate-500 mb-6">
+                        Click any question to view it in the test environment.
+                    </p>
 
-                    <div className="space-y-3">
-                        {questions.map((item, idx) => {
-                            const isOpen = expandedQuestions.has(idx);
-                            return (
-                                <div
-                                    key={item.question.id}
-                                    className={`bg-white rounded-xl shadow-sm overflow-hidden border-l-[3px] ${
-                                        !item.was_attempted
-                                            ? "border-l-slate-300"
-                                            : item.is_correct
-                                              ? "border-l-emerald-500"
-                                              : "border-l-rose-400"
-                                    }`}
-                                >
-                                    {/* Question row */}
-                                    <button
-                                        onClick={() => toggleQuestion(idx)}
-                                        className="w-full px-5 py-4 flex items-center justify-between gap-4 text-left hover:bg-slate-50/60 transition-colors"
-                                    >
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <span className="text-sm font-semibold text-slate-900 shrink-0">
-                                                Q{item.question_number}
-                                            </span>
-                                            {!item.was_attempted ? (
-                                                <Minus className="h-4 w-4 text-slate-400 shrink-0" />
-                                            ) : item.is_correct ? (
-                                                <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                                            ) : (
-                                                <XCircle className="h-4 w-4 text-rose-400 shrink-0" />
-                                            )}
-                                            <span className="text-xs text-slate-400 capitalize shrink-0">
-                                                {item.question.difficulty}
-                                            </span>
-                                            <span className="text-xs text-slate-300 shrink-0">
-                                                /
-                                            </span>
-                                            <span className="text-xs text-slate-400 shrink-0">
-                                                {item.question.question_type.replace(
-                                                    /_/g,
-                                                    " ",
-                                                )}
-                                            </span>
-                                        </div>
-                                        <div className="flex items-center gap-4 shrink-0">
-                                            <span className="text-sm text-slate-500 tabular-nums">
-                                                {item.marks_earned}/
-                                                {item.question.marks}
-                                            </span>
-                                            {isOpen ? (
-                                                <ChevronUp className="h-4 w-4 text-slate-400" />
-                                            ) : (
-                                                <ChevronDown className="h-4 w-4 text-slate-400" />
-                                            )}
-                                        </div>
-                                    </button>
+                    {/* Question grid */}
+                    <div className="flex flex-wrap gap-2">
+                        {questions.map((item, idx) => (
+                            <button
+                                key={item.question.id}
+                                onClick={() => {
+                                    setOpenIndex(idx);
+                                    setShowSolution(false);
+                                }}
+                                className={cn(
+                                    "w-10 h-10 rounded-lg text-sm font-semibold transition-all relative",
+                                    "flex items-center justify-center cursor-pointer",
+                                    "hover:scale-110 hover:shadow-md",
+                                    !item.was_attempted
+                                        ? "bg-slate-200 text-slate-500"
+                                        : item.is_correct
+                                          ? "bg-emerald-500 text-white"
+                                          : "bg-rose-400 text-white",
+                                )}
+                            >
+                                {item.question_number}
+                            </button>
+                        ))}
+                    </div>
 
-                                    {/* Expanded content */}
-                                    {isOpen && (
-                                        <div className="px-5 pb-5 pt-1 border-t border-slate-100">
-                                            {/* Passage */}
-                                            {item.question.passage && (
-                                                <div className="mb-5 p-4 bg-slate-50 rounded-lg">
-                                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
-                                                        {item.question.passage
-                                                            .title || "Passage"}
-                                                    </p>
-                                                    <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                                                        {
-                                                            item.question
-                                                                .passage.content
-                                                        }
-                                                    </p>
-                                                </div>
-                                            )}
-
-                                            {/* Question */}
-                                            <QuestionDisplay
-                                                question={item.question}
-                                                studentAnswer={
-                                                    item.student_answer
-                                                }
-                                                wasAttempted={
-                                                    item.was_attempted
-                                                }
-                                            />
-
-                                            {/* Solution */}
-                                            {item.question.solution_text && (
-                                                <div className="mt-5 p-4 bg-slate-50 rounded-lg">
-                                                    <p className="text-xs font-medium text-slate-500 uppercase tracking-wide mb-2">
-                                                        Solution
-                                                    </p>
-                                                    <p className="text-sm text-slate-700 leading-relaxed">
-                                                        {
-                                                            item.question
-                                                                .solution_text
-                                                        }
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
+                    {/* Legend */}
+                    <div className="flex items-center gap-5 mt-4">
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-sm bg-emerald-500" />
+                            <span className="text-xs text-slate-500">
+                                Correct ({summary.correct})
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-sm bg-rose-400" />
+                            <span className="text-xs text-slate-500">
+                                Incorrect ({summary.incorrect})
+                            </span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="w-3 h-3 rounded-sm bg-slate-200" />
+                            <span className="text-xs text-slate-500">
+                                Unattempted ({summary.unattempted})
+                            </span>
+                        </div>
                     </div>
                 </section>
 
@@ -463,30 +404,272 @@ export default function TestReviewPage() {
                     </Button>
                 </div>
             </div>
+
+            {/* ============================================
+                FULLSCREEN REVIEW OVERLAY
+            ============================================ */}
+            {openItem && openIndex !== null && (
+                <div className="fixed inset-0 z-50 flex flex-col bg-[#e8eef3]">
+                    {/* ── HEADER BAR (matches test env) ── */}
+                    <header className="bg-[#1a2744] text-white px-4 py-2.5 flex items-center justify-between shrink-0">
+                        {/* Left */}
+                        <div className="flex items-center gap-4">
+                            <h3 className="text-sm font-semibold hidden md:block">
+                                {test.subject.name} — Review
+                            </h3>
+                            <Badge
+                                variant="outline"
+                                className="border-white/30 text-white text-xs"
+                            >
+                                Q {openItem.question_number} / {questions.length}
+                            </Badge>
+                        </div>
+
+                        {/* Center status */}
+                        <div className="flex items-center gap-3">
+                            {openItem.time_spent_secs > 0 && (
+                                <div className="flex items-center gap-1.5 text-white/70 text-xs">
+                                    <Clock className="h-3.5 w-3.5" />
+                                    {formatTime(openItem.time_spent_secs)}
+                                </div>
+                            )}
+                            <Badge
+                                className={cn(
+                                    "text-xs font-medium",
+                                    !openItem.was_attempted
+                                        ? "bg-slate-500/40 text-white"
+                                        : openItem.is_correct
+                                          ? "bg-emerald-500/90 text-white"
+                                          : "bg-rose-400/90 text-white",
+                                )}
+                            >
+                                {!openItem.was_attempted
+                                    ? "Unattempted"
+                                    : openItem.is_correct
+                                      ? "Correct"
+                                      : "Incorrect"}
+                            </Badge>
+                            <span className="text-xs text-white/60 tabular-nums">
+                                {openItem.marks_earned}/{openItem.question.marks} mk
+                            </span>
+                        </div>
+
+                        {/* Right: close */}
+                        <button
+                            onClick={() => setOpenIndex(null)}
+                            className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
+                        >
+                            <XCircle className="h-4 w-4" />
+                            Close
+                        </button>
+                    </header>
+
+                    {/* ── SPLIT PANEL CONTENT ── */}
+                    <div className="flex-1 flex overflow-hidden">
+                        {/* Left panel: passage */}
+                        {openHasPassage && (
+                            <div className="w-1/2 border-r bg-white flex flex-col">
+                                {openItem.question.passage && (
+                                     <Tabs
+                                defaultValue="extract"
+                                className="flex flex-col h-full"
+                            >
+                                <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
+                                    <TabsList className="bg-transparent h-auto p-0 gap-0">
+                                        <TabsTrigger
+                                            value="extract"
+                                            className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
+                                        >
+                                            {openItem.question.passage?.passage_type === "poem"
+                                                ? "Poem"
+                                                : openItem.question.passage?.title || "Extract"}
+                                        </TabsTrigger>
+                                    </TabsList>
+                                </div>
+                                <TabsContent
+                                    value="extract"
+                                    className="flex-1 m-0"
+                                >
+                                    <ScrollArea className="h-full">
+                                        <div className="p-6 md:p-8">
+                                            {openItem.question.passage?.title && (
+                                                <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                    {openItem.question.passage.title}
+                                                </h3>
+                                            )}
+                                            {openItem.question.passage?.image_url && (
+                                                <div className="mb-4">
+                                                    <img
+                                                        src={openItem.question.passage.image_url}
+                                                        alt={
+                                                            openItem.question.passage.title ||
+                                                            "Passage image"
+                                                        }
+                                                        className="max-w-full rounded-lg"
+                                                    />
+                                                </div>
+                                            )}
+                                            <div
+                                                className={`leading-relaxed text-gray-800 ${
+                                                    openItem.question.passage?.passage_type ===
+                                                    "poem"
+                                                        ? "whitespace-pre-line italic"
+                                                        : ""
+                                                }`}
+                                            >
+                                                {openItem.question.passage?.content}
+                                            </div>
+                                        </div>
+                                    </ScrollArea>
+                                </TabsContent>
+                            </Tabs> 
+                                )}
+
+                            </div>
+                        )}
+                        
+
+                        {/* Right panel (or full width): question + answers in split layout */}
+                        <div className={`${openHasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white`}>
+                            <ScrollArea className="flex-1">
+                                <ReviewQuestionDisplay
+                                    question={openItem.question}
+                                    questionNumber={openItem.question_number}
+                                    studentAnswer={openItem.student_answer}
+                                    wasAttempted={openItem.was_attempted}
+                                    solutionText={openItem.question.solution_text}
+                                    showSolution={showSolution}
+                                    onToggleSolution={() => setShowSolution(!showSolution)}
+                                />
+                            </ScrollArea>
+                        </div>
+                    </div>
+
+                    {/* ── BOTTOM NAV BAR (matches test env) ── */}
+                    <footer className="border-t bg-white px-4 py-3 flex items-center justify-between shrink-0">
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setOpenIndex(Math.max(0, openIndex - 1));
+                                setShowSolution(false);
+                            }}
+                            disabled={openIndex === 0}
+                            className="gap-2"
+                        >
+                            <ArrowLeft className="h-4 w-4" />
+                            Back
+                        </Button>
+
+                        {/* Mini question grid */}
+                        <div className="hidden md:flex flex-wrap px-10 items-center gap-1.5">
+                            {questions.map((item, idx) => (
+                                <button
+                                    key={`nav-${item.question.id}`}
+                                    onClick={() => {
+                                        setOpenIndex(idx);
+                                        setShowSolution(false);
+                                    }}
+                                    className={cn(
+                                        "w-7 h-7 rounded text-xs font-semibold transition-all flex items-center justify-center",
+                                        openIndex === idx
+                                            ? "ring-2 ring-[#1a2744] ring-offset-1 scale-110"
+                                            : "hover:scale-105",
+                                        !item.was_attempted
+                                            ? "bg-slate-200 text-slate-500"
+                                            : item.is_correct
+                                              ? "bg-emerald-500 text-white"
+                                              : "bg-rose-400 text-white",
+                                    )}
+                                >
+                                    {item.question_number}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Mobile counter */}
+                        <span className="md:hidden text-xs text-slate-400 tabular-nums">
+                            {openIndex + 1} of {questions.length}
+                        </span>
+
+                        <Button
+                            onClick={() => {
+                                setOpenIndex(Math.min(questions.length - 1, openIndex + 1));
+                                setShowSolution(false);
+                            }}
+                            disabled={openIndex === questions.length - 1}
+                            className="gap-2 bg-[#1a2744] hover:bg-[#1a2744]/90"
+                        >
+                            Next
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
+                    </footer>
+                </div>
+            )}
         </div>
     );
 }
 
 // ============================================
-// QUESTION DISPLAY
+// REVIEW QUESTION DISPLAY — split layout:
+// Left column: question stem + solution
+// Right column: options / answers with highlights
 // ============================================
-function QuestionDisplay({
+function ReviewQuestionDisplay({
     question,
+    questionNumber,
     studentAnswer,
     wasAttempted,
+    solutionText,
+    showSolution,
+    onToggleSolution,
 }: {
     question: ReviewQuestion["question"];
+    questionNumber: number;
     studentAnswer: unknown;
     wasAttempted: boolean;
+    solutionText: string | null;
+    showSolution: boolean;
+    onToggleSolution: () => void;
 }) {
     const content = question.content;
     const correctAnswer = question.correct_answer;
+
+    const questionBadge = (
+        <div className="flex items-center gap-3 mb-6">
+            <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
+                Q{questionNumber}
+            </span>
+            <Badge variant="outline" className="text-xs">
+                {question.marks === 1 ? "1 mark" : `${question.marks} marks`}
+            </Badge>
+        </div>
+    );
+
+    const solutionBlock = solutionText ? (
+        <div className="mt-6 pt-6 border-t border-gray-100">
+            <button
+                onClick={onToggleSolution}
+                className="inline-flex items-center gap-2 text-sm font-medium text-[#1a2744] hover:text-[#1a2744]/80 transition-colors"
+            >
+                <Lightbulb className="h-4 w-4" />
+                {showSolution ? "Hide Solution" : "Show Solution"}
+            </button>
+            {showSolution && (
+                <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-slate-700 leading-relaxed">
+                        {solutionText}
+                    </p>
+                </div>
+            )}
+        </div>
+    ) : null;
 
     switch (question.question_type) {
         case "mcq":
         case "passage_mcq":
         case "poem_mcq": {
             const questionText = content.question as string;
+            const questionImage = content.question_image as string | undefined;
             const options = content.options as Array<{
                 label: string;
                 text?: string;
@@ -498,56 +681,97 @@ function QuestionDisplay({
             const studentLabel = (studentAnswer as string)?.toUpperCase();
 
             return (
-                <div>
-                    <p className="text-sm text-slate-800 mb-4 leading-relaxed">
-                        {questionText}
-                    </p>
-                    <div className="space-y-2">
-                        {options.map((option, index) => {
-                            const optionLabel = option.label.toUpperCase();
-                            const isCorrect = optionLabel === correctLabel;
-                            const isSelected = optionLabel === studentLabel;
-
-                            return (
-                                <div
-                                    key={`mcq-opt-${index}`}
-                                    className={`flex items-center gap-3 p-3 rounded-lg text-sm transition-colors ${
-                                        isCorrect
-                                            ? "bg-emerald-50 text-slate-800"
-                                            : isSelected
-                                              ? "bg-rose-50 text-slate-800"
-                                              : "bg-slate-50 text-slate-600"
-                                    }`}
-                                >
-                                    <span
-                                        className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
-                                            isCorrect
-                                                ? "bg-emerald-500 text-white"
-                                                : isSelected
-                                                  ? "bg-rose-400 text-white"
-                                                  : "bg-slate-200 text-slate-500"
-                                        }`}
-                                    >
-                                        {optionLabel}
-                                    </span>
-                                    <span className="flex-1">
-                                        {option.text}
-                                    </span>
-                                    {isCorrect && (
-                                        <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                                    )}
-                                    {isSelected && !isCorrect && (
-                                        <XCircle className="h-4 w-4 text-rose-400 shrink-0" />
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                    {!wasAttempted && (
-                        <p className="text-xs text-slate-400 mt-3 italic">
-                            Not attempted
+                <div className="grid grid-cols-2 gap-0 min-h-0">
+                    {/* Left: Question stem + solution */}
+                    <div className="p-6 md:p-8 border-r border-gray-200">
+                        {questionBadge}
+                        <p className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
+                            {questionText}
                         </p>
-                    )}
+                        {questionImage && (
+                            <img
+                                src={questionImage}
+                                alt="Question"
+                                className="max-w-full rounded-lg border mt-4"
+                            />
+                        )}
+                        {!wasAttempted && (
+                            <p className="text-xs text-slate-400 italic flex items-center gap-1.5 mt-4">
+                                <Minus className="h-3.5 w-3.5" />
+                                Not attempted
+                            </p>
+                        )}
+                        {solutionBlock}
+                    </div>
+
+                    {/* Right: Options with correct/wrong highlights */}
+                    <div className="p-6 md:p-8">
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+                            Answer Options
+                        </p>
+                        <div className="space-y-3">
+                            {options.map((option, index) => {
+                                const optionLabel = option.label.toUpperCase();
+                                const isCorrect = optionLabel === correctLabel;
+                                const isSelected = optionLabel === studentLabel;
+                                const isWrong = isSelected && !isCorrect;
+
+                                return (
+                                    <div
+                                        key={`mcq-opt-${index}`}
+                                        className={cn(
+                                            "w-full flex items-start gap-3 p-4 rounded-lg border-2 text-left",
+                                            isCorrect
+                                                ? "border-emerald-500 bg-emerald-50/80 shadow-sm"
+                                                : isWrong
+                                                  ? "border-rose-400 bg-rose-50/60"
+                                                  : "border-gray-200 bg-white",
+                                        )}
+                                    >
+                                        <span
+                                            className={cn(
+                                                "shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold",
+                                                isCorrect
+                                                    ? "bg-emerald-500 text-white"
+                                                    : isWrong
+                                                      ? "bg-rose-400 text-white"
+                                                      : "bg-gray-100 text-gray-600",
+                                            )}
+                                        >
+                                            {optionLabel}
+                                        </span>
+                                        <div className="flex-1 pt-1">
+                                            {option.text && (
+                                                <span
+                                                    className={cn(
+                                                        "text-sm leading-relaxed",
+                                                        isCorrect || isSelected
+                                                            ? "text-gray-900 font-medium"
+                                                            : "text-gray-700",
+                                                    )}
+                                                >
+                                                    {option.text}
+                                                </span>
+                                            )}
+                                            {option.image_url && (
+                                                <img
+                                                    src={option.image_url}
+                                                    alt={`Option ${optionLabel}`}
+                                                    className="max-w-xs rounded mt-2"
+                                                />
+                                            )}
+                                        </div>
+                                        {isCorrect && (
+                                            <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0 mt-1" />
+                                        )}
+                                        {isWrong && (
+                                            <XCircle className="h-5 w-5 text-rose-400 shrink-0 mt-1" />
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
             );
         }
@@ -563,50 +787,184 @@ function QuestionDisplay({
             const correctAnswers = (correctAnswer as { answers: number[] })
                 .answers;
 
-            return (
-                <div>
-                    <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-                        {passageText}
-                    </p>
-                    <div className="space-y-2">
-                        {blanks.map((blank, idx) => {
-                            const isCorrectBlank =
-                                studentAnswers[idx] === correctAnswers[idx];
-                            const studentOption =
-                                blank.options[studentAnswers[idx]];
-                            const correctOption =
-                                blank.options[correctAnswers[idx]];
+            const parts = passageText.split(/___+|\[\d+\]|\{blank\}/gi);
 
-                            return (
-                                <div
-                                    key={idx}
-                                    className="flex items-center gap-2 text-sm"
-                                >
-                                    <span className="text-xs font-medium text-slate-500 w-16 shrink-0">
-                                        Blank {idx + 1}
-                                    </span>
+            return (
+                <div className="grid grid-cols-2 gap-0 min-h-0">
+                    {/* Left: Passage with inline student answers + solution */}
+                    <div className="p-6 md:p-8 border-r border-gray-200">
+                        {questionBadge}
+                        <div className="text-base leading-relaxed text-slate-800">
+                            {parts.map((part, index) => (
+                                <span key={`fb-part-${index}`}>
+                                    {part}
+                                    {index < blanks.length && (() => {
+                                        const isCorrectBlank =
+                                            studentAnswers[index] ===
+                                            correctAnswers[index];
+                                        const studentOption =
+                                            blanks[index]?.options[
+                                                studentAnswers[index]
+                                            ];
+
+                                        return (
+                                            <span
+                                                className={cn(
+                                                    "inline-flex items-center gap-1 mx-1 px-2.5 py-0.5 rounded-md text-sm font-medium border",
+                                                    isCorrectBlank
+                                                        ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                                                        : "bg-rose-50 border-rose-300 text-rose-700",
+                                                )}
+                                            >
+                                                {studentOption || "Skipped"}
+                                                {isCorrectBlank ? (
+                                                    <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                                                ) : (
+                                                    <XCircle className="h-3.5 w-3.5 text-rose-400" />
+                                                )}
+                                            </span>
+                                        );
+                                    })()}
+                                </span>
+                            ))}
+                        </div>
+                        {solutionBlock}
+                    </div>
+
+                    {/* Right: Correct answers */}
+                    <div className="p-6 md:p-8">
+                        <div className="p-4 bg-emerald-50/60 rounded-lg border border-emerald-200">
+                            <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-2.5">
+                                Correct Answers
+                            </p>
+                            <div className="space-y-1.5">
+                                {blanks.map((blank, idx) => {
+                                    const isCorrectBlank =
+                                        studentAnswers[idx] === correctAnswers[idx];
+                                    const correctOpt =
+                                        blank.options[correctAnswers[idx]];
+
+                                    return (
+                                        <div
+                                            key={idx}
+                                            className="flex items-center gap-2 text-sm"
+                                        >
+                                            <span className="text-xs font-medium text-emerald-600 w-16 shrink-0">
+                                                Blank {idx + 1}
+                                            </span>
+                                            <span className="text-emerald-700 font-medium">
+                                                {correctOpt}
+                                            </span>
+                                            {isCorrectBlank && (
+                                                <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        case "fill_missing_sentence": {
+            const passageWithGaps = content.passage_with_gaps as string;
+            const sentences = content.sentences as string[];
+            const studentMapping = (studentAnswer as Record<string, number>) || {};
+            const correctMapping = (correctAnswer as { mapping: Record<string, number> }).mapping;
+
+            const gapPattern = /\{(GAP_\d+)\}/g;
+            const textParts: Array<{ type: "text" | "gap"; value: string }> = [];
+            let lastIdx = 0;
+            let match;
+
+            while ((match = gapPattern.exec(passageWithGaps)) !== null) {
+                if (match.index > lastIdx) {
+                    textParts.push({
+                        type: "text",
+                        value: passageWithGaps.slice(lastIdx, match.index),
+                    });
+                }
+                textParts.push({ type: "gap", value: match[1] });
+                lastIdx = match.index + match[0].length;
+            }
+            if (lastIdx < passageWithGaps.length) {
+                textParts.push({
+                    type: "text",
+                    value: passageWithGaps.slice(lastIdx),
+                });
+            }
+
+            return (
+                <div className="grid grid-cols-2 gap-0 min-h-0">
+                    {/* Left: Passage with gap results + solution */}
+                    <div className="p-6 md:p-8 border-r border-gray-200">
+                        {questionBadge}
+                        <div className="text-base leading-relaxed text-slate-800">
+                            {textParts.map((part, i) => {
+                                if (part.type === "text") {
+                                    return (
+                                        <span key={`fms-text-${i}`}>
+                                            {part.value}
+                                        </span>
+                                    );
+                                }
+                                const studentIdx = studentMapping[part.value];
+                                const correctIdx = correctMapping?.[part.value];
+                                const isCorrectGap = studentIdx === correctIdx;
+                                const selectedSentence =
+                                    studentIdx !== undefined
+                                        ? sentences[studentIdx]
+                                        : null;
+
+                                return (
                                     <span
-                                        className={
-                                            isCorrectBlank
-                                                ? "text-emerald-600 font-medium"
-                                                : "text-rose-500 line-through"
-                                        }
+                                        key={`fms-gap-${i}`}
+                                        className={cn(
+                                            "inline-block mx-1 px-3 py-1 rounded-md text-sm font-medium border",
+                                            isCorrectGap
+                                                ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                                                : "bg-rose-50 border-rose-300 text-rose-700",
+                                        )}
                                     >
-                                        {studentOption || "Skipped"}
+                                        {selectedSentence || "Empty"}
+                                        {isCorrectGap ? (
+                                            <CheckCircle className="inline h-3.5 w-3.5 ml-1 text-emerald-500" />
+                                        ) : (
+                                            <XCircle className="inline h-3.5 w-3.5 ml-1 text-rose-400" />
+                                        )}
                                     </span>
-                                    {!isCorrectBlank && (
-                                        <>
-                                            <span className="text-slate-300">
-                                                →
+                                );
+                            })}
+                        </div>
+                        {solutionBlock}
+                    </div>
+
+                    {/* Right: Correct placement */}
+                    <div className="p-6 md:p-8">
+                        <div className="p-4 bg-emerald-50/60 rounded-lg border border-emerald-200">
+                            <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-2.5">
+                                Correct Placement
+                            </p>
+                            <div className="space-y-1.5">
+                                {Object.entries(correctMapping || {}).map(
+                                    ([gapKey, sentenceIdx]) => (
+                                        <div
+                                            key={gapKey}
+                                            className="flex items-start gap-2 text-sm"
+                                        >
+                                            <span className="text-xs font-medium text-emerald-600 w-16 shrink-0 pt-0.5">
+                                                {gapKey.replace("_", " ")}
                                             </span>
-                                            <span className="text-emerald-600 font-medium">
-                                                {correctOption}
+                                            <span className="text-emerald-700">
+                                                {sentences[sentenceIdx as number]}
                                             </span>
-                                        </>
-                                    )}
-                                </div>
-                            );
-                        })}
+                                        </div>
+                                    ),
+                                )}
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -615,29 +973,50 @@ function QuestionDisplay({
         case "essay": {
             const prompt = content.prompt as string;
             const essayText = studentAnswer as string;
+            const wordLimit = content.word_limit as number | undefined;
 
             return (
-                <div>
-                    <p className="text-sm text-slate-800 font-medium mb-3">
-                        {prompt}
-                    </p>
-                    <div className="p-4 bg-slate-50 rounded-lg">
-                        <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                            {essayText || "No response submitted."}
+                <div className="grid grid-cols-2 gap-0 min-h-0">
+                    {/* Left: Prompt + solution */}
+                    <div className="p-6 md:p-8 border-r border-gray-200">
+                        {questionBadge}
+                        <p className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
+                            {prompt}
+                        </p>
+                        {wordLimit && (
+                            <Badge variant="outline" className="text-xs mt-3">
+                                Word limit: {wordLimit}
+                            </Badge>
+                        )}
+                        {solutionBlock}
+                    </div>
+
+                    {/* Right: Student response */}
+                    <div className="p-6 md:p-8">
+                        <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                                Your Response
+                            </p>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
+                                {essayText || "No response submitted."}
+                            </p>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-3">
+                            Essays are evaluated by AI. Score may vary.
                         </p>
                     </div>
-                    <p className="text-xs text-slate-400 mt-2">
-                        Essays are evaluated by AI. Score may vary.
-                    </p>
                 </div>
             );
         }
 
         default:
             return (
-                <p className="text-sm text-slate-400">
-                    Review not available for this question type.
-                </p>
+                <div className="p-6 md:p-8">
+                    {questionBadge}
+                    <p className="text-sm text-slate-400">
+                        Review not available for this question type.
+                    </p>
+                </div>
             );
     }
 }

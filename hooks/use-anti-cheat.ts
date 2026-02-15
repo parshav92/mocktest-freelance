@@ -160,8 +160,8 @@ export function useAntiCheat({
           if (!document.fullscreenElement && isFullscreenRef.current) {
             isFullscreenRef.current = false;
             addWarning();
-            // Try to re-enter fullscreen
-            enterFullscreen();
+            // Don't try to re-enter fullscreen here — browser blocks it without user gesture.
+            // Re-entry happens when user clicks "I Understand" on the warning modal.
           } else if (document.fullscreenElement) {
             isFullscreenRef.current = true;
           }

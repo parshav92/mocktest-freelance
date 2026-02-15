@@ -163,7 +163,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                     key={test.id}
                     className="bg-white hover:shadow-md transition-shadow shrink-0"
                   >
-                    <CardContent className="p-3">
+                    <CardContent className="px-4">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
