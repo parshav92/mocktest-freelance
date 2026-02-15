@@ -1,8 +1,11 @@
 import Navbar from "@/components/navbar";
 import HeroSection from "@/components/landing/hero-section";
 import AboutSection from "@/components/landing/about-section";
-// import ProductivitySection from "@/components/landing/productivity-section";
+import WhyUsSection from "@/components/landing/why-us-section";
 import PricingSection from "@/components/landing/pricing-section";
+import FAQSection from "@/components/landing/faq-section";
+import GradientTransition from "@/components/landing/gradient-transition";
+import ContactSection from "@/components/landing/contact-section";
 import Footer from "@/components/landing/footer";
 
 export default function Home() {
@@ -11,8 +14,11 @@ export default function Home() {
             <Navbar />
             <HeroSection />
             <AboutSection />
-            {/* <ProductivitySection /> */}
+            <WhyUsSection />
             <PricingSection />
+            <FAQSection />
+            <GradientTransition />
+            <ContactSection />
             <Footer />
         </div>
     );

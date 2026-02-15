@@ -1,7 +1,13 @@
-import React from "react";
+import Navbar from "@/components/navbar";
+import ContactSection from "@/components/landing/contact-section";
+import Footer from "@/components/landing/footer";
 
-const ContactPage = () => {
-    return <div>ContactPage</div>;
-};
-
-export default ContactPage;
+export default function ContactPage() {
+    return (
+        <div className="min-h-screen">
+            <Navbar />
+            <ContactSection isPage={true} />
+            <Footer />
+        </div>
+    );
+}

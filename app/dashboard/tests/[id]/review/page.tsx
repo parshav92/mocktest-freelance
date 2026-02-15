@@ -174,7 +174,11 @@ export default function TestReviewPage() {
 
     const { test, questions, summary } = reviewData;
     const barColor = (pct: number) =>
-        pct >= 75 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-400" : "bg-rose-400";
+        pct >= 75
+            ? "bg-emerald-500"
+            : pct >= 50
+              ? "bg-amber-400"
+              : "bg-rose-400";
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -240,7 +244,9 @@ export default function TestReviewPage() {
                     {/* Stat row */}
                     <div className="mt-8 flex flex-wrap gap-8">
                         <div>
-                            <p className="text-xs text-slate-500 mb-0.5">Correct</p>
+                            <p className="text-xs text-slate-500 mb-0.5">
+                                Correct
+                            </p>
                             <p className="text-lg font-semibold text-slate-900 tabular-nums">
                                 {summary.correct}
                                 <span className="text-slate-400 font-normal">
@@ -249,7 +255,9 @@ export default function TestReviewPage() {
                             </p>
                         </div>
                         <div>
-                            <p className="text-xs text-slate-500 mb-0.5">Marks</p>
+                            <p className="text-xs text-slate-500 mb-0.5">
+                                Marks
+                            </p>
                             <p className="text-lg font-semibold text-slate-900 tabular-nums">
                                 {summary.marks_obtained}
                                 <span className="text-slate-400 font-normal">
@@ -258,13 +266,17 @@ export default function TestReviewPage() {
                             </p>
                         </div>
                         <div>
-                            <p className="text-xs text-slate-500 mb-0.5">Time</p>
+                            <p className="text-xs text-slate-500 mb-0.5">
+                                Time
+                            </p>
                             <p className="text-lg font-semibold text-slate-900 tabular-nums">
                                 {formatTime(summary.time_spent_secs)}
                             </p>
                         </div>
                         <div>
-                            <p className="text-xs text-slate-500 mb-0.5">Unattempted</p>
+                            <p className="text-xs text-slate-500 mb-0.5">
+                                Unattempted
+                            </p>
                             <p className="text-lg font-semibold text-slate-900 tabular-nums">
                                 {summary.unattempted}
                             </p>
@@ -518,7 +530,9 @@ function QuestionDisplay({
                                     >
                                         {optionLabel}
                                     </span>
-                                    <span className="flex-1">{option.text}</span>
+                                    <span className="flex-1">
+                                        {option.text}
+                                    </span>
                                     {isCorrect && (
                                         <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
                                     )}

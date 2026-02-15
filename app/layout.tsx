@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import { Funnel_Display, Inter } from "next/font/google";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const funnelDisplay = Funnel_Display({
+const plusJakarta = Plus_Jakarta_Sans({
     subsets: ["latin"],
     weight: ["300", "400", "500", "600", "700"],
-    variable: "--font-funnel-display",
+    variable: "--font-plus-jakarta-sans",
 });
 
 const inter = Inter({
@@ -27,7 +27,7 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body
-                className={`${funnelDisplay.className} ${inter.variable} antialiased bg-neutral-200/20`}
+                className={`${inter.variable} ${plusJakarta.variable} font-jakarta antialiased`}
             >
                 {children}
             </body>

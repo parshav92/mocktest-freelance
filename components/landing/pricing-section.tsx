@@ -38,19 +38,21 @@ const PricingSection = () => {
     ];
 
     return (
-        <section className="w-full bg-zinc-50 py-24 px-6">
+        <section id="pricing" className="w-full bg-slate-50 py-24 px-6">
             <div className="max-w-4xl mx-auto">
                 {/* Section Header */}
                 <div className="text-center mb-16">
-                    <span className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-full px-4 py-2 text-emerald-600 text-[10px] font-bold tracking-[0.2em] uppercase mb-6">
+                    <span className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100 rounded-full px-4 py-2 text-sky-600 text-[10px] font-bold tracking-[0.2em] uppercase mb-6">
                         <Sparkles className="w-3 h-3" />
                         Simple Pricing
                     </span>
-                    <h2 className="text-3xl md:text-5xl font-bold text-zinc-900 heading-tight max-w-2xl mx-auto mb-4">
-                        Choose Your{" "}
-                        <span className="text-emerald-500">Plan</span>
+                    <h2
+                        className="text-3xl md:text-5xl font-bold text-slate-900 mb-4"
+                        style={{ letterSpacing: "-0.04em" }}
+                    >
+                        Choose Your <span className="text-sky-600">Plan</span>
                     </h2>
-                    <p className="text-zinc-500 max-w-lg mx-auto">
+                    <p className="text-slate-500 max-w-lg mx-auto">
                         Start your journey to academic excellence with our
                         straightforward pricing. No hidden fees.
                     </p>
@@ -143,7 +145,7 @@ const PricingSection = () => {
                                                 </div>
                                                 {feature}
                                             </li>
-                                        )
+                                        ),
                                     )}
                                 </ul>
 
