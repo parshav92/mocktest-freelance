@@ -14,7 +14,6 @@ import {
     BookOpen,
     Award,
     TrendingUp,
-    Home,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -274,7 +273,7 @@ export default function AuthPage() {
                         href="/"
                         className="lg:hidden absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-colors"
                     >
-                        <Home className="w-4 h-4" />
+                        <ArrowLeft className="w-4 h-4" />
                         Home
                     </Link>
 

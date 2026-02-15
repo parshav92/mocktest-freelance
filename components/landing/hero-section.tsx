@@ -19,7 +19,7 @@ const HeroSection = () => {
             <div className="relative z-10 flex-1 flex items-center justify-center px-6 md:px-12 lg:px-20">
                 <div className="max-w-4xl mx-auto text-center">
                     {/* Label */}
-                    <div className="animate-fade-in-up inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-sky-200/80 shadow-sm mb-8 hover:shadow-md transition-shadow duration-300">
+                    <div className="animate-fade-in-up inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-sky-200/80 shadow-sm md:mt-8 mb-4 hover:shadow-md transition-shadow duration-300">
                         <span className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
@@ -85,7 +85,7 @@ const HeroSection = () => {
             <div className="relative z-10 w-full mt-auto">
                 <div className="relative max-w-6xl mx-auto px-6 md:px-12 lg:px-20">
                     {/* Paper Clip */}
-                    <div className="absolute left-1/3 -translate-x-1/2 -top-8 z-20">
+                    <div className="absolute left-16 md:left-1/3 md:-translate-x-1/2 -top-6 z-20">
                         <div
                             className="relative"
                             style={{ transform: "rotate(-12deg)" }}

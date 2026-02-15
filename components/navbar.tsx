@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Menu, X, ChevronRight } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navLinks = [
@@ -50,10 +50,10 @@ const Navbar = () => {
                 scrolled ? "py-3" : "py-5",
             )}
         >
-            <div className="max-w-6xl w-fit mx-auto px-6">
+            <div className="max-w-6xl w-fit ml-auto md:mx-auto px-6">
                 <nav
                     className={cn(
-                        "relative flex items-center justify-between md:justify-center px-6 py-3 rounded-2xl transition-all duration-500",
+                        "relative flex items-center justify-between md:justify-center px-4 py-2 rounded-2xl transition-all duration-500",
                         scrolled
                             ? "bg-white/80 backdrop-blur-xl shadow-lg shadow-black/[0.03]"
                             : "bg-transparent",
