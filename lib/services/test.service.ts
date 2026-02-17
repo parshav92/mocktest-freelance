@@ -459,6 +459,13 @@ export class TestService {
             (now.getTime() - startedAt.getTime()) / 1000,
         );
 
+        // Set empty score breakdown for ended early tests
+        const scoreBreakdown = {
+            easy: { total: 0, correct: 0, percentage: 0 },
+            medium: { total: 0, correct: 0, percentage: 0 },
+            hard: { total: 0, correct: 0, percentage: 0 },
+        };
+
         const { data: updatedTest, error } = await this.supabase
             .from("tests")
             .update({
@@ -467,6 +474,7 @@ export class TestService {
                 time_spent_secs: timeSpentSecs,
                 marks_obtained: 0,
                 percentage: 0,
+                score_breakdown: scoreBreakdown,
             })
             .eq("id", testId)
             .select()

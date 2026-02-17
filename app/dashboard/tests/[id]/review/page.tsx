@@ -17,9 +17,13 @@ import {
     Minus,
     Clock,
     Lightbulb,
+    FileText,
+    ListChecks,
+    PenLine,
+    BookOpen,
+    ClipboardList,
 } from "lucide-react";
-import {Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ReviewQuestion {
     question_number: number;
@@ -337,7 +341,7 @@ export default function TestReviewPage() {
                     </p>
 
                     {/* Question grid */}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex flex-wrap gap-2 ">
                         {questions.map((item, idx) => (
                             <button
                                 key={item.question.id}
@@ -384,6 +388,137 @@ export default function TestReviewPage() {
                     </div>
                 </section>
 
+                <div className="h-px bg-slate-200" />
+
+                {/* ============================================
+                    DETAILED RESULTS TABLE
+                ============================================ */}
+                <section className="py-10">
+                    <div className="flex items-center gap-2 mb-2">
+                        <ClipboardList className="h-5 w-5 text-slate-400" />
+                        <h2 className="text-lg font-medium text-slate-800">
+                            Detailed Results
+                        </h2>
+                    </div>
+                    <p className="text-sm text-slate-500 mb-6">
+                        Click a question to view your response in detail.
+                    </p>
+
+                    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+                        {/* Table Header */}
+                        <div className="grid grid-cols-[60px_80px_1fr_100px] bg-slate-50 border-b border-slate-200 px-4 py-3">
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                #
+                            </span>
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                Type
+                            </span>
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                Question
+                            </span>
+                            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">
+                                Result
+                            </span>
+                        </div>
+
+                        {/* Table Body */}
+                        <div className="divide-y divide-slate-100">
+                            {questions.map((item, idx) => {
+                                const questionType =
+                                    item.question.question_type;
+                                const content = item.question.content as Record<
+                                    string,
+                                    unknown
+                                >;
+
+                                // Get question title/description
+                                const getQuestionTitle = () => {
+                                    if (item.question.passage?.title) {
+                                        return `${item.question.passage.title} Q${item.question_number}`;
+                                    }
+                                    if (content.question) {
+                                        const q = content.question as string;
+                                        return q.length > 60
+                                            ? q.substring(0, 60) + "..."
+                                            : q;
+                                    }
+                                    if (content.prompt) {
+                                        const p = content.prompt as string;
+                                        return p.length > 60
+                                            ? p.substring(0, 60) + "..."
+                                            : p;
+                                    }
+                                    return `Question ${item.question_number}`;
+                                };
+
+                                // Get type icon
+                                const getTypeIcon = () => {
+                                    switch (questionType) {
+                                        case "mcq":
+                                            return (
+                                                <ListChecks className="h-4 w-4 text-slate-400" />
+                                            );
+                                        case "passage_mcq":
+                                        case "poem_mcq":
+                                            return (
+                                                <BookOpen className="h-4 w-4 text-slate-400" />
+                                            );
+                                        case "essay":
+                                            return (
+                                                <PenLine className="h-4 w-4 text-slate-400" />
+                                            );
+                                        case "fill_blank_dropdown":
+                                        case "fill_missing_sentence":
+                                            return (
+                                                <FileText className="h-4 w-4 text-slate-400" />
+                                            );
+                                        default:
+                                            return (
+                                                <FileText className="h-4 w-4 text-slate-400" />
+                                            );
+                                    }
+                                };
+
+                                return (
+                                    <button
+                                        key={item.question.id}
+                                        onClick={() => {
+                                            setOpenIndex(idx);
+                                            setShowSolution(false);
+                                        }}
+                                        className="w-full grid grid-cols-[60px_80px_1fr_100px] px-4 py-3 hover:bg-slate-50 transition-colors text-left items-center"
+                                    >
+                                        <span className="text-sm font-medium text-sky-600">
+                                            {item.question_number}
+                                        </span>
+                                        <span className="flex items-center">
+                                            {getTypeIcon()}
+                                        </span>
+                                        <span className="text-sm text-sky-600 hover:text-sky-700 hover:underline truncate pr-4">
+                                            {getQuestionTitle()}
+                                        </span>
+                                        <span className="flex justify-center">
+                                            {!item.was_attempted ? (
+                                                <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                                                    <Minus className="h-4 w-4 text-slate-400" />
+                                                </div>
+                                            ) : item.is_correct ? (
+                                                <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                                                    <CheckCircle className="h-4 w-4 text-emerald-600" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-8 h-8 rounded-lg bg-rose-100 flex items-center justify-center">
+                                                    <XCircle className="h-4 w-4 text-rose-500" />
+                                                </div>
+                                            )}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </section>
+
                 {/* ============================================
                     ACTIONS
                 ============================================ */}
@@ -421,7 +556,8 @@ export default function TestReviewPage() {
                                 variant="outline"
                                 className="border-white/30 text-white text-xs"
                             >
-                                Q {openItem.question_number} / {questions.length}
+                                Q {openItem.question_number} /{" "}
+                                {questions.length}
                             </Badge>
                         </div>
 
@@ -450,7 +586,8 @@ export default function TestReviewPage() {
                                       : "Incorrect"}
                             </Badge>
                             <span className="text-xs text-white/60 tabular-nums">
-                                {openItem.marks_earned}/{openItem.question.marks} mk
+                                {openItem.marks_earned}/
+                                {openItem.question.marks} mk
                             </span>
                         </div>
 
@@ -470,76 +607,105 @@ export default function TestReviewPage() {
                         {openHasPassage && (
                             <div className="w-1/2 border-r bg-white flex flex-col">
                                 {openItem.question.passage && (
-                                     <Tabs
-                                defaultValue="extract"
-                                className="flex flex-col h-full"
-                            >
-                                <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
-                                    <TabsList className="bg-transparent h-auto p-0 gap-0">
-                                        <TabsTrigger
-                                            value="extract"
-                                            className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
-                                        >
-                                            {openItem.question.passage?.passage_type === "poem"
-                                                ? "Poem"
-                                                : openItem.question.passage?.title || "Extract"}
-                                        </TabsTrigger>
-                                    </TabsList>
-                                </div>
-                                <TabsContent
-                                    value="extract"
-                                    className="flex-1 m-0"
-                                >
-                                    <ScrollArea className="h-full">
-                                        <div className="p-6 md:p-8">
-                                            {openItem.question.passage?.title && (
-                                                <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                    {openItem.question.passage.title}
-                                                </h3>
-                                            )}
-                                            {openItem.question.passage?.image_url && (
-                                                <div className="mb-4">
-                                                    <img
-                                                        src={openItem.question.passage.image_url}
-                                                        alt={
-                                                            openItem.question.passage.title ||
-                                                            "Passage image"
-                                                        }
-                                                        className="max-w-full rounded-lg"
-                                                    />
-                                                </div>
-                                            )}
-                                            <div
-                                                className={`leading-relaxed text-gray-800 ${
-                                                    openItem.question.passage?.passage_type ===
+                                    <Tabs
+                                        defaultValue="extract"
+                                        className="flex flex-col h-full"
+                                    >
+                                        <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
+                                            <TabsList className="bg-transparent h-auto p-0 gap-0">
+                                                <TabsTrigger
+                                                    value="extract"
+                                                    className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
+                                                >
+                                                    {openItem.question.passage
+                                                        ?.passage_type ===
                                                     "poem"
-                                                        ? "whitespace-pre-line italic"
-                                                        : ""
-                                                }`}
-                                            >
-                                                {openItem.question.passage?.content}
-                                            </div>
+                                                        ? "Poem"
+                                                        : openItem.question
+                                                              .passage?.title ||
+                                                          "Extract"}
+                                                </TabsTrigger>
+                                            </TabsList>
                                         </div>
-                                    </ScrollArea>
-                                </TabsContent>
-                            </Tabs> 
+                                        <TabsContent
+                                            value="extract"
+                                            className="flex-1 m-0"
+                                        >
+                                            <ScrollArea className="h-full">
+                                                <div className="p-6 md:p-8">
+                                                    {openItem.question.passage
+                                                        ?.title && (
+                                                        <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                            {
+                                                                openItem
+                                                                    .question
+                                                                    .passage
+                                                                    .title
+                                                            }
+                                                        </h3>
+                                                    )}
+                                                    {openItem.question.passage
+                                                        ?.image_url && (
+                                                        <div className="mb-4">
+                                                            <img
+                                                                src={
+                                                                    openItem
+                                                                        .question
+                                                                        .passage
+                                                                        .image_url
+                                                                }
+                                                                alt={
+                                                                    openItem
+                                                                        .question
+                                                                        .passage
+                                                                        .title ||
+                                                                    "Passage image"
+                                                                }
+                                                                className="max-w-full rounded-lg"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    <div
+                                                        className={`leading-relaxed text-gray-800 ${
+                                                            openItem.question
+                                                                .passage
+                                                                ?.passage_type ===
+                                                            "poem"
+                                                                ? "whitespace-pre-line italic"
+                                                                : ""
+                                                        }`}
+                                                    >
+                                                        {
+                                                            openItem.question
+                                                                .passage
+                                                                ?.content
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </ScrollArea>
+                                        </TabsContent>
+                                    </Tabs>
                                 )}
-
                             </div>
                         )}
-                        
 
                         {/* Right panel (or full width): question + answers in split layout */}
-                        <div className={`${openHasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white`}>
+                        <div
+                            className={`${openHasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white`}
+                        >
                             <ScrollArea className="flex-1">
                                 <ReviewQuestionDisplay
                                     question={openItem.question}
                                     questionNumber={openItem.question_number}
                                     studentAnswer={openItem.student_answer}
                                     wasAttempted={openItem.was_attempted}
-                                    solutionText={openItem.question.solution_text}
+                                    solutionText={
+                                        openItem.question.solution_text
+                                    }
                                     showSolution={showSolution}
-                                    onToggleSolution={() => setShowSolution(!showSolution)}
+                                    onToggleSolution={() =>
+                                        setShowSolution(!showSolution)
+                                    }
                                 />
                             </ScrollArea>
                         </div>
@@ -570,7 +736,7 @@ export default function TestReviewPage() {
                                         setShowSolution(false);
                                     }}
                                     className={cn(
-                                        "w-7 h-7 rounded text-xs font-semibold transition-all flex items-center justify-center",
+                                        "w-7 h-7 rounded text-xs font-semibold transition-all flex items-center justify-center cursor-pointer",
                                         openIndex === idx
                                             ? "ring-2 ring-[#1a2744] ring-offset-1 scale-110"
                                             : "hover:scale-105",
@@ -593,7 +759,12 @@ export default function TestReviewPage() {
 
                         <Button
                             onClick={() => {
-                                setOpenIndex(Math.min(questions.length - 1, openIndex + 1));
+                                setOpenIndex(
+                                    Math.min(
+                                        questions.length - 1,
+                                        openIndex + 1,
+                                    ),
+                                );
                                 setShowSolution(false);
                             }}
                             disabled={openIndex === questions.length - 1}
@@ -798,33 +969,34 @@ function ReviewQuestionDisplay({
                             {parts.map((part, index) => (
                                 <span key={`fb-part-${index}`}>
                                     {part}
-                                    {index < blanks.length && (() => {
-                                        const isCorrectBlank =
-                                            studentAnswers[index] ===
-                                            correctAnswers[index];
-                                        const studentOption =
-                                            blanks[index]?.options[
-                                                studentAnswers[index]
-                                            ];
+                                    {index < blanks.length &&
+                                        (() => {
+                                            const isCorrectBlank =
+                                                studentAnswers[index] ===
+                                                correctAnswers[index];
+                                            const studentOption =
+                                                blanks[index]?.options[
+                                                    studentAnswers[index]
+                                                ];
 
-                                        return (
-                                            <span
-                                                className={cn(
-                                                    "inline-flex items-center gap-1 mx-1 px-2.5 py-0.5 rounded-md text-sm font-medium border",
-                                                    isCorrectBlank
-                                                        ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                                                        : "bg-rose-50 border-rose-300 text-rose-700",
-                                                )}
-                                            >
-                                                {studentOption || "Skipped"}
-                                                {isCorrectBlank ? (
-                                                    <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
-                                                ) : (
-                                                    <XCircle className="h-3.5 w-3.5 text-rose-400" />
-                                                )}
-                                            </span>
-                                        );
-                                    })()}
+                                            return (
+                                                <span
+                                                    className={cn(
+                                                        "inline-flex items-center gap-1 mx-1 px-2.5 py-0.5 rounded-md text-sm font-medium border",
+                                                        isCorrectBlank
+                                                            ? "bg-emerald-50 border-emerald-300 text-emerald-700"
+                                                            : "bg-rose-50 border-rose-300 text-rose-700",
+                                                    )}
+                                                >
+                                                    {studentOption || "Skipped"}
+                                                    {isCorrectBlank ? (
+                                                        <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
+                                                    ) : (
+                                                        <XCircle className="h-3.5 w-3.5 text-rose-400" />
+                                                    )}
+                                                </span>
+                                            );
+                                        })()}
                                 </span>
                             ))}
                         </div>
@@ -840,7 +1012,8 @@ function ReviewQuestionDisplay({
                             <div className="space-y-1.5">
                                 {blanks.map((blank, idx) => {
                                     const isCorrectBlank =
-                                        studentAnswers[idx] === correctAnswers[idx];
+                                        studentAnswers[idx] ===
+                                        correctAnswers[idx];
                                     const correctOpt =
                                         blank.options[correctAnswers[idx]];
 
@@ -871,11 +1044,15 @@ function ReviewQuestionDisplay({
         case "fill_missing_sentence": {
             const passageWithGaps = content.passage_with_gaps as string;
             const sentences = content.sentences as string[];
-            const studentMapping = (studentAnswer as Record<string, number>) || {};
-            const correctMapping = (correctAnswer as { mapping: Record<string, number> }).mapping;
+            const studentMapping =
+                (studentAnswer as Record<string, number>) || {};
+            const correctMapping = (
+                correctAnswer as { mapping: Record<string, number> }
+            ).mapping;
 
             const gapPattern = /\{(GAP_\d+)\}/g;
-            const textParts: Array<{ type: "text" | "gap"; value: string }> = [];
+            const textParts: Array<{ type: "text" | "gap"; value: string }> =
+                [];
             let lastIdx = 0;
             let match;
 
@@ -958,7 +1135,11 @@ function ReviewQuestionDisplay({
                                                 {gapKey.replace("_", " ")}
                                             </span>
                                             <span className="text-emerald-700">
-                                                {sentences[sentenceIdx as number]}
+                                                {
+                                                    sentences[
+                                                        sentenceIdx as number
+                                                    ]
+                                                }
                                             </span>
                                         </div>
                                     ),

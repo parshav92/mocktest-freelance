@@ -16,7 +16,6 @@ import {
     EyeOff,
     Loader2,
     LogOut,
-    Maximize,
     Send,
 } from "lucide-react";
 import { TEST_CONFIG } from "@/lib/config/test-rules";
@@ -63,6 +62,7 @@ export default function TestEnvironmentPage() {
     // ============================================
     const [phase, setPhase] = useState<TestPhase>("loading");
     const [error, setError] = useState<string | null>(null);
+    const [isResuming, setIsResuming] = useState(false);
 
     // Test data
     const [test, setTest] = useState<Test | null>(null);
@@ -147,14 +147,21 @@ export default function TestEnvironmentPage() {
                     ? {
                           name: testData.subject.name,
                           instructions: (() => {
-                              const raw = testData.subject.instructions as unknown;
+                              const raw = testData.subject
+                                  .instructions as unknown;
                               if (!raw) return null;
                               // DB stores { pages: [...] } JSONB
-                              if (typeof raw === "object" && raw !== null && "pages" in raw) {
-                                  return (raw as { pages: InstructionPage[] }).pages;
+                              if (
+                                  typeof raw === "object" &&
+                                  raw !== null &&
+                                  "pages" in raw
+                              ) {
+                                  return (raw as { pages: InstructionPage[] })
+                                      .pages;
                               }
                               // Already an array
-                              if (Array.isArray(raw)) return raw as InstructionPage[];
+                              if (Array.isArray(raw))
+                                  return raw as InstructionPage[];
                               return null;
                           })(),
                           duration_mins: testData.subject.duration_mins,
@@ -181,7 +188,13 @@ export default function TestEnvironmentPage() {
 
             // Determine starting phase
             if (testData.status === "in_progress") {
-                // Resuming — enter fullscreen directly
+                // Check if this is a fresh start by seeing if test started within last 10 seconds
+                const startedAt = new Date(testData.started_at!).getTime();
+                const now = Date.now();
+                const secondsSinceStart = (now - startedAt) / 1000;
+                const isFreshStart = secondsSinceStart < 10;
+
+                setIsResuming(!isFreshStart);
                 if (TEST_CONFIG.antiCheat.requireFullscreen) {
                     // Will enter fullscreen once component mounts and user interacts
                     setPhase("enter-fullscreen");
@@ -332,7 +345,13 @@ export default function TestEnvironmentPage() {
     };
 
     const handleInstructionsComplete = () => {
-        if (TEST_CONFIG.instructions.requireStartConfirmation) {
+        // If opening in new tab with fullscreen required, skip the modal and go directly
+        if (
+            TEST_CONFIG.antiCheat.openInNewTab &&
+            TEST_CONFIG.antiCheat.requireFullscreen
+        ) {
+            handleStartTest();
+        } else if (TEST_CONFIG.instructions.requireStartConfirmation) {
             setPhase("confirmation");
         } else {
             handleStartTest();
@@ -542,30 +561,27 @@ export default function TestEnvironmentPage() {
         );
     }
 
-    // ENTER FULLSCREEN GATE
+    // ENTER FULLSCREEN GATE (minimal - just the required user gesture)
     if (phase === "enter-fullscreen") {
         return (
             <div className="min-h-screen flex flex-col items-center justify-center bg-[#1a2744] font-[family-name:var(--font-inter)]">
-                <div className="text-center max-w-md mx-auto p-8">
-                    <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <Maximize className="h-8 w-8 text-white" />
+                <div className="text-center max-w-sm mx-auto p-8">
+                    <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-8">
+                        <Loader2 className="h-8 w-8 text-white animate-spin" />
                     </div>
-                    <h2 className="text-white text-2xl font-bold mb-3">
-                        Enter Fullscreen Mode
+                    <h2 className="text-white text-xl font-semibold mb-3">
+                        {isResuming ? "Ready to Continue" : "Ready to Begin"}
                     </h2>
-                    <p className="text-white/60 text-sm mb-2 leading-relaxed">
-                        This test must be taken in fullscreen mode. You will
-                        receive warnings if you exit fullscreen or switch tabs.
-                    </p>
-                    <p className="text-white/40 text-xs mb-8">
-                        After {TEST_CONFIG.antiCheat.maxWarnings} warnings your
-                        test will be automatically submitted.
+                    <p className="text-white/50 text-sm mb-8">
+                        {isResuming
+                            ? "Click below to resume your test"
+                            : "Click below to start your test"}
                     </p>
                     <Button
                         onClick={handleEnterFullscreen}
-                        className="bg-white text-[#1a2744] hover:bg-white/90 font-semibold text-base px-8 py-3 h-auto"
+                        className="bg-white text-[#1a2744] hover:bg-white/90 font-semibold text-base px-10 py-3 h-auto"
                     >
-                        Enter Fullscreen & Start Test
+                        {isResuming ? "Resume Test" : "Start Test"}
                     </Button>
                 </div>
             </div>
@@ -807,7 +823,6 @@ export default function TestEnvironmentPage() {
                                         {currentQuestion.marks} mark
                                         {currentQuestion.marks !== 1 ? "s" : ""}
                                     </Badge>
-                                    
                                 </div>
                             </div>
 
