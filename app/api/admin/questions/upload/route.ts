@@ -139,6 +139,20 @@ export async function POST(request: NextRequest) {
 }
 
 /**
+ * Infer subject slug from passage code prefix
+ * RD_P_xxx -> reading, WR_P_xxx -> writing, etc.
+ */
+function inferSubjectSlugFromPassageCode(code: string): string {
+  const upperCode = (code || "").toUpperCase();
+  if (upperCode.startsWith("RD_")) return "reading";
+  if (upperCode.startsWith("WR_")) return "writing";
+  if (upperCode.startsWith("MR_")) return "mathematical-reasoning";
+  if (upperCode.startsWith("TS_")) return "thinking-skills";
+  // Default to reading for passages
+  return "reading";
+}
+
+/**
  * Insert parsed passages into database
  */
 async function insertPassages(
@@ -149,6 +163,17 @@ async function insertPassages(
   if (passages.length === 0) {
     return { inserted: 0, batchId: null };
   }
+
+  // Get subject IDs for mapping
+  const { data: subjects, error: subjectError } = await supabase
+    .from("subjects")
+    .select("id, slug");
+
+  if (subjectError || !subjects) {
+    throw new Error("Failed to fetch subjects");
+  }
+
+  const subjectMap = new Map(subjects.map((s) => [s.slug, s.id]));
 
   // Check for duplicate codes
   const codes = passages.map((p) => p.code);
@@ -166,6 +191,14 @@ async function insertPassages(
 
   // Prepare passages for insert
   const passagesToInsert = passages.map((p) => {
+    // Infer subject from passage code
+    const subjectSlug = inferSubjectSlugFromPassageCode(p.code);
+    const subjectId = subjectMap.get(subjectSlug);
+
+    if (!subjectId) {
+      throw new Error(`Invalid subject for passage ${p.code}. Subject "${subjectSlug}" not found.`);
+    }
+
     // Get image URL if exists
     let imageUrl = null;
     for (const req of p.imageRequirements) {
@@ -178,7 +211,8 @@ async function insertPassages(
 
     return {
       code: p.code,
-      type: p.data.type,
+      subject_id: subjectId,
+      passage_type: p.data.type,  // CSV column is 'type', DB column is 'passage_type'
       title: p.data.title || null,
       content: p.data.content,
       image_url: imageUrl,
