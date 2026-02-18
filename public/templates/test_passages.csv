@@ -1,0 +1,31 @@
+code,type,title,content,has_image
+RD_P_T001,extract,The Brave Little Mouse,"In a cozy barn lived a tiny mouse named Max. Unlike other mice who feared the farm cat, Max was curious and brave. One stormy night, he heard scratching at the barn door. All the other animals hid in fear, but Max crept forward to investigate. To everyone's surprise, it was a lost kitten, shivering and hungry. Max remembered how his mother always said, ""Kindness knows no boundaries."" He shared his food and led the kitten to a warm corner. By morning, the kitten's mother found her, and from that day on, the cats and mice of the barn lived in peaceful harmony.",no
+RD_P_T002,extract,The Science Fair Project,"Emma had always loved science. When the school announced a science fair, she knew exactly what to do—build a miniature solar-powered car. She spent weeks collecting materials: old toy car wheels, a small solar panel from an electronics store, and wooden craft sticks for the frame. Her first attempt failed when the car wouldn't move. Instead of giving up, Emma analyzed the problem: the wheels were too heavy. After replacing them with lighter ones, the car zoomed across the table. On fair day, Emma's car won first place. More importantly, she learned that failure is just another step toward success.",yes
+RD_POEM_T001,poem,The River's Song,"The river flows through valley wide,
+With fish that swim and birds that glide,
+It whispers secrets to the trees,
+And carries leaves upon the breeze.
+
+In summer warm, it sparkles bright,
+Reflecting golden morning light,
+In winter cold, it slows its pace,
+A frozen mirror, smooth as lace.
+
+The river teaches us to see,
+That change is natural, wild, and free,
+Like water finding its own way,
+We learn and grow with every day.",no
+RD_POEM_T002,poem,Seasons of the Garden,"Spring arrives with gentle rain,
+Tiny seeds wake up again,
+Green shoots reaching for the sun,
+A brand new cycle has begun.
+
+Summer brings the warmest days,
+Flowers bloom in colorful displays,
+Bees collect their golden treasure,
+Working hard without a measure.
+
+Autumn paints the world in gold,
+As harvest stories are retold,
+Winter blankets all in white,
+Seeds dream softly through the night.",no

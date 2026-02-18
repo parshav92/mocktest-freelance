@@ -80,6 +80,12 @@ const UPLOAD_TYPES = [
         subjects: "Reading",
     },
     {
+        value: "fill_missing_sentence",
+        label: "Fill Missing Sentence",
+        description: "Select sentences to fill gaps in a passage",
+        subjects: "Reading",
+    },
+    {
         value: "passage",
         label: "Passages",
         description: "Reading passages, poems, extracts",

@@ -84,6 +84,14 @@ export const CSV_COLUMNS = {
     "blank_5_options", // Options for blank 5 (if any)
   ],
 
+  // Fill missing sentence (Reading) - drag and drop sentences into gaps
+  fill_missing_sentence: [
+    "code",             // Question code (e.g., RD_FMS_001)
+    "difficulty",       // easy, medium, hard
+    "passage_with_gaps", // Text with {GAP_1}, {GAP_2} etc for gaps
+    "sentences",         // Available sentences separated by | (pipe)
+  ],
+
   // Passages for reading comprehension
   passage: [
     "code",           // Passage code (e.g., RD_P_001)
@@ -121,6 +129,10 @@ RD_POEM_001,RD_POEM_P_001,easy,What rhyme scheme does the poem follow?,ABAB,AABB
   fill_blank: `code,passage_code,difficulty,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
 RD_FB_001,,easy,"The cat [1] on the mat. It was [2] comfortable.",sat|sit|set,very|much|more,,,
 RD_FB_002,,medium,"Reading books [1] your vocabulary and [2] your imagination.",improves|reduces|stops,expands|shrinks|limits,,,`,
+
+  fill_missing_sentence: `code,difficulty,passage_with_gaps,sentences
+RD_FMS_001,easy,"The park was beautiful in spring. {GAP_1} Birds sang in the trees. {GAP_2} Children played on the swings.","Flowers bloomed everywhere.|Families enjoyed picnics on the grass."
+RD_FMS_002,medium,"The science experiment was exciting. First we gathered all the materials. {GAP_1} We observed carefully and took notes. {GAP_2} Our results matched our predictions.","Then we mixed the chemicals together.|Finally we discussed what we learned."`,
 
   passage: `code,type,title,content,has_image
 RD_P_001,extract,The Loyal Friend,"Once upon a time, there lived two friends named Tom and Jerry...",no
@@ -161,5 +173,6 @@ export const QUESTION_TYPE_MAP = {
   "poem_mcq": "poem_mcq",
   "fill_blank": "fill_blank_dropdown",
   "fill_blank_dropdown": "fill_blank_dropdown",
+  "fill_missing_sentence": "fill_missing_sentence",
   "essay": "essay",
 } as const;

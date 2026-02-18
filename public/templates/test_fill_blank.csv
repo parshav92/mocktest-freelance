@@ -1,0 +1,9 @@
+code,passage_code,difficulty,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
+RD_FB_T001,,easy,The dog [1] loudly when a stranger [2] the door.,barked|bark|barks,knocked|knock|knocking,,,
+RD_FB_T002,,easy,She [1] to school every day and [2] hard in class.,walks|walk|walking,studies|study|studied,,,
+RD_FB_T003,,easy,The sun [1] in the east and [2] in the west.,rises|rise|rising,sets|set|setting,,,
+RD_FB_T004,,medium,After the rain [1] the flowers in the garden [2] to bloom. The children [3] outside to play.,stopped|stop|stops,began|begin|begins,ran|run|running,,
+RD_FB_T005,,medium,The scientist [1] an experiment to test her [2]. She recorded all her [3] carefully.,conducted|conducts|conduct,hypothesis|theory|idea,observations|ideas|thoughts,,
+RD_FB_T006,,medium,Reading books [1] your vocabulary and [2] your imagination. It also [3] your concentration skills.,improves|improve|improved,expands|expand|expanded,develops|develop|developed,,
+RD_FB_T007,,hard,The ancient Egyptians [1] magnificent pyramids that [2] thousands of years. These structures [3] the ingenuity of early engineers and [4] tourists from around the world.,built|build|building,lasted|last|lasts,demonstrate|demonstrates|demonstrated,attract|attracts|attracted,
+RD_FB_T008,,hard,Climate change [1] affecting weather patterns globally. Scientists [2] that temperatures will [3] to rise if we [4] to reduce carbon emissions [5].,is|are|was,predict|predicts|predicted,continue|continues|continued,fail|fails|failed,immediately|immediate|soon

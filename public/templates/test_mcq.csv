@@ -1,0 +1,11 @@
+code,subject,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image
+MR_T001,mathematical-reasoning,easy,What is 25 + 37?,52,62,72,82,B,Add: 25 + 37 = 62,no,no,no,no,no
+MR_T002,mathematical-reasoning,easy,What is 9 × 7?,54,63,72,81,B,9 × 7 = 63,no,no,no,no,no
+MR_T003,mathematical-reasoning,easy,How many sides does a pentagon have?,3,4,5,6,C,A pentagon has 5 sides,no,no,no,no,no
+MR_T004,mathematical-reasoning,medium,What is 144 ÷ 12?,10,11,12,13,C,144 ÷ 12 = 12,no,no,no,no,no
+MR_T005,mathematical-reasoning,medium,Look at the rectangle shown. What is its perimeter?,20 cm,32 cm,40 cm,96 cm,C,Perimeter = 2 × (length + width). See diagram for measurements.,yes,no,no,no,no
+MR_T006,mathematical-reasoning,hard,Which shape has the largest area?,Shape A,Shape B,Shape C,Shape D,A,Calculate area for each: Shape A = 48 sq cm is largest,yes,yes,yes,yes,yes
+TS_T001,thinking-skills,easy,"Find the odd one out: Dog, Cat, Fish, Car",Dog,Cat,Fish,Car,D,Car is not an animal,no,no,no,no,no
+TS_T002,thinking-skills,easy,"What comes next in the sequence: 2, 4, 6, 8, ?",9,10,11,12,B,The sequence increases by 2 each time,no,no,no,no,no
+TS_T003,thinking-skills,medium,Look at the pattern. Which shape comes next?,Shape 1,Shape 2,Shape 3,Shape 4,B,The pattern follows a rotation rule,yes,yes,yes,yes,yes
+TS_T004,thinking-skills,hard,"Complete the analogy: Day is to Night as Summer is to ?",Spring,Autumn,Winter,Morning,C,Day-Night are opposites; Summer-Winter are opposites,no,no,no,no,no

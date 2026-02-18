@@ -1,0 +1,9 @@
+code,difficulty,prompt,word_limit,time_mins,rubric
+WR_T001,easy,Write about your favorite animal and explain why you like it.,150,15,content:10|structure:5|grammar:5
+WR_T002,easy,Describe your best day ever. What happened and why was it special?,150,15,content:10|structure:5|grammar:5
+WR_T003,easy,Write about a person you admire and explain why you look up to them.,150,15,content:10|structure:5|grammar:5
+WR_T004,medium,Describe a challenge you faced and how you overcame it. What did you learn from the experience?,250,20,content:15|structure:10|grammar:5|reflection:5
+WR_T005,medium,"If you could have any superpower what would it be? Explain how you would use it to help others.",250,20,content:15|structure:10|grammar:5|creativity:5
+WR_T006,medium,Write about the importance of friendship. Use examples from your own life to support your ideas.,250,20,content:15|structure:10|grammar:5|examples:5
+WR_T007,hard,"Technology has changed how we communicate. Discuss both the benefits and drawbacks of modern communication technologies.",350,25,content:20|argument:10|structure:10|grammar:5|examples:5
+WR_T008,hard,"Environmental protection is everyone's responsibility. Discuss what individuals and communities can do to protect our planet.",350,25,content:20|argument:10|structure:10|grammar:5|solutions:5

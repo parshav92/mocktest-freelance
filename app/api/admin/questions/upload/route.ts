@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
     return errorResponse("Template type required", 400);
   }
 
-  const validTypes = ["mcq", "passage_mcq", "poem_mcq", "fill_blank", "passage", "essay"];
+  const validTypes = ["mcq", "passage_mcq", "poem_mcq", "fill_blank", "fill_missing_sentence", "passage", "essay"];
   if (!validTypes.includes(templateType)) {
     return errorResponse(`Invalid type. Use: ${validTypes.join(", ")}`, 400);
   }
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Data is required", 400);
     }
 
-    const validTypes = ["mcq", "passage_mcq", "poem_mcq", "fill_blank", "passage", "essay"];
+    const validTypes = ["mcq", "passage_mcq", "poem_mcq", "fill_blank", "fill_missing_sentence", "passage", "essay"];
     if (!validTypes.includes(uploadType)) {
       return errorResponse(`Invalid type. Use: ${validTypes.join(", ")}`, 400);
     }
@@ -266,13 +266,25 @@ async function insertQuestions(
     throw new Error(`Duplicate question codes: ${duplicates.join(", ")}`);
   }
 
+  // Infer subject slug from various sources
+  function inferSubjectSlug(data: Record<string, string>): string {
+    if (data.subject) return data.subject.toLowerCase().replace(/\s+/g, "-");
+    // Infer from question code prefix (e.g. RD_ → reading, WR_ → writing, MR_ → mathematical-reasoning, TS_ → thinking-skills)
+    const code = (data.code || "").toUpperCase();
+    if (code.startsWith("RD_")) return "reading";
+    if (code.startsWith("WR_")) return "writing";
+    if (code.startsWith("MR_")) return "mathematical-reasoning";
+    if (code.startsWith("TS_")) return "thinking-skills";
+    return "";
+  }
+
   // Get first question's subject_id for the batch
   const firstQuestion = questions[0];
-  const subjectSlug = firstQuestion.data.subject || "general";
-  const batchSubjectId = subjectMap.get(subjectSlug.toLowerCase().replace(/\s+/g, "-"));
+  const subjectSlug = inferSubjectSlug(firstQuestion.data);
+  const batchSubjectId = subjectMap.get(subjectSlug);
 
   if (!batchSubjectId) {
-    throw new Error(`Invalid subject: ${subjectSlug}`);
+    throw new Error(`Invalid subject: "${subjectSlug || firstQuestion.data.subject || "unknown"}". Ensure the subject slug exists in the database.`);
   }
 
   // Create upload batch record
@@ -297,8 +309,8 @@ async function insertQuestions(
 
   // Prepare questions for insert
   const questionsToInsert = questions.map((q) => {
-    const subjectSlug = q.data.subject || "general";
-    const subjectId = subjectMap.get(subjectSlug.toLowerCase().replace(/\s+/g, "-"));
+    const qSubjectSlug = inferSubjectSlug(q.data);
+    const subjectId = subjectMap.get(qSubjectSlug);
 
     // Build content object based on question type
     let content: Record<string, unknown> = {};
@@ -356,6 +368,28 @@ async function insertQuestions(
       };
 
       correctAnswer = { blanks: blanks.map((b) => b.correct) };
+    } else if (uploadType === "fill_missing_sentence") {
+      // Parse sentences from pipe-separated string
+      const sentences = q.data.sentences
+        .split("|")
+        .map((s: string) => s.trim())
+        .filter(Boolean);
+
+      // Build correct_mapping from gap order: GAP_1 -> 0, GAP_2 -> 1, etc.
+      const gapMatches = (q.data.passage_with_gaps || "").match(/\{(GAP_\d+)\}/g) || [];
+      const correctMapping: Record<string, number> = {};
+      gapMatches.forEach((gap, idx) => {
+        const key = gap.replace(/[{}]/g, ""); // "GAP_1"
+        correctMapping[key] = idx;
+      });
+
+      content = {
+        passage_with_gaps: q.data.passage_with_gaps,
+        sentences,
+        correct_mapping: correctMapping,
+      };
+
+      correctAnswer = { mapping: correctMapping };
     } else if (uploadType === "essay") {
       // Parse rubric
       const rubric: Record<string, number> = {};
@@ -466,6 +500,8 @@ function getQuestionType(uploadType: string): string {
       return "poem_mcq";
     case "fill_blank":
       return "fill_blank_dropdown";
+    case "fill_missing_sentence":
+      return "fill_missing_sentence";
     case "essay":
       return "essay";
     default:

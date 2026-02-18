@@ -327,6 +327,85 @@ function parseFillBlank(
   return { questions, errors };
 }
 
+// Parse CSV for fill_missing_sentence type
+function parseFillMissingSentence(
+  rows: string[][],
+  headers: string[]
+): { questions: ParsedQuestion[]; errors: ParseError[] } {
+  const questions: ParsedQuestion[] = [];
+  const errors: ParseError[] = [];
+
+  // Validate required headers
+  const required = ["code", "difficulty", "passage_with_gaps", "sentences"];
+  const missing = required.filter((col) => !headers.includes(col));
+  if (missing.length > 0) {
+    errors.push({
+      row: 1,
+      message: `Missing required columns: ${missing.join(", ")}`,
+    });
+    return { questions, errors };
+  }
+
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    const rowData: Record<string, string> = {};
+
+    headers.forEach((header, idx) => {
+      rowData[header] = row[idx] || "";
+    });
+
+    const code = rowData.code;
+    if (!code) {
+      errors.push({ row: i + 1, column: "code", message: "Code is required" });
+      continue;
+    }
+
+    if (!["easy", "medium", "hard"].includes(rowData.difficulty?.toLowerCase())) {
+      errors.push({ row: i + 1, column: "difficulty", message: "Difficulty must be easy, medium, or hard" });
+      continue;
+    }
+
+    if (!rowData.passage_with_gaps) {
+      errors.push({ row: i + 1, column: "passage_with_gaps", message: "Passage with gaps is required" });
+      continue;
+    }
+
+    // Count gap markers like {GAP_1}, {GAP_2}
+    const gapMatches = rowData.passage_with_gaps.match(/\{GAP_\d+\}/g) || [];
+    const gapCount = gapMatches.length;
+
+    if (gapCount === 0) {
+      errors.push({ row: i + 1, column: "passage_with_gaps", message: "Passage must contain at least one gap marker like {GAP_1}" });
+      continue;
+    }
+
+    if (!rowData.sentences) {
+      errors.push({ row: i + 1, column: "sentences", message: "Sentences are required" });
+      continue;
+    }
+
+    const sentenceList = rowData.sentences.split("|").map((s: string) => s.trim()).filter(Boolean);
+
+    if (sentenceList.length < gapCount) {
+      errors.push({
+        row: i + 1,
+        column: "sentences",
+        message: `Need at least ${gapCount} sentences (one per gap), found ${sentenceList.length}`,
+      });
+      continue;
+    }
+
+    questions.push({
+      rowIndex: i + 1,
+      code,
+      data: rowData,
+      imageRequirements: [],
+    });
+  }
+
+  return { questions, errors };
+}
+
 // Parse CSV for passages
 function parsePassages(
   rows: string[][],
@@ -485,6 +564,13 @@ export function parseCSV(csvText: string, type: string): ParseResult {
 
     case "fill_blank": {
       const { questions, errors } = parseFillBlank(rows, headers);
+      result.questions = questions;
+      result.errors = errors;
+      break;
+    }
+
+    case "fill_missing_sentence": {
+      const { questions, errors } = parseFillMissingSentence(rows, headers);
       result.questions = questions;
       result.errors = errors;
       break;

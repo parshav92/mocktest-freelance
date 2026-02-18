@@ -1,10 +1,11 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StorageImage } from "@/components/ui/storage-image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import type {
     QuestionForTest,
     MCQContent,
@@ -156,16 +157,50 @@ interface MCQRendererProps {
 
 export const MCQRenderer = memo(
     ({ content, selected, onSelect, layout }: MCQRendererProps) => {
+        const [optionsCollapsed, setOptionsCollapsed] = useState(false);
+
         if (layout === "split") {
             return (
-                <div className="grid grid-cols-2 gap-0 min-h-0">
+                <div className="flex min-h-0 relative">
                     {/* Left column: Question stem */}
-                    <div className="pr-8 border-r border-gray-200">
+                    <div
+                        className={cn(
+                            "transition-all duration-300 ease-in-out",
+                            optionsCollapsed ? "flex-1 pr-4" : "w-1/2 pr-8"
+                        )}
+                    >
                         <MCQQuestionStem content={content} />
                     </div>
 
-                    {/* Right column: Options */}
-                    <div className="pl-8">
+                    {/* Divider with toggle button */}
+                    <div className="relative flex items-stretch">
+                        <div className="w-px bg-gray-200" />
+                        <button
+                            onClick={() => setOptionsCollapsed(!optionsCollapsed)}
+                            className={cn(
+                                "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-0",
+                                "w-6 h-12 flex items-center justify-center",
+                                "bg-white border border-gray-300 rounded-full shadow-sm",
+                                "hover:bg-gray-50 hover:border-gray-400 transition-colors",
+                                "z-10 cursor-pointer"
+                            )}
+                            title={optionsCollapsed ? "Show options" : "Hide options"}
+                        >
+                            {optionsCollapsed ? (
+                                <ChevronLeft className="h-4 w-4 text-gray-600" />
+                            ) : (
+                                <ChevronRight className="h-4 w-4 text-gray-600" />
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Right column: Options (collapsible) */}
+                    <div
+                        className={cn(
+                            "transition-all duration-300 ease-in-out overflow-hidden",
+                            optionsCollapsed ? "w-0 opacity-0 pl-0" : "w-1/2 opacity-100 pl-8"
+                        )}
+                    >
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                             Choose your answer
                         </p>
@@ -424,6 +459,7 @@ interface EssayRendererProps {
 
 export const EssayRenderer = memo(
     ({ content, selected, onSelect, layout }: EssayRendererProps) => {
+        const [editorCollapsed, setEditorCollapsed] = useState(false);
         const wordCount = (selected || "").split(/\s+/).filter(Boolean).length;
         const isOverLimit = wordCount > content.word_limit;
 
@@ -474,14 +510,46 @@ export const EssayRenderer = memo(
 
         if (layout === "split") {
             return (
-                <div className="grid grid-cols-2 gap-0 min-h-0">
+                <div className="flex min-h-0 relative">
                     {/* Left column: Prompt */}
-                    <div className="pr-8 border-r border-gray-200">
+                    <div
+                        className={cn(
+                            "transition-all duration-300 ease-in-out",
+                            editorCollapsed ? "flex-1 pr-4" : "w-1/2 pr-8"
+                        )}
+                    >
                         {promptSection}
                     </div>
 
-                    {/* Right column: Editor */}
-                    <div className="pl-8">
+                    {/* Divider with toggle button */}
+                    <div className="relative flex items-stretch">
+                        <div className="w-px bg-gray-200" />
+                        <button
+                            onClick={() => setEditorCollapsed(!editorCollapsed)}
+                            className={cn(
+                                "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-0",
+                                "w-6 h-12 flex items-center justify-center",
+                                "bg-white border border-gray-300 rounded-full shadow-sm",
+                                "hover:bg-gray-50 hover:border-gray-400 transition-colors",
+                                "z-10 cursor-pointer"
+                            )}
+                            title={editorCollapsed ? "Show editor" : "Hide editor"}
+                        >
+                            {editorCollapsed ? (
+                                <ChevronLeft className="h-4 w-4 text-gray-600" />
+                            ) : (
+                                <ChevronRight className="h-4 w-4 text-gray-600" />
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Right column: Editor (collapsible) */}
+                    <div
+                        className={cn(
+                            "transition-all duration-300 ease-in-out overflow-hidden",
+                            editorCollapsed ? "w-0 opacity-0 pl-0" : "w-1/2 opacity-100 pl-8"
+                        )}
+                    >
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
                             Your response
                         </p>
