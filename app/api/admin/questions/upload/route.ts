@@ -409,8 +409,7 @@ async function insertQuestions(
         time_mins: parseInt(q.data.time_mins, 10),
         rubric,
       };
-
-      correctAnswer = null; // Essays don't have a correct answer
+      correctAnswer = { rubric };
     }
 
     return {
