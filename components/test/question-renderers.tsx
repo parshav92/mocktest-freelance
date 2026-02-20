@@ -161,7 +161,7 @@ export const MCQRenderer = memo(
 
         if (layout === "split") {
             return (
-                <div className="flex min-h-0 relative">
+                <div className="overflow-scroll flex min-h-0 relative">
                     {/* Left column: Question stem */}
                     <div
                         className={cn(
@@ -197,7 +197,7 @@ export const MCQRenderer = memo(
                     {/* Right column: Options (collapsible) */}
                     <div
                         className={cn(
-                            "transition-all duration-300 ease-in-out overflow-hidden",
+                            "transition-all duration-300 ease-in-out ",
                             optionsCollapsed ? "w-0 opacity-0 pl-0" : "w-1/2 opacity-100 pl-8"
                         )}
                     >
@@ -546,7 +546,7 @@ export const EssayRenderer = memo(
                     {/* Right column: Editor (collapsible) */}
                     <div
                         className={cn(
-                            "transition-all duration-300 ease-in-out overflow-hidden",
+                            "transition-all duration-300 ease-in-out ",
                             editorCollapsed ? "w-0 opacity-0 pl-0" : "w-1/2 opacity-100 pl-8"
                         )}
                     >

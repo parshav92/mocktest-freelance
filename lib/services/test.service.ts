@@ -10,7 +10,9 @@ import type {
     MCQAnswer,
     FillBlankAnswer,
     FillMissingSentenceAnswer,
+    EssayContent,
 } from "@/types/test";
+import { EssayEvaluationService } from "@/lib/services/essay-evaluation.service";
 
 // Internal type for questions with answers during grading
 interface GradableQuestion {
@@ -628,7 +630,56 @@ export class TestService {
             throw new Error("Failed to submit test");
         }
 
+        // Queue essay questions for LLM evaluation
+        await this.queueEssayEvaluations(testId, studentId, questions, gradedAnswers);
+
         return { test: updatedTest, questions };
+    }
+
+    /**
+     * Queue any essay questions from a submitted test for LLM evaluation.
+     * Only inserts rows into essay_evaluations table — actual processing
+     * is triggered by the Supabase database webhook and Vercel cron.
+     */
+    private async queueEssayEvaluations(
+        testId: string,
+        studentId: string,
+        questions: QuestionForTest[],
+        answers: TestAnswer[],
+    ): Promise<void> {
+        const essayQuestions = questions.filter(
+            (q) => q.question_type === "essay",
+        );
+
+        if (essayQuestions.length === 0) return;
+
+        const essayService = new EssayEvaluationService(this.supabase);
+
+        for (const question of essayQuestions) {
+            const answer = answers.find((a) => a.question_id === question.id);
+            if (!answer || !answer.selected) continue;
+
+            const content = question.content as EssayContent;
+
+            try {
+                await essayService.queueEssayEvaluation({
+                    test_id: testId,
+                    question_id: question.id,
+                    student_id: studentId,
+                    essay_prompt: content.prompt,
+                    student_answer: String(answer.selected),
+                    rubric: content.rubric || {},
+                    word_limit: content.word_limit,
+                });
+            } catch (err) {
+                // Don't fail the entire submission if queuing fails
+                console.error(
+                    `Failed to queue essay evaluation for question ${question.id}:`,
+                    err,
+                );
+            }
+        }
+        // No direct processQueue() call — webhook + cron handle evaluation
     }
 
     /**

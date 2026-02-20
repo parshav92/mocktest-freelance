@@ -6,6 +6,7 @@ import {
     successResponse,
 } from "@/lib/auth/student";
 import { TestService } from "@/lib/services/test.service";
+import { EssayEvaluationService } from "@/lib/services/essay-evaluation.service";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -97,6 +98,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             score_breakdown: test.score_breakdown,
         };
 
+        // Fetch essay evaluation data if any essay questions exist
+        const essayService = new EssayEvaluationService(supabase);
+        const essayEvaluations = await essayService.getEvaluationsForTest(test.id);
+
         return successResponse({
             test: {
                 id: test.id,
@@ -107,6 +112,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             },
             questions: reviewData,
             summary,
+            essay_evaluations: essayEvaluations,
             is_read_only,
         });
     } catch (error) {

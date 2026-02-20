@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,8 +22,10 @@ import {
     PenLine,
     BookOpen,
     ClipboardList,
+    Sparkles,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 
 interface ReviewQuestion {
     question_number: number;
@@ -82,6 +84,17 @@ interface ReviewData {
     is_read_only: boolean;
 }
 
+interface EssayEvaluation {
+    id: string;
+    question_id: string;
+    status: "pending" | "processing" | "completed" | "failed";
+    rubric_scores: Record<string, number> | null;
+    score: number | null;
+    max_score: number | null;
+    feedback: string | null;
+    completed_at: string | null;
+}
+
 export default function TestReviewPage() {
     const router = useRouter();
     const params = useParams();
@@ -92,22 +105,58 @@ export default function TestReviewPage() {
     const [error, setError] = useState<string | null>(null);
     const [openIndex, setOpenIndex] = useState<number | null>(null);
     const [showSolution, setShowSolution] = useState(false);
+    const [essayEvaluations, setEssayEvaluations] = useState<EssayEvaluation[]>([]);
+    const [essayPolling, setEssayPolling] = useState(false);
 
     useEffect(() => {
         fetchReview();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [testId]);
 
+    // Poll for essay evaluation status
+    const pollEssayStatus = useCallback(async () => {
+        try {
+            const res = await fetch(`/api/tests/${testId}/essay-status`);
+            const data = await res.json();
+            if (res.ok && data.evaluations) {
+                setEssayEvaluations(data.evaluations);
+                // Stop polling when all completed or failed
+                if (data.status === "completed" || data.status === "failed" || data.status === "no_essays") {
+                    setEssayPolling(false);
+                }
+            }
+        } catch {
+            // Silent fail for polling
+        }
+    }, [testId]);
+
+    useEffect(() => {
+        if (!essayPolling) return;
+        const interval = setInterval(pollEssayStatus, 5000); // Poll every 5 seconds
+        return () => clearInterval(interval);
+    }, [essayPolling, pollEssayStatus]);
+
     const fetchReview = async () => {
         try {
             const res = await fetch(`/api/tests/${testId}/review`);
             const data = await res.json();
-
+            console.log("test", data)
             if (!res.ok) {
                 throw new Error(data.error || "Failed to load review");
             }
 
             setReviewData(data);
+
+            // If there are essay evaluations, set them and start polling if any are pending
+            if (data.essay_evaluations) {
+                setEssayEvaluations(data.essay_evaluations);
+                const hasPending = data.essay_evaluations.some(
+                    (e: EssayEvaluation) => e.status === "pending" || e.status === "processing",
+                );
+                if (hasPending) {
+                    setEssayPolling(true);
+                }
+            }
         } catch (err) {
             setError(
                 err instanceof Error ? err.message : "Failed to load review",
@@ -602,7 +651,7 @@ export default function TestReviewPage() {
                     </header>
 
                     {/* ── SPLIT PANEL CONTENT ── */}
-                    <div className="flex-1 flex overflow-hidden">
+                    <div className="flex-1 flex overflow-y-scroll">
                         {/* Left panel: passage */}
                         {openHasPassage && (
                             <div className="w-1/2 border-r bg-white flex flex-col">
@@ -693,7 +742,7 @@ export default function TestReviewPage() {
                         <div
                             className={`${openHasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white`}
                         >
-                            <ScrollArea className="flex-1">
+                            <ScrollArea className="flex-1 overflow-y-auto">
                                 <ReviewQuestionDisplay
                                     question={openItem.question}
                                     questionNumber={openItem.question_number}
@@ -705,6 +754,11 @@ export default function TestReviewPage() {
                                     showSolution={showSolution}
                                     onToggleSolution={() =>
                                         setShowSolution(!showSolution)
+                                    }
+                                    essayEvaluation={
+                                        essayEvaluations.find(
+                                            (e) => e.question_id === openItem.question.id,
+                                        ) || null
                                     }
                                 />
                             </ScrollArea>
@@ -793,6 +847,7 @@ function ReviewQuestionDisplay({
     solutionText,
     showSolution,
     onToggleSolution,
+    essayEvaluation,
 }: {
     question: ReviewQuestion["question"];
     questionNumber: number;
@@ -801,6 +856,7 @@ function ReviewQuestionDisplay({
     solutionText: string | null;
     showSolution: boolean;
     onToggleSolution: () => void;
+    essayEvaluation?: EssayEvaluation | null;
 }) {
     const content = question.content;
     const correctAnswer = question.correct_answer;
@@ -950,14 +1006,16 @@ function ReviewQuestionDisplay({
         case "fill_blank_dropdown": {
             const passageText = content.passage_text as string;
             const blanks = content.blanks as Array<{
-                position: number;
+                correct: string;
                 options: string[];
                 correct_index: number;
             }>;
             const studentAnswers = (studentAnswer as number[]) || [];
-            const correctAnswers = (correctAnswer as { answers: number[] })
-                .answers;
-
+           const correctAnswers =
+  (correctAnswer as { answers?: number[] })?.answers ||
+  blanks.map((b) =>
+    b.options.findIndex((opt) => opt === b.correct)
+  );
             const parts = passageText.split(/___+|\[\d+\]|\{blank\}/gi);
 
             return (
@@ -1155,6 +1213,7 @@ function ReviewQuestionDisplay({
             const prompt = content.prompt as string;
             const essayText = studentAnswer as string;
             const wordLimit = content.word_limit as number | undefined;
+            const rubric = content.rubric as Record<string, number> | undefined;
 
             return (
                 <div className="grid grid-cols-2 gap-0 min-h-0">
@@ -1172,8 +1231,9 @@ function ReviewQuestionDisplay({
                         {solutionBlock}
                     </div>
 
-                    {/* Right: Student response */}
-                    <div className="p-6 md:p-8">
+                    {/* Right: Student response + AI evaluation */}
+                    <div className="p-6 md:p-8 space-y-4">
+                        {/* Student response */}
                         <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
                             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                                 Your Response
@@ -1182,9 +1242,117 @@ function ReviewQuestionDisplay({
                                 {essayText || "No response submitted."}
                             </p>
                         </div>
-                        <p className="text-xs text-slate-400 mt-3">
-                            Essays are evaluated by AI. Score may vary.
-                        </p>
+
+                        {/* AI Evaluation */}
+                        {essayEvaluation ? (
+                            essayEvaluation.status === "completed" ? (
+                                <div className="space-y-3">
+                                    {/* Score summary */}
+                                    <div className="p-4 bg-gradient-to-br from-violet-50 to-indigo-50 rounded-lg border border-violet-200">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Sparkles className="h-4 w-4 text-violet-600" />
+                                            <p className="text-xs font-semibold text-violet-700 uppercase tracking-wider">
+                                                AI Evaluation
+                                            </p>
+                                        </div>
+
+                                        {/* Total score */}
+                                        <div className="flex items-baseline gap-2 mb-4">
+                                            <span className="text-3xl font-bold text-slate-900">
+                                                {essayEvaluation.score}
+                                            </span>
+                                            <span className="text-sm text-slate-500">
+                                                / {essayEvaluation.max_score}
+                                            </span>
+                                            <Badge
+                                                className={cn(
+                                                    "ml-2 text-xs",
+                                                    essayEvaluation.score! >= (essayEvaluation.max_score! * 0.75)
+                                                        ? "bg-emerald-100 text-emerald-700"
+                                                        : essayEvaluation.score! >= (essayEvaluation.max_score! * 0.5)
+                                                            ? "bg-amber-100 text-amber-700"
+                                                            : "bg-rose-100 text-rose-700",
+                                                )}
+                                            >
+                                                {Math.round(
+                                                    (essayEvaluation.score! / essayEvaluation.max_score!) * 100,
+                                                )}%
+                                            </Badge>
+                                        </div>
+
+                                        {/* Rubric breakdown */}
+                                        {essayEvaluation.rubric_scores && rubric && (
+                                            <div className="space-y-2">
+                                                {Object.entries(essayEvaluation.rubric_scores).map(
+                                                    ([category, score]) => {
+                                                        const maxPoints = rubric[category] || score;
+                                                        const pct = maxPoints > 0 ? (score / maxPoints) * 100 : 0;
+                                                        return (
+                                                            <div key={category}>
+                                                                <div className="flex items-center justify-between mb-1">
+                                                                    <span className="text-xs font-medium text-slate-600 capitalize">
+                                                                        {category}
+                                                                    </span>
+                                                                    <span className="text-xs text-slate-500 tabular-nums">
+                                                                        {score}/{maxPoints}
+                                                                    </span>
+                                                                </div>
+                                                                <Progress
+                                                                    value={pct}
+                                                                    className="h-1.5"
+                                                                />
+                                                            </div>
+                                                        );
+                                                    },
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Feedback */}
+                                    {essayEvaluation.feedback && (
+                                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                            <p className="text-xs font-semibold text-blue-700 uppercase tracking-wider mb-2">
+                                                Feedback
+                                            </p>
+                                            <p className="text-sm text-slate-700 leading-relaxed">
+                                                {essayEvaluation.feedback}
+                                            </p>
+                                        </div>
+                                    )}
+                                </div>
+                            ) : essayEvaluation.status === "failed" ? (
+                                <div className="p-4 bg-rose-50 rounded-lg border border-rose-200">
+                                    <div className="flex items-center gap-2">
+                                        <AlertTriangle className="h-4 w-4 text-rose-500" />
+                                        <p className="text-sm font-medium text-rose-700">
+                                            Evaluation failed
+                                        </p>
+                                    </div>
+                                    <p className="text-xs text-rose-600 mt-1">
+                                        AI evaluation encountered an error. Please contact support.
+                                    </p>
+                                </div>
+                            ) : (
+                                <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+                                    <div className="flex items-center gap-3">
+                                        <Loader2 className="h-4 w-4 text-amber-600 animate-spin" />
+                                        <div>
+                                            <p className="text-sm font-medium text-amber-800">
+                                                Evaluation in progress
+                                            </p>
+                                            <p className="text-xs text-amber-600 mt-0.5">
+                                                Your essay is being evaluated by AI. This may take a moment.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )
+                        ) : (
+                            <p className="text-xs text-slate-400">
+                                Essay evaluation not available.
+                            </p>
+                        )}
                     </div>
                 </div>
             );

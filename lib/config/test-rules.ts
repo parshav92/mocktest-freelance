@@ -77,21 +77,21 @@ export const TEST_CONFIG = {
     // ============================================
     antiCheat: {
         /** Enable fullscreen mode */
-        requireFullscreen: true,
+        requireFullscreen: false,
         /** Open test in a new browser tab */
         openInNewTab: true,
         /** Disable right-click context menu */
         disableRightClick: true,
         /** Disable keyboard shortcuts (F12, Ctrl+Shift+I, etc.) */
-        disableDevTools: true,
+        disableDevTools: false,
         /** Disable copy/paste from outside */
-        disableCopyPaste: true,
+        disableCopyPaste: false,
         /** Disable text selection on question content */
         disableTextSelection: true,
         /** Track tab/window visibility changes */
-        detectTabSwitch: true,
+        detectTabSwitch: false,
         /** Number of warnings before auto-submit */
-        maxWarnings: 3,
+        maxWarnings: 10,
         /** Warning message template */
         warningMessage: (remaining: number) =>
             `Warning: Switching tabs or windows is not allowed during the test. You have ${remaining} warning${remaining === 1 ? "" : "s"} remaining before your test is automatically submitted.`,

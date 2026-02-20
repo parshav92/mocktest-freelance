@@ -738,7 +738,7 @@ export default function TestEnvironmentPage() {
             <div className="flex-1 flex overflow-hidden">
                 {/* LEFT PANEL: Passage (if applicable) */}
                 {hasPassage && (
-                    <div className="w-1/2 border-r bg-white flex flex-col">
+                    <div className="w-1/2 border-r bg-white flex flex-col overflow-scroll">
                         {/* Passage tabs if multiple extracts with same passage */}
                         {passage && (
                             <Tabs
@@ -802,7 +802,7 @@ export default function TestEnvironmentPage() {
                 <div
                     className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white`}
                 >
-                    <ScrollArea className="flex-1">
+                    <ScrollArea className="flex-1  ">
                         <div
                             className={cn(
                                 "p-6 md:p-8",
@@ -811,7 +811,7 @@ export default function TestEnvironmentPage() {
                             )}
                         >
                             {/* Question number + marks */}
-                            <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center justify-between mb-6 overflow">
                                 <div className="flex items-center gap-3">
                                     <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
                                         Q{currentIndex + 1}

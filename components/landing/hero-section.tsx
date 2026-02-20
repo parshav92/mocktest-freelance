@@ -19,7 +19,7 @@ const HeroSection = () => {
             <div className="relative z-10 flex-1 flex items-center justify-center px-6 md:px-12 lg:px-20">
                 <div className="max-w-4xl mx-auto text-center">
                     {/* Label */}
-                    <div className="animate-fade-in-up inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-sky-200/80 shadow-sm md:mt-8 mb-4 hover:shadow-md transition-shadow duration-300">
+                    {/* <div className="animate-fade-in-up inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-sky-200/80 shadow-sm md:mt-8 mb-4 hover:shadow-md transition-shadow duration-300">
                         <span className="relative flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
@@ -30,13 +30,13 @@ const HeroSection = () => {
                                 2,000+
                             </span>{" "}
                             students
-                        </span>
+                        </span> */}
                         {/* <Sparkles className="w-3.5 h-3.5 text-amber-500" /> */}
-                    </div>
+                    {/* </div> */}
 
                     {/* Main Heading */}
                     <h1
-                        className="text-4xl md:text-6xl lg:text-7xl font-bold text-slate-900 mb-6 animate-fade-in-up-delay-1 heading-tight"
+                        className="mt-24 text-4xl md:text-6xl lg:text-7xl font-bold text-slate-900 mb-6 animate-fade-in-up-delay-1 heading-tight"
                         style={{ letterSpacing: "-0.04em" }}
                     >
                         Your Journey to{" "}
