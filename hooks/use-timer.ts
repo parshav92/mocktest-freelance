@@ -16,16 +16,23 @@ export function useTimer({
   isRunning,
   onTimeout,
 }: UseTimerOptions) {
-  const [remainingSecs, setRemainingSecs] = useState(durationMins * 60);
+  const [remainingSecs, setRemainingSecs] = useState(() => durationMins * 60);
   const [isHidden, setIsHidden] = useState(false);
   const onTimeoutRef = useRef(onTimeout);
   onTimeoutRef.current = onTimeout;
 
   const config = TEST_CONFIG.timer;
 
+  // Update initial remaining seconds when durationMins changes
+  useEffect(() => {
+    if (durationMins > 0 && !startedAt) {
+      setRemainingSecs(durationMins * 60);
+    }
+  }, [durationMins, startedAt]);
+
   // Calculate remaining time from startedAt
   useEffect(() => {
-    if (!startedAt || !isRunning) return;
+    if (!startedAt || !isRunning || durationMins <= 0) return;
 
     const startTime = new Date(startedAt).getTime();
     const endTime = startTime + durationMins * 60 * 1000;

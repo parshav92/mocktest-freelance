@@ -6,7 +6,7 @@ import { AdminLayoutClient } from "@/components/admin-layout";
 
 /**
  * Dashboard Layout
- * 
+ *
  * Handles authentication and role-based layout rendering:
  * - Admin: Wraps with sidebar layout + MFA validation
  * - Parent: Renders children directly

@@ -205,7 +205,7 @@ export class EssayEvaluationService {
             .single();
 
         if (!test) return;
-        console.log("thiss")
+
         const essayEval = {
             question_id: questionId,
             score: result.score,
@@ -252,7 +252,6 @@ export class EssayEvaluationService {
      * Call Gemini AI to evaluate an essay
      */
     private async evaluateWithGemini(row: EssayEvalRow): Promise<EssayEvaluationResult> {
-        console.log("Gemini started")
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
             throw new Error("GEMINI_API_KEY environment variable is not set");
@@ -334,12 +333,11 @@ Evaluate this essay against each rubric criterion and provide scores and feedbac
         if (!textContent) {
             throw new Error("Empty response from Gemini API");
         }
-        console.log("textContext", textContent)
+
         // Parse the JSON response
         let parsed: { scores: Record<string, number>; feedback: string };
         try {
             parsed = JSON.parse(textContent);
-            console.log("parsed", parsed)
         } catch {
             // Try to extract JSON from the response if it has extra text
             const jsonMatch = textContent.match(/\{[\s\S]*\}/);

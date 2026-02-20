@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
     ArrowLeft,
@@ -62,7 +61,6 @@ export default function TestEnvironmentPage() {
     // ============================================
     const [phase, setPhase] = useState<TestPhase>("loading");
     const [error, setError] = useState<string | null>(null);
-    const [isResuming, setIsResuming] = useState(false);
 
     // Test data
     const [test, setTest] = useState<Test | null>(null);
@@ -93,11 +91,19 @@ export default function TestEnvironmentPage() {
     // CURRENT QUESTION
     // ============================================
     const currentQuestion = questions[currentIndex] || null;
-    const currentAnswer = currentQuestion
-        ? (answers[currentQuestion.id] ?? null)
-        : null;
-    const answeredSet = new Set(Object.keys(answers));
     const questionsOrder = test?.questions_order || [];
+
+    // Memoize current answer to avoid unnecessary recalculations
+    const currentAnswer = useMemo(
+        () => (currentQuestion ? (answers[currentQuestion.id] ?? null) : null),
+        [currentQuestion, answers]
+    );
+
+    // Memoize answered set to avoid recreation on every render
+    const answeredSet = useMemo(
+        () => new Set(Object.keys(answers)),
+        [answers]
+    );
 
     // ============================================
     // TIMER
@@ -125,12 +131,7 @@ export default function TestEnvironmentPage() {
     // ============================================
     // LOAD TEST DATA
     // ============================================
-    useEffect(() => {
-        loadTest();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [testId]);
-
-    const loadTest = async () => {
+    const loadTest = useCallback(async () => {
         try {
             const res = await fetch(`/api/tests/${testId}`);
             const data = await res.json();
@@ -188,13 +189,6 @@ export default function TestEnvironmentPage() {
 
             // Determine starting phase
             if (testData.status === "in_progress") {
-                // Check if this is a fresh start by seeing if test started within last 10 seconds
-                const startedAt = new Date(testData.started_at!).getTime();
-                const now = Date.now();
-                const secondsSinceStart = (now - startedAt) / 1000;
-                const isFreshStart = secondsSinceStart < 10;
-
-                setIsResuming(!isFreshStart);
                 if (TEST_CONFIG.antiCheat.requireFullscreen) {
                     // Will enter fullscreen once component mounts and user interacts
                     setPhase("enter-fullscreen");
@@ -219,7 +213,20 @@ export default function TestEnvironmentPage() {
             );
             setPhase("loading");
         }
-    };
+    }, [testId]);
+
+    useEffect(() => {
+        loadTest();
+    }, [loadTest]);
+
+    // Cleanup debounce timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+            }
+        };
+    }, []);
 
     // ============================================
     // MARK VISITED ON INDEX CHANGE
@@ -296,7 +303,7 @@ export default function TestEnvironmentPage() {
         [currentQuestion, debouncedSave],
     );
 
-    const handleNavigate = (direction: "prev" | "next") => {
+    const handleNavigate = useCallback((direction: "prev" | "next") => {
         // Save current answer before navigating
         if (currentQuestion && answers[currentQuestion.id] !== undefined) {
             saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
@@ -319,9 +326,9 @@ export default function TestEnvironmentPage() {
                 setCurrentIndex((i) => i - 1);
             }
         }
-    };
+    }, [currentQuestion, answers, saveAnswer, currentIndex, questions.length]);
 
-    const handleJumpTo = (index: number) => {
+    const handleJumpTo = useCallback((index: number) => {
         if (TEST_CONFIG.navigation.allowQuestionJump) {
             // Save current answer before jumping
             if (currentQuestion && answers[currentQuestion.id] !== undefined) {
@@ -329,9 +336,9 @@ export default function TestEnvironmentPage() {
             }
             setCurrentIndex(index);
         }
-    };
+    }, [currentQuestion, answers, saveAnswer]);
 
-    const handleToggleFlag = () => {
+    const handleToggleFlag = useCallback(() => {
         if (!currentQuestion || !TEST_CONFIG.flag.enabled) return;
         setFlaggedSet((prev) => {
             const next = new Set(prev);
@@ -342,7 +349,7 @@ export default function TestEnvironmentPage() {
             }
             return next;
         });
-    };
+    }, [currentQuestion]);
 
     const handleInstructionsComplete = () => {
         // If opening in new tab with fullscreen required, skip the modal and go directly
@@ -374,7 +381,7 @@ export default function TestEnvironmentPage() {
                 const testUrl = `/dashboard/tests/${testId}?mode=test`;
                 const newWindow = window.open(testUrl, "_blank");
                 if (newWindow) {
-                    router.replace("/dashboard/tests");
+                    router.replace("/dashboard");
                     return;
                 }
                 // Popup blocked — fall through to same-tab fullscreen
@@ -441,11 +448,18 @@ export default function TestEnvironmentPage() {
         }
     };
 
-    const handleAutoSubmit = async (reason: string) => {
+    const handleAutoSubmit = useCallback(async (reason: string) => {
         setWarningMessage(null);
-        setError(reason);
-        await handleSubmitTest();
-    };
+        // Don't set error before submit - let the submit handle its own errors
+        // Show the reason after successful submit or as final message
+        try {
+            await handleSubmitTest();
+            // After successful submit, show the reason (e.g., "Time is up!")
+            setError(reason);
+        } catch {
+            // Submit failed - its own error is already set
+        }
+    }, []);
 
     const handleEndTestEarly = async () => {
         try {
@@ -467,9 +481,9 @@ export default function TestEnvironmentPage() {
     };
 
     // ============================================
-    // PASSAGE DATA
+    // PASSAGE DATA (memoized)
     // ============================================
-    const getPassageData = (): Passage | null => {
+    const passage = useMemo((): Passage | null => {
         if (!currentQuestion) return null;
         if (
             currentQuestion.question_type === "passage_mcq" ||
@@ -478,12 +492,10 @@ export default function TestEnvironmentPage() {
             return currentQuestion.passage || null;
         }
         return null;
-    };
-
-    const passage = getPassageData();
+    }, [currentQuestion]);
 
     // Check if adjacent questions share the same passage (for passage group indicator)
-    const getPassageGroup = (): { start: number; end: number } | null => {
+    const passageGroup = useMemo((): { start: number; end: number } | null => {
         if (!passage || !currentQuestion?.passage) return null;
         const passageId = currentQuestion.passage.id;
 
@@ -501,7 +513,15 @@ export default function TestEnvironmentPage() {
         }
 
         return { start, end };
-    };
+    }, [passage, currentQuestion?.passage, currentIndex, questions]);
+
+    // Derive isResuming from test data (test started more than 10 seconds ago)
+    const isResuming = useMemo(() => {
+        if (!test?.started_at) return false;
+        const startedAt = new Date(test.started_at).getTime();
+        const secondsSinceStart = (Date.now() - startedAt) / 1000;
+        return secondsSinceStart > TEST_CONFIG.freshStartThresholdSecs;
+    }, [test?.started_at]);
 
     // ============================================
     // RENDER PHASES
@@ -515,10 +535,10 @@ export default function TestEnvironmentPage() {
                     <div className="bg-white p-8 rounded-xl shadow-sm border max-w-md text-center">
                         <p className="text-red-600 mb-4">{error}</p>
                         <Button
-                            onClick={() => router.push("/dashboard/tests")}
+                            onClick={() => router.push("/dashboard")}
                             className="bg-[#1a2744]"
                         >
-                            Back to Tests
+                            Back to Dashboard
                         </Button>
                     </div>
                 </div>
@@ -617,12 +637,13 @@ export default function TestEnvironmentPage() {
 
     // RESULT
     if (phase === "result" && test) {
+        const isEssayTest =
+            questions.length > 0 &&
+            questions.every((q) => q.question_type === "essay");
         return (
             <PostSubmitResult
                 test={test}
-                onViewSolutions={() =>
-                    router.push(`/dashboard/tests/${testId}/review`)
-                }
+                isEssayTest={isEssayTest}
                 onBackToDashboard={() => router.push("/dashboard")}
             />
         );
@@ -633,7 +654,6 @@ export default function TestEnvironmentPage() {
     // ============================================
     if (phase !== "testing" || !currentQuestion || !test) return null;
 
-    const passageGroup = getPassageGroup();
     const isFlagged = flaggedSet.has(currentQuestion.id);
     const hasPassage = !!passage;
 
@@ -737,64 +757,44 @@ export default function TestEnvironmentPage() {
             {/* ============================================ */}
             <div className="flex-1 flex overflow-hidden">
                 {/* LEFT PANEL: Passage (if applicable) */}
-                {hasPassage && (
-                    <div className="w-1/2 border-r bg-white flex flex-col overflow-scroll">
-                        {/* Passage tabs if multiple extracts with same passage */}
-                        {passage && (
-                            <Tabs
-                                defaultValue="extract"
-                                className="flex flex-col h-full"
-                            >
-                                <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
-                                    <TabsList className="bg-transparent h-auto p-0 gap-0">
-                                        <TabsTrigger
-                                            value="extract"
-                                            className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
-                                        >
-                                            {passage.passage_type === "poem"
-                                                ? "Poem"
-                                                : passage.title || "Extract"}
-                                        </TabsTrigger>
-                                    </TabsList>
-                                </div>
-                                <TabsContent
-                                    value="extract"
-                                    className="flex-1 m-0"
+                {hasPassage && passage && (
+                    <div className="w-1/2 border-r bg-white flex flex-col">
+                        {/* Passage header */}
+                        <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
+                            <span className="text-sm font-medium text-[#1a2744]">
+                                {passage.passage_type === "poem"
+                                    ? "Poem"
+                                    : passage.title || "Extract"}
+                            </span>
+                        </div>
+                        {/* Passage content */}
+                        <ScrollArea className="flex-1">
+                            <div className="p-6 md:p-8">
+                                {passage.title && (
+                                    <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                        {passage.title}
+                                    </h3>
+                                )}
+                                {passage.image_url && (
+                                    <div className="mb-4">
+                                        <img
+                                            src={passage.image_url}
+                                            alt={passage.title || "Passage image"}
+                                            className="max-w-full rounded-lg"
+                                        />
+                                    </div>
+                                )}
+                                <div
+                                    className={`leading-relaxed text-gray-800 ${
+                                        passage.passage_type === "poem"
+                                            ? "whitespace-pre-line italic"
+                                            : ""
+                                    }`}
                                 >
-                                    <ScrollArea className="h-full">
-                                        <div className="p-6 md:p-8">
-                                            {passage.title && (
-                                                <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                    {passage.title}
-                                                </h3>
-                                            )}
-                                            {passage.image_url && (
-                                                <div className="mb-4">
-                                                    <img
-                                                        src={passage.image_url}
-                                                        alt={
-                                                            passage.title ||
-                                                            "Passage image"
-                                                        }
-                                                        className="max-w-full rounded-lg"
-                                                    />
-                                                </div>
-                                            )}
-                                            <div
-                                                className={`leading-relaxed text-gray-800 ${
-                                                    passage.passage_type ===
-                                                    "poem"
-                                                        ? "whitespace-pre-line italic"
-                                                        : ""
-                                                }`}
-                                            >
-                                                {passage.content}
-                                            </div>
-                                        </div>
-                                    </ScrollArea>
-                                </TabsContent>
-                            </Tabs>
-                        )}
+                                    {passage.content}
+                                </div>
+                            </div>
+                        </ScrollArea>
                     </div>
                 )}
 
@@ -810,19 +810,12 @@ export default function TestEnvironmentPage() {
                                     "max-w-3xl mx-auto",
                             )}
                         >
-                            {/* Question number + marks */}
+                            {/* Question number */}
                             <div className="flex items-center justify-between mb-6 overflow">
                                 <div className="flex items-center gap-3">
                                     <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
                                         Q{currentIndex + 1}
                                     </span>
-                                    <Badge
-                                        variant="outline"
-                                        className="text-xs"
-                                    >
-                                        {currentQuestion.marks} mark
-                                        {currentQuestion.marks !== 1 ? "s" : ""}
-                                    </Badge>
                                 </div>
                             </div>
 

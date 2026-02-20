@@ -140,7 +140,7 @@ export default function TestReviewPage() {
         try {
             const res = await fetch(`/api/tests/${testId}/review`);
             const data = await res.json();
-            console.log("test", data)
+
             if (!res.ok) {
                 throw new Error(data.error || "Failed to load review");
             }

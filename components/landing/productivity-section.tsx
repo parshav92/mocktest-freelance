@@ -41,7 +41,9 @@ const ProductivitySection = () => {
                     </span>
                     <h2 className="text-3xl md:text-5xl font-bold text-white heading-tight max-w-2xl mx-auto">
                         Streamlined Process for{" "}
-                        <span className="text-emerald-400">Maximum Results</span>
+                        <span className="text-emerald-400">
+                            Maximum Results
+                        </span>
                     </h2>
                 </div>
 
@@ -81,8 +83,8 @@ const ProductivitySection = () => {
                                     </h3>
                                     <p className="text-white/60 leading-relaxed">
                                         Celebrate your acceptance to your dream
-                                        university with our continued support for
-                                        visa and enrollment.
+                                        university with our continued support
+                                        for visa and enrollment.
                                     </p>
                                 </div>
                             </div>
@@ -119,14 +121,16 @@ const ProductivitySection = () => {
                                         <div className="flex items-center gap-3">
                                             <div
                                                 className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                                                    snippet.status === "completed"
+                                                    snippet.status ===
+                                                    "completed"
                                                         ? "bg-emerald-500/20"
                                                         : "bg-yellow-500/20"
                                                 }`}
                                             >
                                                 <Check
                                                     className={`w-4 h-4 ${
-                                                        snippet.status === "completed"
+                                                        snippet.status ===
+                                                        "completed"
                                                             ? "text-emerald-400"
                                                             : "text-yellow-400"
                                                     }`}
@@ -149,11 +153,9 @@ const ProductivitySection = () => {
                                 ))}
 
                                 {/* Progress Bar */}
-                               
                             </div>
 
                             {/* Animated Status Tag */}
-                            
                         </div>
                     </div>
                 </div>

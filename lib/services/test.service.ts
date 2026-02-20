@@ -102,11 +102,74 @@ export class TestService {
             throw new Error("Failed to select questions for test");
         }
 
-        // Shuffle the questions
         const questionIds = (data || []).map(
             (row: { question_id: string }) => row.question_id,
         );
-        return this.shuffleArray(questionIds);
+
+        // Group questions by passage to keep related questions together
+        return this.groupAndShuffleQuestions(questionIds);
+    }
+
+    /**
+     * Group questions by passage and shuffle groups while keeping passage questions together.
+     * Order: All passage-based questions first (grouped by passage), then standalone questions.
+     * This ensures reading comprehension questions appear before fill-in-the-blanks, etc.
+     */
+    private async groupAndShuffleQuestions(questionIds: string[]): Promise<string[]> {
+        if (questionIds.length === 0) return [];
+
+        // Fetch passage_id for each question
+        const { data: questionsWithPassage, error } = await this.supabase
+            .from("questions")
+            .select("id, passage_id, question_type")
+            .in("id", questionIds);
+
+        if (error || !questionsWithPassage) {
+            // Fallback to simple shuffle if we can't get passage info
+            return this.shuffleArray(questionIds);
+        }
+
+        // Create maps for question info
+        const questionInfoMap = new Map<string, { passage_id: string | null; question_type: string }>();
+        for (const q of questionsWithPassage) {
+            questionInfoMap.set(q.id, { passage_id: q.passage_id, question_type: q.question_type });
+        }
+
+        // Group questions: passage questions grouped together, standalone questions separate
+        const passageGroups = new Map<string, string[]>(); // passage_id -> question_ids
+        const standaloneQuestions: string[] = [];
+
+        for (const qId of questionIds) {
+            const info = questionInfoMap.get(qId);
+            const passageId = info?.passage_id;
+            if (passageId) {
+                if (!passageGroups.has(passageId)) {
+                    passageGroups.set(passageId, []);
+                }
+                passageGroups.get(passageId)!.push(qId);
+            } else {
+                standaloneQuestions.push(qId);
+            }
+        }
+
+        // Shuffle questions within each passage group
+        const shuffledPassageGroups: string[][] = [];
+        for (const [, groupQuestions] of passageGroups) {
+            shuffledPassageGroups.push(this.shuffleArray(groupQuestions));
+        }
+
+        // Shuffle the passage groups themselves (but keep them as a block)
+        const shuffledGroups = this.shuffleArray(shuffledPassageGroups);
+
+        // Shuffle standalone questions
+        const shuffledStandalone = this.shuffleArray(standaloneQuestions);
+
+        // Final order: ALL passage-based questions first, THEN standalone questions
+        // This ensures reading comprehension comes before fill-in-the-blanks
+        return [
+            ...shuffledGroups.flat(),      // All passage questions (grouped by passage)
+            ...shuffledStandalone,          // All standalone questions (fill blanks, etc.)
+        ];
     }
 
     /**
@@ -139,7 +202,7 @@ export class TestService {
 
         if (existingTest) {
             throw new Error(
-                `You have an existing ${existingTest.status === "in_progress" ? "in-progress" : "unstarted"} test for this subject. Please complete or abandon it first.`,
+                `You have an existing ${existingTest.status === "in_progress" ? "in-progress" : "unstarted"} test for this subject. Please complete it first.`,
             );
         }
 
@@ -631,7 +694,12 @@ export class TestService {
         }
 
         // Queue essay questions for LLM evaluation
-        await this.queueEssayEvaluations(testId, studentId, questions, gradedAnswers);
+        await this.queueEssayEvaluations(
+            testId,
+            studentId,
+            questions,
+            gradedAnswers,
+        );
 
         return { test: updatedTest, questions };
     }
@@ -712,6 +780,17 @@ export class TestService {
             const question = questionMap.get(answer.question_id);
 
             if (!question) {
+                console.error(
+                    `Question ${answer.question_id} not found in question map during grading`,
+                );
+                return { ...answer, is_correct: false, marks_earned: 0 };
+            }
+
+            // Validate question has required fields
+            if (!question.correct_answer) {
+                console.error(
+                    `Question ${question.id} (type: ${question.question_type}) has no correct_answer field`,
+                );
                 return { ...answer, is_correct: false, marks_earned: 0 };
             }
 
@@ -759,11 +838,30 @@ export class TestService {
             return false;
         }
 
+        // Validate that correctAnswer exists
+        if (!correctAnswer || typeof correctAnswer !== "object") {
+            console.error(
+                `Invalid correct_answer for question type ${questionType}:`,
+                correctAnswer,
+            );
+            return false;
+        }
+
         switch (questionType) {
             case "mcq":
             case "passage_mcq":
             case "poem_mcq": {
                 const correct = correctAnswer as MCQAnswer;
+
+                // Validate structure
+                if (!correct.label || typeof correct.label !== "string") {
+                    console.error(
+                        `Invalid MCQ correct_answer structure. Expected {label: string}, got:`,
+                        correct,
+                    );
+                    return false;
+                }
+
                 // Normalize both to uppercase for comparison
                 const selectedKey = String(selected).trim().toUpperCase();
                 const correctKey = String(correct.label).trim().toUpperCase();
@@ -772,7 +870,18 @@ export class TestService {
 
             case "fill_blank_dropdown": {
                 const correct = correctAnswer as FillBlankAnswer;
+
                 if (!Array.isArray(selected)) return false;
+
+                // Validate structure
+                if (!correct.answers || !Array.isArray(correct.answers)) {
+                    console.error(
+                        `Invalid fill_blank_dropdown correct_answer structure. Expected {answers: array}, got:`,
+                        correct,
+                    );
+                    return false;
+                }
+
                 return (
                     selected.length === correct.answers.length &&
                     selected.every((val, idx) => val === correct.answers[idx])
@@ -781,8 +890,19 @@ export class TestService {
 
             case "fill_missing_sentence": {
                 const correct = correctAnswer as FillMissingSentenceAnswer;
+
                 if (typeof selected !== "object" || Array.isArray(selected))
                     return false;
+
+                // Validate structure
+                if (!correct.mapping || typeof correct.mapping !== "object") {
+                    console.error(
+                        `Invalid fill_missing_sentence correct_answer structure. Expected {mapping: object}, got:`,
+                        correct,
+                    );
+                    return false;
+                }
+
                 const selectedMapping = selected as Record<string, number>;
                 return Object.entries(correct.mapping).every(
                     ([key, value]) => selectedMapping[key] === value,
@@ -794,6 +914,7 @@ export class TestService {
                 return false;
 
             default:
+                console.warn(`Unknown question type: ${questionType}`);
                 return false;
         }
     }

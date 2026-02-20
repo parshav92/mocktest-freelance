@@ -128,7 +128,7 @@ export interface FillMissingSentenceContent {
 export interface EssayContent {
     prompt: string;
     word_limit: number;
-    time_limit_mins: number;
+    time_mins: number;
     rubric: Record<string, number>; // e.g., {"content": 10, "structure": 5}
 }
 

@@ -1,6 +1,8 @@
 "use client";
 
 import { memo, useState } from "react";
+import dynamic from "next/dynamic";
+import * as MDEditorCommands from "@uiw/react-md-editor/commands";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -14,6 +16,11 @@ import type {
     EssayContent,
     MCQOption,
 } from "@/types/test";
+import "@uiw/react-md-editor/markdown-editor.css";
+import "@uiw/react-markdown-preview/markdown.css";
+
+// Dynamically import MDEditor to avoid SSR issues
+const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
 // ============================================
 // LAYOUT TYPE
@@ -166,7 +173,7 @@ export const MCQRenderer = memo(
                     <div
                         className={cn(
                             "transition-all duration-300 ease-in-out",
-                            optionsCollapsed ? "flex-1 pr-4" : "w-1/2 pr-8"
+                            optionsCollapsed ? "flex-1 pr-4" : "w-1/2 pr-8",
                         )}
                     >
                         <MCQQuestionStem content={content} />
@@ -176,15 +183,21 @@ export const MCQRenderer = memo(
                     <div className="relative flex items-stretch">
                         <div className="w-px bg-gray-200" />
                         <button
-                            onClick={() => setOptionsCollapsed(!optionsCollapsed)}
+                            onClick={() =>
+                                setOptionsCollapsed(!optionsCollapsed)
+                            }
                             className={cn(
                                 "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-0",
                                 "w-6 h-12 flex items-center justify-center",
                                 "bg-white border border-gray-300 rounded-full shadow-sm",
                                 "hover:bg-gray-50 hover:border-gray-400 transition-colors",
-                                "z-10 cursor-pointer"
+                                "z-10 cursor-pointer",
                             )}
-                            title={optionsCollapsed ? "Show options" : "Hide options"}
+                            title={
+                                optionsCollapsed
+                                    ? "Show options"
+                                    : "Hide options"
+                            }
                         >
                             {optionsCollapsed ? (
                                 <ChevronLeft className="h-4 w-4 text-gray-600" />
@@ -198,7 +211,9 @@ export const MCQRenderer = memo(
                     <div
                         className={cn(
                             "transition-all duration-300 ease-in-out ",
-                            optionsCollapsed ? "w-0 opacity-0 pl-0" : "w-1/2 opacity-100 pl-8"
+                            optionsCollapsed
+                                ? "w-0 opacity-0 pl-0"
+                                : "w-1/2 opacity-100 pl-8",
                         )}
                     >
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
@@ -473,25 +488,36 @@ export const EssayRenderer = memo(
                         Word limit: {content.word_limit}
                     </Badge>
                     <Badge variant="outline" className="text-xs gap-1">
-                        Time: {content.time_limit_mins} min
+                        Time: {content.time_mins} min
                     </Badge>
                 </div>
             </div>
         );
 
         const editorSection = (
-            <div className="space-y-2">
-                <textarea
+            <div className="space-y-2" data-color-mode="light">
+                <MDEditor
                     value={selected || ""}
-                    onChange={(e) => onSelect(e.target.value)}
-                    placeholder="Write your essay here..."
-                    rows={layout === "split" ? 20 : 15}
-                    className={cn(
-                        "w-full p-4 rounded-lg text-sm text-foreground leading-relaxed resize-y transition-colors",
-                        "border-2 border-gray-200 bg-white",
-                        "focus:border-[#2563eb] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20",
-                        "placeholder:text-muted-foreground",
-                    )}
+                    onChange={(val) => onSelect(val || "")}
+                    preview="edit"
+                    height={layout === "split" ? 450 : 350}
+                    enableScroll={true}
+                    visibleDragbar={true}
+                    textareaProps={{
+                        placeholder: "Write your essay here...",
+                    }}
+                    commands={[
+                        MDEditorCommands.heading1,
+                        MDEditorCommands.heading2,
+                        MDEditorCommands.bold,
+                        MDEditorCommands.italic,
+                        MDEditorCommands.divider,
+                        MDEditorCommands.unorderedListCommand,
+                        MDEditorCommands.orderedListCommand,
+
+                        MDEditorCommands.fullscreen,
+                    ]}
+                    extraCommands={[]}
                 />
                 <div className="flex items-center justify-end">
                     <span
@@ -515,7 +541,7 @@ export const EssayRenderer = memo(
                     <div
                         className={cn(
                             "transition-all duration-300 ease-in-out",
-                            editorCollapsed ? "flex-1 pr-4" : "w-1/2 pr-8"
+                            editorCollapsed ? "flex-1 pr-4" : "w-1/2 pr-8",
                         )}
                     >
                         {promptSection}
@@ -531,9 +557,11 @@ export const EssayRenderer = memo(
                                 "w-6 h-12 flex items-center justify-center",
                                 "bg-white border border-gray-300 rounded-full shadow-sm",
                                 "hover:bg-gray-50 hover:border-gray-400 transition-colors",
-                                "z-10 cursor-pointer"
+                                "z-10 cursor-pointer",
                             )}
-                            title={editorCollapsed ? "Show editor" : "Hide editor"}
+                            title={
+                                editorCollapsed ? "Show editor" : "Hide editor"
+                            }
                         >
                             {editorCollapsed ? (
                                 <ChevronLeft className="h-4 w-4 text-gray-600" />
@@ -547,7 +575,9 @@ export const EssayRenderer = memo(
                     <div
                         className={cn(
                             "transition-all duration-300 ease-in-out ",
-                            editorCollapsed ? "w-0 opacity-0 pl-0" : "w-1/2 opacity-100 pl-8"
+                            editorCollapsed
+                                ? "w-0 opacity-0 pl-0"
+                                : "w-1/2 opacity-100 pl-8",
                         )}
                     >
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">

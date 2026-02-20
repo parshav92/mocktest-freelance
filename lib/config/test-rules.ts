@@ -7,6 +7,12 @@
 
 export const TEST_CONFIG = {
     // ============================================
+    // GENERAL SETTINGS
+    // ============================================
+    /** Seconds threshold to determine if this is a fresh start or resume */
+    freshStartThresholdSecs: 10,
+
+    // ============================================
     // TIMER SETTINGS
     // ============================================
     timer: {
@@ -81,13 +87,13 @@ export const TEST_CONFIG = {
         /** Open test in a new browser tab */
         openInNewTab: true,
         /** Disable right-click context menu */
-        disableRightClick: true,
+        disableRightClick: false,
         /** Disable keyboard shortcuts (F12, Ctrl+Shift+I, etc.) */
         disableDevTools: false,
         /** Disable copy/paste from outside */
         disableCopyPaste: false,
         /** Disable text selection on question content */
-        disableTextSelection: true,
+        disableTextSelection: false,
         /** Track tab/window visibility changes */
         detectTabSwitch: false,
         /** Number of warnings before auto-submit */
@@ -146,11 +152,6 @@ export const TEST_CONFIG = {
                             "Sometimes, particularly in the Reading Test, you will have to scroll down using the scroll bar so that you can read the whole question or extract, like in this picture. If you just want to see the question on its own, without the answers, you can click on the arrow you see in the middle of the screen. You can always click the same arrow again to show the answers again.",
                         visualType: "scroll",
                     },
-                ],
-            },
-            {
-                title: "How to navigate the test?",
-                sections: [
                     {
                         heading: "Next and Back",
                         content:
@@ -218,7 +219,13 @@ export interface DBInstructionPage {
 export interface InstructionSection {
     heading: string;
     content: string;
-    visualType?: "navigation" | "flag" | "progress" | "timer" | "scroll" | "zoom";
+    visualType?:
+        | "navigation"
+        | "flag"
+        | "progress"
+        | "timer"
+        | "scroll"
+        | "zoom";
 }
 
 export interface GeneralInstructionPage {

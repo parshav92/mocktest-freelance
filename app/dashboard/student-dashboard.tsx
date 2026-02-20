@@ -15,7 +15,7 @@ import {
     Eye,
     Loader2,
 } from "lucide-react";
-import type { Test } from "@/types/test";
+import type { Test, Subject } from "@/types/test";
 
 interface StudentUser {
     id: string;
@@ -31,7 +31,10 @@ interface StudentDashboardProps {
 export function StudentDashboard({ user }: StudentDashboardProps) {
     const router = useRouter();
     const [recentTests, setRecentTests] = useState<Test[]>([]);
+    const [subjects, setSubjects] = useState<Subject[]>([]);
     const [loading, setLoading] = useState(true);
+    const [startingSubject, setStartingSubject] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
     const [leftHeight, setLeftHeight] = useState<number | null>(null);
     const rightCardRef = useRef<HTMLDivElement>(null);
 
@@ -54,20 +57,59 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
     }, [syncHeight, loading]);
 
     useEffect(() => {
-        fetchRecentTests();
+        fetchData();
     }, []);
 
-    const fetchRecentTests = async () => {
+    const fetchData = async () => {
         try {
-            const res = await fetch("/api/tests?status=submitted&limit=5");
-            if (res.ok) {
-                const data = await res.json();
-                setRecentTests(data.tests || []);
+            // Fetch both in parallel for better performance
+            const [testsRes, subjectsRes] = await Promise.all([
+                fetch("/api/tests?status=submitted&limit=5"),
+                fetch("/api/subjects"),
+            ]);
+
+            if (testsRes.ok) {
+                const testsData = await testsRes.json();
+                setRecentTests(testsData.tests || []);
+            }
+
+            if (subjectsRes.ok) {
+                const subjectsData = await subjectsRes.json();
+                setSubjects(subjectsData.subjects || []);
             }
         } catch {
-            // Silent fail
+            // Silent fail for tests, show error for subjects
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleStartTest = async (subject: Subject) => {
+        if (user.isReadOnly) return;
+
+        setStartingSubject(subject.id);
+        setError(null);
+
+        try {
+            const res = await fetch("/api/tests", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    subject_id: subject.id,
+                    start_immediately: false,
+                }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || "Failed to create test");
+            }
+
+            router.push(`/dashboard/tests/${data.test.id}`);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to start test");
+            setStartingSubject(null);
         }
     };
 
@@ -273,59 +315,59 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                         )}
                     </div>
 
-                    {/* RIGHT HALF: Take Practice Test CTA */}
+                    {/* RIGHT HALF: Subject Selection */}
                     <div ref={rightCardRef} className="flex items-start">
                         <Card className="bg-white w-full">
-                            <CardContent className="p-8 text-center">
-                                <div className="w-16 h-16 mx-auto mb-6 rounded-full bg-[#1a2744]/10 flex items-center justify-center">
-                                    <FileText className="h-8 w-8 text-[#1a2744]" />
+                            <CardContent className="p-8">
+                                {/* Title */}
+                                <div className="text-center mb-8">
+                                    <h2 className="text-2xl font-bold text-[#1a2744] leading-tight">
+                                        Selective High School Placement
+                                    </h2>
+                                    <h3 className="text-2xl font-bold text-[#1a2744]">
+                                        Practice Test
+                                    </h3>
+                                    <div className="w-full h-1 bg-gradient-to-r from-red-500 via-red-400 to-red-500 mt-4" />
                                 </div>
 
-                                <h2 className="text-2xl font-bold text-[#1a2744] mb-3">
-                                    Ready to Practice?
-                                </h2>
+                                {error && (
+                                    <div className="mb-6 p-3 rounded bg-red-100 text-red-700 text-sm text-center">
+                                        {error}
+                                    </div>
+                                )}
 
-                                <p className="text-gray-600 mb-6 max-w-sm mx-auto">
-                                    Challenge yourself with practice tests
-                                    designed to help you prepare for the
-                                    Selective High School Placement Test.
-                                </p>
-
-                                <div className="space-y-3 text-sm text-gray-500 mb-8">
-                                    <div className="flex items-center justify-center gap-2">
-                                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                        <span>4 subject areas available</span>
-                                    </div>
-                                    <div className="flex items-center justify-center gap-2">
-                                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                        <span>
-                                            Adaptive difficulty based on your
-                                            level
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center justify-center gap-2">
-                                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                                        <span>
-                                            Detailed solutions for every
-                                            question
-                                        </span>
-                                    </div>
+                                {/* Subject Buttons */}
+                                <div className="space-y-3">
+                                    {subjects.map((subject) => (
+                                        <button
+                                            key={subject.id}
+                                            onClick={() => handleStartTest(subject)}
+                                            disabled={user.isReadOnly || startingSubject !== null}
+                                            className="w-full py-4 px-6 bg-[#1a2744] text-white font-medium rounded-md
+                                                hover:bg-[#1a2744]/90 transition-colors text-center
+                                                disabled:opacity-50 disabled:cursor-not-allowed
+                                                flex items-center justify-center gap-2"
+                                        >
+                                            {startingSubject === subject.id ? (
+                                                <>
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    Starting...
+                                                </>
+                                            ) : (
+                                                subject.name
+                                            )}
+                                        </button>
+                                    ))}
                                 </div>
 
-                                <Button
-                                    size="lg"
-                                    className="bg-[#1a2744] hover:bg-[#1a2744]/90 px-8"
-                                    onClick={() =>
-                                        router.push("/dashboard/tests")
-                                    }
-                                    disabled={user.isReadOnly}
-                                >
-                                    Take Practice Test
-                                    <ArrowRight className="h-4 w-4 ml-2" />
-                                </Button>
+                                {subjects.length === 0 && !loading && (
+                                    <p className="text-center text-gray-500">
+                                        No subjects available at the moment.
+                                    </p>
+                                )}
 
-                                {user.isReadOnly && (
-                                    <p className="text-xs text-amber-600 mt-3">
+                                {user.isReadOnly && subjects.length > 0 && (
+                                    <p className="text-xs text-amber-600 mt-4 text-center">
                                         Subscription required to take new tests
                                     </p>
                                 )}
