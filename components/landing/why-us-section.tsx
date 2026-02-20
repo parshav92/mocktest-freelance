@@ -110,7 +110,7 @@ const WhyUsSection = () => {
                                                 <h3 className="text-lg font-semibold text-slate-900">
                                                     {item.title}
                                                 </h3>
-                                                <p className="text-slate-600 text-sm">
+                                                <p className="text-slate-600 text-md">
                                                     {item.description}
                                                 </p>
                                             </div>

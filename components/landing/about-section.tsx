@@ -116,7 +116,7 @@ const AboutSection = () => {
                     {/* Right Column - Content */}
                     <div className="order-2 lg:order-2 max-w-xl">
                         {/* Badge */}
-                        <span className="inline-block px-4 py-1.5 mb-6 text-sm font-medium text-sky-700 bg-sky-100 rounded-full">
+                        <span className="inline-block px-4 py-1.5 mb-6 text-md font-medium text-sky-700 bg-sky-100 rounded-full">
                             About Us
                         </span>
 
@@ -168,7 +168,7 @@ const AboutSection = () => {
                                     >
                                         {stat.value}
                                     </div>
-                                    <div className="text-sm text-slate-500">
+                                    <div className="text-md text-slate-500">
                                         {stat.label}
                                     </div>
                                 </div>

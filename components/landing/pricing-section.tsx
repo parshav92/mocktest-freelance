@@ -166,15 +166,7 @@ const PricingSection = () => {
                 </div>
 
                 {/* Bottom Note */}
-                <p className="text-center text-zinc-400 text-sm mt-10">
-                    All plans include a 7-day money-back guarantee.{" "}
-                    <a
-                        href="/contact"
-                        className="text-emerald-600 hover:text-emerald-700 transition-colors"
-                    >
-                        Questions? Contact us
-                    </a>
-                </p>
+                
             </div>
         </section>
     );

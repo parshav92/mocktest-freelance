@@ -80,7 +80,7 @@ const Navbar = () => {
                                 href={link.href}
                                 onClick={(e) => handleAnchorClick(e, link.href)}
                                 className={cn(
-                                    "relative px-4 py-2 text-sm font-medium rounded-lg transition-all duration-300 hover:scale-[0.97]",
+                                    "relative px-4 py-2 text-xl font-medium rounded-lg transition-all duration-300 hover:scale-[0.97]",
                                     pathname === link.href
                                         ? "text-zinc-900"
                                         : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80",
@@ -95,7 +95,16 @@ const Navbar = () => {
                     </div>
 
                     {/* Auth Buttons - Hidden for now */}
-                    <div className="hidden md:flex items-center gap-3"></div>
+                    <div className="hidden md:flex items-center gap-3">
+                        <Link href="/auth">
+                            <Button
+                                variant="outline"
+                                className="rounded-lg border-zinc-200 hover:scale-[0.97] transition-transform"
+                            >
+                                Sign in
+                            </Button>
+                        </Link>
+                    </div>
                 </nav>
 
                 {/* Mobile Menu */}

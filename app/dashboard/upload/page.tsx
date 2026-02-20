@@ -195,7 +195,7 @@ export default function AdminUploadPage() {
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `${type}_template.csv`;
+            a.download = `test_${type}_template.csv`;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(url);
