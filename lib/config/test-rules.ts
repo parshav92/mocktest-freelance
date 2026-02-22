@@ -85,7 +85,7 @@ export const TEST_CONFIG = {
         /** Enable fullscreen mode */
         requireFullscreen: false,
         /** Open test in a new browser tab */
-        openInNewTab: true,
+        openInNewTab: false,
         /** Disable right-click context menu */
         disableRightClick: false,
         /** Disable keyboard shortcuts (F12, Ctrl+Shift+I, etc.) */

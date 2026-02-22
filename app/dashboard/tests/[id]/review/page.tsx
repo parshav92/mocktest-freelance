@@ -26,6 +26,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
+import { RichTextViewer } from "@/components/ui/rich-text-editor";
 
 interface ReviewQuestion {
     question_number: number;
@@ -105,7 +106,9 @@ export default function TestReviewPage() {
     const [error, setError] = useState<string | null>(null);
     const [openIndex, setOpenIndex] = useState<number | null>(null);
     const [showSolution, setShowSolution] = useState(false);
-    const [essayEvaluations, setEssayEvaluations] = useState<EssayEvaluation[]>([]);
+    const [essayEvaluations, setEssayEvaluations] = useState<EssayEvaluation[]>(
+        [],
+    );
     const [essayPolling, setEssayPolling] = useState(false);
 
     useEffect(() => {
@@ -121,7 +124,11 @@ export default function TestReviewPage() {
             if (res.ok && data.evaluations) {
                 setEssayEvaluations(data.evaluations);
                 // Stop polling when all completed or failed
-                if (data.status === "completed" || data.status === "failed" || data.status === "no_essays") {
+                if (
+                    data.status === "completed" ||
+                    data.status === "failed" ||
+                    data.status === "no_essays"
+                ) {
                     setEssayPolling(false);
                 }
             }
@@ -151,7 +158,8 @@ export default function TestReviewPage() {
             if (data.essay_evaluations) {
                 setEssayEvaluations(data.essay_evaluations);
                 const hasPending = data.essay_evaluations.some(
-                    (e: EssayEvaluation) => e.status === "pending" || e.status === "processing",
+                    (e: EssayEvaluation) =>
+                        e.status === "pending" || e.status === "processing",
                 );
                 if (hasPending) {
                     setEssayPolling(true);
@@ -210,7 +218,7 @@ export default function TestReviewPage() {
                     </h2>
                     <p className="text-sm text-slate-500 mb-6">{error}</p>
                     <Button
-                        onClick={() => router.push("/dashboard/tests")}
+                        onClick={() => router.push("/dashboard")}
                         className="bg-[#1a2744] hover:bg-[#1a2744]/90"
                     >
                         Back to Tests
@@ -240,7 +248,7 @@ export default function TestReviewPage() {
                 {/* Nav */}
                 <div className="pt-6 pb-2">
                     <button
-                        onClick={() => router.push("/dashboard/tests")}
+                        onClick={() => router.push("/dashboard")}
                         className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors"
                     >
                         <ArrowLeft className="h-3.5 w-3.5" />
@@ -543,7 +551,7 @@ export default function TestReviewPage() {
                                         <span className="flex items-center">
                                             {getTypeIcon()}
                                         </span>
-                                        <span className="text-sm text-sky-600 hover:text-sky-700 hover:underline truncate pr-4">
+                                        <span className="text-sm text-sky-600 hover:text-sky-700 hover:underline truncate pr-4 cursor-pointer">
                                             {getQuestionTitle()}
                                         </span>
                                         <span className="flex justify-center">
@@ -574,7 +582,7 @@ export default function TestReviewPage() {
                 <div className="pb-14 flex flex-col-reverse sm:flex-row items-center justify-end gap-3">
                     <Button
                         variant="outline"
-                        onClick={() => router.push("/dashboard/tests")}
+                        onClick={() => router.push("/dashboard")}
                         className="w-full sm:w-auto border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 transition-colors"
                     >
                         <ArrowLeft className="h-4 w-4 mr-2" />
@@ -757,7 +765,9 @@ export default function TestReviewPage() {
                                     }
                                     essayEvaluation={
                                         essayEvaluations.find(
-                                            (e) => e.question_id === openItem.question.id,
+                                            (e) =>
+                                                e.question_id ===
+                                                openItem.question.id,
                                         ) || null
                                     }
                                 />
@@ -1011,11 +1021,11 @@ function ReviewQuestionDisplay({
                 correct_index: number;
             }>;
             const studentAnswers = (studentAnswer as number[]) || [];
-           const correctAnswers =
-  (correctAnswer as { answers?: number[] })?.answers ||
-  blanks.map((b) =>
-    b.options.findIndex((opt) => opt === b.correct)
-  );
+            const correctAnswers =
+                (correctAnswer as { answers?: number[] })?.answers ||
+                blanks.map((b) =>
+                    b.options.findIndex((opt) => opt === b.correct),
+                );
             const parts = passageText.split(/___+|\[\d+\]|\{blank\}/gi);
 
             return (
@@ -1238,9 +1248,16 @@ function ReviewQuestionDisplay({
                             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
                                 Your Response
                             </p>
-                            <p className="text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-                                {essayText || "No response submitted."}
-                            </p>
+                            {essayText ? (
+                                <RichTextViewer
+                                    content={essayText}
+                                    className="text-sm text-slate-700"
+                                />
+                            ) : (
+                                <p className="text-sm text-slate-700 leading-relaxed">
+                                    No response submitted.
+                                </p>
+                            )}
                         </div>
 
                         {/* AI Evaluation */}
@@ -1267,46 +1284,78 @@ function ReviewQuestionDisplay({
                                             <Badge
                                                 className={cn(
                                                     "ml-2 text-xs",
-                                                    essayEvaluation.score! >= (essayEvaluation.max_score! * 0.75)
+                                                    essayEvaluation.score! >=
+                                                        essayEvaluation.max_score! *
+                                                            0.75
                                                         ? "bg-emerald-100 text-emerald-700"
-                                                        : essayEvaluation.score! >= (essayEvaluation.max_score! * 0.5)
-                                                            ? "bg-amber-100 text-amber-700"
-                                                            : "bg-rose-100 text-rose-700",
+                                                        : essayEvaluation.score! >=
+                                                            essayEvaluation.max_score! *
+                                                                0.5
+                                                          ? "bg-amber-100 text-amber-700"
+                                                          : "bg-rose-100 text-rose-700",
                                                 )}
                                             >
                                                 {Math.round(
-                                                    (essayEvaluation.score! / essayEvaluation.max_score!) * 100,
-                                                )}%
+                                                    (essayEvaluation.score! /
+                                                        essayEvaluation.max_score!) *
+                                                        100,
+                                                )}
+                                                %
                                             </Badge>
                                         </div>
 
                                         {/* Rubric breakdown */}
-                                        {essayEvaluation.rubric_scores && rubric && (
-                                            <div className="space-y-2">
-                                                {Object.entries(essayEvaluation.rubric_scores).map(
-                                                    ([category, score]) => {
-                                                        const maxPoints = rubric[category] || score;
-                                                        const pct = maxPoints > 0 ? (score / maxPoints) * 100 : 0;
-                                                        return (
-                                                            <div key={category}>
-                                                                <div className="flex items-center justify-between mb-1">
-                                                                    <span className="text-xs font-medium text-slate-600 capitalize">
-                                                                        {category}
-                                                                    </span>
-                                                                    <span className="text-xs text-slate-500 tabular-nums">
-                                                                        {score}/{maxPoints}
-                                                                    </span>
+                                        {essayEvaluation.rubric_scores &&
+                                            rubric && (
+                                                <div className="space-y-2">
+                                                    {Object.entries(
+                                                        essayEvaluation.rubric_scores,
+                                                    ).map(
+                                                        ([category, score]) => {
+                                                            const maxPoints =
+                                                                rubric[
+                                                                    category
+                                                                ] || score;
+                                                            const pct =
+                                                                maxPoints > 0
+                                                                    ? (score /
+                                                                          maxPoints) *
+                                                                      100
+                                                                    : 0;
+                                                            return (
+                                                                <div
+                                                                    key={
+                                                                        category
+                                                                    }
+                                                                >
+                                                                    <div className="flex items-center justify-between mb-1">
+                                                                        <span className="text-xs font-medium text-slate-600 capitalize">
+                                                                            {
+                                                                                category
+                                                                            }
+                                                                        </span>
+                                                                        <span className="text-xs text-slate-500 tabular-nums">
+                                                                            {
+                                                                                score
+                                                                            }
+                                                                            /
+                                                                            {
+                                                                                maxPoints
+                                                                            }
+                                                                        </span>
+                                                                    </div>
+                                                                    <Progress
+                                                                        value={
+                                                                            pct
+                                                                        }
+                                                                        className="h-1.5"
+                                                                    />
                                                                 </div>
-                                                                <Progress
-                                                                    value={pct}
-                                                                    className="h-1.5"
-                                                                />
-                                                            </div>
-                                                        );
-                                                    },
-                                                )}
-                                            </div>
-                                        )}
+                                                            );
+                                                        },
+                                                    )}
+                                                </div>
+                                            )}
                                     </div>
 
                                     {/* Feedback */}
@@ -1330,7 +1379,8 @@ function ReviewQuestionDisplay({
                                         </p>
                                     </div>
                                     <p className="text-xs text-rose-600 mt-1">
-                                        AI evaluation encountered an error. Please contact support.
+                                        AI evaluation encountered an error.
+                                        Please contact support.
                                     </p>
                                 </div>
                             ) : (
@@ -1342,7 +1392,8 @@ function ReviewQuestionDisplay({
                                                 Evaluation in progress
                                             </p>
                                             <p className="text-xs text-amber-600 mt-0.5">
-                                                Your essay is being evaluated by AI. This may take a moment.
+                                                Your essay is being evaluated by
+                                                AI. This may take a moment.
                                             </p>
                                         </div>
                                     </div>

@@ -96,14 +96,11 @@ export default function TestEnvironmentPage() {
     // Memoize current answer to avoid unnecessary recalculations
     const currentAnswer = useMemo(
         () => (currentQuestion ? (answers[currentQuestion.id] ?? null) : null),
-        [currentQuestion, answers]
+        [currentQuestion, answers],
     );
 
     // Memoize answered set to avoid recreation on every render
-    const answeredSet = useMemo(
-        () => new Set(Object.keys(answers)),
-        [answers]
-    );
+    const answeredSet = useMemo(() => new Set(Object.keys(answers)), [answers]);
 
     // ============================================
     // TIMER
@@ -303,40 +300,49 @@ export default function TestEnvironmentPage() {
         [currentQuestion, debouncedSave],
     );
 
-    const handleNavigate = useCallback((direction: "prev" | "next") => {
-        // Save current answer before navigating
-        if (currentQuestion && answers[currentQuestion.id] !== undefined) {
-            saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
-        }
-
-        if (direction === "next") {
-            if (currentIndex < questions.length - 1) {
-                setCurrentIndex((i) => i + 1);
-            } else {
-                // Last question — go to pre-submit
-                if (TEST_CONFIG.submit.showPreSubmitSummary) {
-                    setPhase("pre-submit");
-                }
-            }
-        } else {
-            if (
-                currentIndex > 0 &&
-                TEST_CONFIG.navigation.allowBackNavigation
-            ) {
-                setCurrentIndex((i) => i - 1);
-            }
-        }
-    }, [currentQuestion, answers, saveAnswer, currentIndex, questions.length]);
-
-    const handleJumpTo = useCallback((index: number) => {
-        if (TEST_CONFIG.navigation.allowQuestionJump) {
-            // Save current answer before jumping
+    const handleNavigate = useCallback(
+        (direction: "prev" | "next") => {
+            // Save current answer before navigating
             if (currentQuestion && answers[currentQuestion.id] !== undefined) {
                 saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
             }
-            setCurrentIndex(index);
-        }
-    }, [currentQuestion, answers, saveAnswer]);
+
+            if (direction === "next") {
+                if (currentIndex < questions.length - 1) {
+                    setCurrentIndex((i) => i + 1);
+                } else {
+                    // Last question — go to pre-submit
+                    if (TEST_CONFIG.submit.showPreSubmitSummary) {
+                        setPhase("pre-submit");
+                    }
+                }
+            } else {
+                if (
+                    currentIndex > 0 &&
+                    TEST_CONFIG.navigation.allowBackNavigation
+                ) {
+                    setCurrentIndex((i) => i - 1);
+                }
+            }
+        },
+        [currentQuestion, answers, saveAnswer, currentIndex, questions.length],
+    );
+
+    const handleJumpTo = useCallback(
+        (index: number) => {
+            if (TEST_CONFIG.navigation.allowQuestionJump) {
+                // Save current answer before jumping
+                if (
+                    currentQuestion &&
+                    answers[currentQuestion.id] !== undefined
+                ) {
+                    saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
+                }
+                setCurrentIndex(index);
+            }
+        },
+        [currentQuestion, answers, saveAnswer],
+    );
 
     const handleToggleFlag = useCallback(() => {
         if (!currentQuestion || !TEST_CONFIG.flag.enabled) return;
@@ -758,7 +764,7 @@ export default function TestEnvironmentPage() {
             <div className="flex-1 flex overflow-hidden">
                 {/* LEFT PANEL: Passage (if applicable) */}
                 {hasPassage && passage && (
-                    <div className="w-1/2 border-r bg-white flex flex-col">
+                    <div className="w-1/2 border-r bg-white flex flex-col overflow-y-auto">
                         {/* Passage header */}
                         <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
                             <span className="text-sm font-medium text-[#1a2744]">
@@ -779,7 +785,9 @@ export default function TestEnvironmentPage() {
                                     <div className="mb-4">
                                         <img
                                             src={passage.image_url}
-                                            alt={passage.title || "Passage image"}
+                                            alt={
+                                                passage.title || "Passage image"
+                                            }
                                             className="max-w-full rounded-lg"
                                         />
                                     </div>

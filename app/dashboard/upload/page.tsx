@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -11,6 +12,8 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { VisuallyHidden } from "radix-ui";
 import { Label } from "@/components/ui/label";
 import {
     Select,
@@ -101,8 +104,10 @@ const UPLOAD_TYPES = [
 
 interface UploadedImage {
     file: File;
-    storagePath: string;
+    storagePath: string; // original path (key for matching requirements)
+    uploadPath: string; // actual upload path (.webp)
     preview: string;
+    sizeKB?: number; // compressed size in KB
 }
 
 interface FinalResult {
@@ -139,25 +144,47 @@ export default function AdminUploadPage() {
 
     // Handle file selection
     const handleFileSelect = useCallback(async (selectedFile: File) => {
-        if (
-            selectedFile.type !== "text/csv" &&
-            !selectedFile.name.endsWith(".csv")
-        ) {
+        const isCsv =
+            selectedFile.type === "text/csv" ||
+            selectedFile.name.endsWith(".csv");
+        const isExcel =
+            selectedFile.name.endsWith(".xlsx") ||
+            selectedFile.name.endsWith(".xls") ||
+            selectedFile.type ===
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+            selectedFile.type === "application/vnd.ms-excel";
+
+        if (!isCsv && !isExcel) {
             setParseResult({
                 success: false,
                 type: "",
                 questions: [],
                 passages: [],
-                errors: [{ row: 0, message: "Please upload a CSV file" }],
+                errors: [
+                    {
+                        row: 0,
+                        message:
+                            "Please upload a CSV or Excel file (.csv, .xlsx, .xls)",
+                    },
+                ],
             });
             return;
         }
+
         setFile(selectedFile);
         setParseResult(null);
 
-        // Read file content
-        const text = await selectedFile.text();
-        setCsvText(text);
+        if (isExcel) {
+            // Convert Excel to CSV using SheetJS
+            const arrayBuffer = await selectedFile.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: "array" });
+            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+            const csv = XLSX.utils.sheet_to_csv(firstSheet);
+            setCsvText(csv);
+        } else {
+            const text = await selectedFile.text();
+            setCsvText(text);
+        }
     }, []);
 
     // Drag and drop handlers
@@ -219,20 +246,52 @@ export default function AdminUploadPage() {
         }
     };
 
-    // Handle image upload for a specific field
-    const handleImageUpload = (storagePath: string, file: File) => {
-        const preview = URL.createObjectURL(file);
-        setUploadedImages((prev) => {
-            const newMap = new Map(prev);
-            // Revoke old preview URL if exists
-            const existing = newMap.get(storagePath);
-            if (existing) {
-                URL.revokeObjectURL(existing.preview);
+    // Handle image upload for a specific field (compresses to WebP ≤50 KB)
+    const handleImageUpload = useCallback(
+        async (storagePath: string, imageFile: File): Promise<void> => {
+            try {
+                const { blob, sizeKB } = await compressToWebP(imageFile, 50);
+                const baseName = imageFile.name.replace(/\.[^/.]+$/, "");
+                const webpFile = new File([blob], `${baseName}.webp`, {
+                    type: "image/webp",
+                });
+                // Replace extension in storage path with .webp
+                const uploadPath = storagePath.replace(/\.[^/.]+$/, ".webp");
+                const preview = URL.createObjectURL(webpFile);
+
+                setUploadedImages((prev) => {
+                    const newMap = new Map(prev);
+                    const existing = newMap.get(storagePath);
+                    if (existing) URL.revokeObjectURL(existing.preview);
+                    newMap.set(storagePath, {
+                        file: webpFile,
+                        storagePath,
+                        uploadPath,
+                        preview,
+                        sizeKB,
+                    });
+                    return newMap;
+                });
+            } catch {
+                // Fallback: use original file without compression
+                const preview = URL.createObjectURL(imageFile);
+                setUploadedImages((prev) => {
+                    const newMap = new Map(prev);
+                    const existing = newMap.get(storagePath);
+                    if (existing) URL.revokeObjectURL(existing.preview);
+                    newMap.set(storagePath, {
+                        file: imageFile,
+                        storagePath,
+                        uploadPath: storagePath,
+                        preview,
+                        sizeKB: Math.round(imageFile.size / 1024),
+                    });
+                    return newMap;
+                });
             }
-            newMap.set(storagePath, { file, storagePath, preview });
-            return newMap;
-        });
-    };
+        },
+        [],
+    );
 
     // Remove uploaded image
     const handleRemoveImage = (storagePath: string) => {
@@ -283,10 +342,10 @@ export default function AdminUploadPage() {
                 }),
             );
 
-            // Add images
+            // Add images (use uploadPath so API receives .webp paths)
             uploadedImages.forEach((img) => {
                 formData.append("images", img.file);
-                formData.append("imagePaths", img.storagePath);
+                formData.append("imagePaths", img.uploadPath);
             });
 
             const response = await fetch("/api/admin/questions/upload", {
@@ -415,14 +474,15 @@ export default function AdminUploadPage() {
                         Step 2: Upload CSV File
                     </CardTitle>
                     <CardDescription className="text-sm">
-                        Drag and drop your CSV file or click to browse
+                        Drag and drop your CSV or Excel file (.csv, .xlsx, .xls)
+                        or click to browse
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <input
                         ref={fileInputRef}
                         type="file"
-                        accept=".csv"
+                        accept=".csv,.xlsx,.xls"
                         className="hidden"
                         onChange={(e) => {
                             const f = e.target.files?.[0];
@@ -477,10 +537,10 @@ export default function AdminUploadPage() {
                                     <Upload className="h-8 w-8 sm:h-12 sm:w-12 text-muted-foreground" />
                                 </div>
                                 <p className="text-base sm:text-lg font-medium mb-2">
-                                    Drop your CSV file here
+                                    Drop your CSV or Excel file here
                                 </p>
                                 <p className="text-xs sm:text-sm text-muted-foreground mb-4">
-                                    or click to browse
+                                    .csv, .xlsx, .xls &mdash; or click to browse
                                 </p>
                                 <Button
                                     variant="outline"
@@ -1108,53 +1168,177 @@ function ImageUploadField({
 }: {
     requirement: ImageRequirement;
     uploadedImage?: UploadedImage;
-    onUpload: (file: File) => void;
+    onUpload: (file: File) => Promise<void>;
     onRemove: () => void;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
+    const [isCompressing, setIsCompressing] = useState(false);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+
+    const handleFileChange = async (file: File) => {
+        setIsCompressing(true);
+        try {
+            await onUpload(file);
+        } finally {
+            setIsCompressing(false);
+            // Reset input so the same file can be re-selected
+            if (inputRef.current) inputRef.current.value = "";
+        }
+    };
 
     return (
-        <div className="flex items-center gap-4 p-3 border rounded-lg">
-            <div className="flex-1">
-                <Label className="text-sm">{requirement.label}</Label>
-                <p className="text-xs text-muted-foreground font-mono">
-                    {requirement.storagePath}
-                </p>
+        <>
+            <div className="flex items-center gap-4 p-3 border rounded-lg">
+                <div className="flex-1 min-w-0">
+                    <Label className="text-sm">{requirement.label}</Label>
+                    <p className="text-xs text-muted-foreground font-mono truncate">
+                        {uploadedImage
+                            ? uploadedImage.uploadPath
+                            : requirement.storagePath}
+                    </p>
+                </div>
+
+                {isCompressing ? (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Compressing&hellip;
+                    </div>
+                ) : uploadedImage ? (
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            className="relative group cursor-zoom-in focus:outline-none"
+                            onClick={() => setLightboxOpen(true)}
+                            title="Click to enlarge"
+                        >
+                            <img
+                                src={uploadedImage.preview}
+                                alt={requirement.label}
+                                className="w-12 h-12 object-cover rounded border transition-opacity group-hover:opacity-80"
+                            />
+                            <span className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Eye className="h-4 w-4 text-white drop-shadow" />
+                            </span>
+                            {uploadedImage.sizeKB !== undefined && (
+                                <span className="absolute -bottom-1 -right-1 bg-green-500 text-white text-[9px] px-1 rounded leading-tight">
+                                    {uploadedImage.sizeKB}KB
+                                </span>
+                            )}
+                        </button>
+                        <Button variant="ghost" size="sm" onClick={onRemove}>
+                            Remove
+                        </Button>
+                    </div>
+                ) : (
+                    <>
+                        <input
+                            ref={inputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleFileChange(file);
+                            }}
+                        />
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => inputRef.current?.click()}
+                        >
+                            <Upload className="h-4 w-4 mr-2" />
+                            Upload
+                        </Button>
+                    </>
+                )}
             </div>
 
-            {uploadedImage ? (
-                <div className="flex items-center gap-2">
-                    <img
-                        src={uploadedImage.preview}
-                        alt={requirement.label}
-                        className="w-12 h-12 object-cover rounded border"
-                    />
-                    <Button variant="ghost" size="sm" onClick={onRemove}>
-                        Remove
-                    </Button>
-                </div>
-            ) : (
-                <>
-                    <input
-                        ref={inputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) onUpload(file);
-                        }}
-                    />
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => inputRef.current?.click()}
-                    >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload
-                    </Button>
-                </>
+            {/* Lightbox */}
+            {uploadedImage && (
+                <Dialog open={lightboxOpen} onOpenChange={setLightboxOpen}>
+                    <DialogContent className="max-w-[90vw] max-h-[90vh] p-2 flex flex-col items-center gap-2 bg-black/90 border-0">
+                        <VisuallyHidden.Root>
+                            <DialogTitle>{requirement.label}</DialogTitle>
+                        </VisuallyHidden.Root>
+                        <img
+                            src={uploadedImage.preview}
+                            alt={requirement.label}
+                            className="max-w-full max-h-[80vh] object-contain rounded"
+                        />
+                    </DialogContent>
+                </Dialog>
             )}
-        </div>
+        </>
     );
+}
+
+/**
+ * Compress an image File to WebP with a target max size.
+ * Uses a quality sweep first; if that's not enough, scales the canvas down.
+ */
+async function compressToWebP(
+    file: File,
+    maxSizeKB = 50,
+): Promise<{ blob: Blob; sizeKB: number }> {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        const objectUrl = URL.createObjectURL(file);
+
+        img.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+
+            const maxBytes = maxSizeKB * 1024;
+            const canvas = document.createElement("canvas");
+            const ctx = canvas.getContext("2d")!;
+
+            const encode = (quality: number, scale: number): Promise<Blob> =>
+                new Promise((res) => {
+                    canvas.width = Math.round(img.naturalWidth * scale);
+                    canvas.height = Math.round(img.naturalHeight * scale);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.toBlob(
+                        (b) => res(b ?? new Blob()),
+                        "image/webp",
+                        quality,
+                    );
+                });
+
+            const find = async () => {
+                // Step 1: sweep quality at full resolution
+                for (const q of [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3]) {
+                    const blob = await encode(q, 1.0);
+                    if (blob.size <= maxBytes) {
+                        resolve({
+                            blob,
+                            sizeKB: Math.round(blob.size / 1024),
+                        });
+                        return;
+                    }
+                }
+                // Step 2: quality alone wasn't enough — scale down too
+                for (const scale of [0.8, 0.6, 0.5, 0.4, 0.3]) {
+                    const blob = await encode(0.7, scale);
+                    if (blob.size <= maxBytes) {
+                        resolve({
+                            blob,
+                            sizeKB: Math.round(blob.size / 1024),
+                        });
+                        return;
+                    }
+                }
+                // Last resort: return whatever we get at minimum settings
+                const blob = await encode(0.2, 0.3);
+                resolve({ blob, sizeKB: Math.round(blob.size / 1024) });
+            };
+
+            find();
+        };
+
+        img.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error("Failed to load image for compression"));
+        };
+
+        img.src = objectUrl;
+    });
 }
