@@ -13,6 +13,8 @@ import type {
     EssayContent,
 } from "@/types/test";
 import { EssayEvaluationService } from "@/lib/services/essay-evaluation.service";
+import { countWords, stripHtmlToText } from "@/lib/utils";
+import { validateRubric } from "@/lib/config/essay-config";
 
 // Internal type for questions with answers during grading
 interface GradableQuestion {
@@ -115,7 +117,9 @@ export class TestService {
      * Order: All passage-based questions first (grouped by passage), then standalone questions.
      * This ensures reading comprehension questions appear before fill-in-the-blanks, etc.
      */
-    private async groupAndShuffleQuestions(questionIds: string[]): Promise<string[]> {
+    private async groupAndShuffleQuestions(
+        questionIds: string[],
+    ): Promise<string[]> {
         if (questionIds.length === 0) return [];
 
         // Fetch passage_id for each question
@@ -130,9 +134,15 @@ export class TestService {
         }
 
         // Create maps for question info
-        const questionInfoMap = new Map<string, { passage_id: string | null; question_type: string }>();
+        const questionInfoMap = new Map<
+            string,
+            { passage_id: string | null; question_type: string }
+        >();
         for (const q of questionsWithPassage) {
-            questionInfoMap.set(q.id, { passage_id: q.passage_id, question_type: q.question_type });
+            questionInfoMap.set(q.id, {
+                passage_id: q.passage_id,
+                question_type: q.question_type,
+            });
         }
 
         // Group questions: passage questions grouped together, standalone questions separate
@@ -167,8 +177,8 @@ export class TestService {
         // Final order: ALL passage-based questions first, THEN standalone questions
         // This ensures reading comprehension comes before fill-in-the-blanks
         return [
-            ...shuffledGroups.flat(),      // All passage questions (grouped by passage)
-            ...shuffledStandalone,          // All standalone questions (fill blanks, etc.)
+            ...shuffledGroups.flat(), // All passage questions (grouped by passage)
+            ...shuffledStandalone, // All standalone questions (fill blanks, etc.)
         ];
     }
 
@@ -589,6 +599,11 @@ export class TestService {
             throw new Error("Question is not part of this test");
         }
 
+        // Validate word limit for essay questions
+        if (typeof selected === "string" && selected.length > 0) {
+            await this.validateEssayWordLimit(questionId, selected);
+        }
+
         // Get current answers
         const currentAnswers: TestAnswer[] = test.answers || [];
 
@@ -660,6 +675,25 @@ export class TestService {
             true,
         );
 
+        // Validate word limits for all essay answers before grading
+        const essayQuestions = questions.filter(
+            (q) => q.question_type === "essay",
+        );
+        for (const eq of essayQuestions) {
+            const answer = (test.answers || []).find(
+                (a) => a.question_id === eq.id,
+            );
+            if (answer?.selected && typeof answer.selected === "string") {
+                const essayContent = eq.content as EssayContent;
+                const wc = countWords(answer.selected);
+                if (wc > essayContent.word_limit) {
+                    throw new Error(
+                        `Essay for question ${eq.code} exceeds the word limit of ${essayContent.word_limit} words (${wc} words submitted). Please shorten your response before submitting.`,
+                    );
+                }
+            }
+        }
+
         // Grade the answers (cast to GradableQuestion since we included answers)
         const { gradedAnswers, scoreBreakdown, marksObtained } =
             this.gradeAnswers(
@@ -723,9 +757,19 @@ export class TestService {
 
         const essayService = new EssayEvaluationService(this.supabase);
 
+        let queuedCount = 0;
         for (const question of essayQuestions) {
             const answer = answers.find((a) => a.question_id === question.id);
             if (!answer || !answer.selected) continue;
+
+            // Skip empty essays (just whitespace or empty HTML tags like <p></p>)
+            const plainText = stripHtmlToText(String(answer.selected));
+            if (!plainText.trim()) {
+                console.log(
+                    `[EssayEval] Skipping empty essay for question ${question.id}`,
+                );
+                continue;
+            }
 
             const content = question.content as EssayContent;
 
@@ -736,9 +780,10 @@ export class TestService {
                     student_id: studentId,
                     essay_prompt: content.prompt,
                     student_answer: String(answer.selected),
-                    rubric: content.rubric || {},
+                    rubric: validateRubric(content.rubric),
                     word_limit: content.word_limit,
                 });
+                queuedCount++;
             } catch (err) {
                 // Don't fail the entire submission if queuing fails
                 console.error(
@@ -747,7 +792,33 @@ export class TestService {
                 );
             }
         }
-        // No direct processQueue() call — webhook + cron handle evaluation
+
+        // Only trigger background processing if we actually queued any essays
+        if (queuedCount === 0) {
+            console.log(
+                `[EssayEval] No essays to process for test ${testId} (all empty or skipped)`,
+            );
+            return;
+        }
+
+        // Process evaluations in background (non-blocking).
+        // Don't await — let the response return immediately.
+        // Cron job will retry if this fails.
+        console.log(
+            `[EssayEval] Triggering background processing for ${queuedCount} essay(s) on test ${testId}`,
+        );
+        void essayService.processQueue(queuedCount).then(
+            (result) =>
+                console.log(
+                    `[EssayEval] Background processing completed:`,
+                    result,
+                ),
+            (err) =>
+                console.error(
+                    `[EssayEval] Background processing failed for test ${testId}:`,
+                    err,
+                ),
+        );
     }
 
     /**
@@ -776,7 +847,22 @@ export class TestService {
             breakdown[q.difficulty].total++;
         }
 
-        const gradedAnswers: TestAnswer[] = answers.map((answer) => {
+        // Filter out empty essay answers (treat as unattempted)
+        const filteredAnswers = answers.filter((answer) => {
+            const question = questionMap.get(answer.question_id);
+            if (question?.question_type === "essay") {
+                const plainText = stripHtmlToText(
+                    String(answer.selected || ""),
+                );
+                if (!plainText.trim()) {
+                    // Empty essay - treat as unattempted (don't include in answers)
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        const gradedAnswers: TestAnswer[] = filteredAnswers.map((answer) => {
             const question = questionMap.get(answer.question_id);
 
             if (!question) {
@@ -784,6 +870,17 @@ export class TestService {
                     `Question ${answer.question_id} not found in question map during grading`,
                 );
                 return { ...answer, is_correct: false, marks_earned: 0 };
+            }
+
+            // Essays are evaluated by LLM — mark as pending (null)
+            if (question.question_type === "essay") {
+                // Don't include essays in score breakdown — they're async evaluated
+                // Marks earned stays null until LLM evaluation completes
+                return {
+                    ...answer,
+                    is_correct: null,
+                    marks_earned: null,
+                };
             }
 
             // Validate question has required fields
@@ -799,6 +896,11 @@ export class TestService {
                 question.correct_answer,
                 question.question_type,
             );
+
+            // Handle null (shouldn't happen for non-essays, but be safe)
+            if (isCorrect === null) {
+                return { ...answer, is_correct: null, marks_earned: null };
+            }
 
             const marksEarned = isCorrect ? question.marks : 0;
 
@@ -828,12 +930,13 @@ export class TestService {
 
     /**
      * Check if an answer is correct based on question type
+     * Returns: true = correct, false = incorrect, null = pending evaluation (essays)
      */
     private checkAnswer(
         selected: TestAnswer["selected"],
         correctAnswer: CorrectAnswer,
         questionType: string,
-    ): boolean {
+    ): boolean | null {
         if (selected === null || selected === undefined) {
             return false;
         }
@@ -910,8 +1013,8 @@ export class TestService {
             }
 
             case "essay":
-                // Essays are evaluated separately by LLM
-                return false;
+                // Essays are evaluated separately by LLM — return null to indicate pending
+                return null;
 
             default:
                 console.warn(`Unknown question type: ${questionType}`);
@@ -922,6 +1025,34 @@ export class TestService {
     // ============================================
     // UTILITY METHODS
     // ============================================
+
+    /**
+     * Validate that an essay answer does not exceed the question's word limit.
+     * Fetches the question to get the word limit from content.
+     * Throws if the answer exceeds the limit.
+     */
+    private async validateEssayWordLimit(
+        questionId: string,
+        selected: string,
+    ): Promise<void> {
+        const { data: question } = await this.supabase
+            .from("questions")
+            .select("question_type, content")
+            .eq("id", questionId)
+            .single();
+
+        if (!question || question.question_type !== "essay") return;
+
+        const content = question.content as EssayContent;
+        if (!content.word_limit) return;
+
+        const wc = countWords(selected);
+        if (wc > content.word_limit) {
+            throw new Error(
+                `Essay exceeds the word limit of ${content.word_limit} words (${wc} words submitted). Please shorten your response.`,
+            );
+        }
+    }
 
     /**
      * Shuffle an array using Fisher-Yates algorithm

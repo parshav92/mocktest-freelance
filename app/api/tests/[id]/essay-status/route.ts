@@ -37,11 +37,20 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         const evaluations = await essayService.getEvaluationsForTest(testId);
 
         // Determine overall status
-        const allCompleted = evaluations.length > 0 && evaluations.every(e => e.status === "completed");
-        const anyFailed = evaluations.some(e => e.status === "failed");
-        const anyPending = evaluations.some(e => e.status === "pending" || e.status === "processing");
+        const allCompleted =
+            evaluations.length > 0 &&
+            evaluations.every((e) => e.status === "completed");
+        const anyFailed = evaluations.some((e) => e.status === "failed");
+        const anyPending = evaluations.some(
+            (e) => e.status === "pending" || e.status === "processing",
+        );
 
-        let overallStatus: "no_essays" | "pending" | "completed" | "partial" | "failed";
+        let overallStatus:
+            | "no_essays"
+            | "pending"
+            | "completed"
+            | "partial"
+            | "failed";
         if (evaluations.length === 0) {
             overallStatus = "no_essays";
         } else if (allCompleted) {
@@ -53,23 +62,21 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         } else {
             overallStatus = "partial";
         }
-        if (anyPending || anyFailed) {
-        essayService.processQueue(5).catch((err) => {
-            console.error("Background essay processing failed:", err);
-        });
-    }
-        return  successResponse({
+        console.log(
+            `[EssayStatus] GET /api/tests/${testId}/essay-status — status: ${overallStatus}, evaluations: ${evaluations.length}`,
+        );
+
+        return successResponse({
             status: overallStatus,
             evaluations,
         });
     } catch (error) {
         console.error("Error fetching essay status:", error);
         return errorResponse(
-            error instanceof Error ? error.message : "Failed to fetch essay status",
+            error instanceof Error
+                ? error.message
+                : "Failed to fetch essay status",
             500,
         );
     }
-
-    // If there are pending evaluations, trigger processing in the background
-    
 }

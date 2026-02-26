@@ -50,11 +50,7 @@ function ScoreRing({
     const circumference = 2 * Math.PI * r;
     const offset = circumference - (percentage / 100) * circumference;
     const color =
-        percentage >= 70
-            ? "#22c55e"
-            : percentage >= 50
-              ? "#f59e0b"
-              : "#ef4444";
+        percentage >= 70 ? "#22c55e" : percentage >= 50 ? "#f59e0b" : "#ef4444";
 
     return (
         <div
@@ -130,13 +126,9 @@ export default function ScoresPage() {
                 const all: Test[] = data.tests || [];
                 if (all.length > 0) {
                     const avg =
-                        all.reduce(
-                            (s, t) => s + (t.percentage || 0),
-                            0,
-                        ) / all.length;
-                    const best = Math.max(
-                        ...all.map((t) => t.percentage || 0),
-                    );
+                        all.reduce((s, t) => s + (t.percentage || 0), 0) /
+                        all.length;
+                    const best = Math.max(...all.map((t) => t.percentage || 0));
                     const totalTime = all.reduce(
                         (s, t) => s + (t.time_spent_secs || 0),
                         0,
@@ -155,29 +147,26 @@ export default function ScoresPage() {
         }
     }, []);
 
-    const fetchTests = useCallback(
-        async (page: number, subjectId?: string) => {
-            setLoading(true);
-            try {
-                const offset = (page - 1) * ITEMS_PER_PAGE;
-                let url = `/api/tests?status=submitted,ended_early&limit=${ITEMS_PER_PAGE}&offset=${offset}`;
-                if (subjectId && subjectId !== "all") {
-                    url += `&subject_id=${subjectId}`;
-                }
-                const res = await fetch(url);
-                if (res.ok) {
-                    const data = await res.json();
-                    setTests(data.tests || []);
-                    setTotal(data.total || 0);
-                }
-            } catch {
-                // Silent fail
-            } finally {
-                setLoading(false);
+    const fetchTests = useCallback(async (page: number, subjectId?: string) => {
+        setLoading(true);
+        try {
+            const offset = (page - 1) * ITEMS_PER_PAGE;
+            let url = `/api/tests?status=submitted,ended_early&limit=${ITEMS_PER_PAGE}&offset=${offset}`;
+            if (subjectId && subjectId !== "all") {
+                url += `&subject_id=${subjectId}`;
             }
-        },
-        [],
-    );
+            const res = await fetch(url);
+            if (res.ok) {
+                const data = await res.json();
+                setTests(data.tests || []);
+                setTotal(data.total || 0);
+            }
+        } catch {
+            // Silent fail
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
     const fetchSubjects = useCallback(async () => {
         try {
@@ -290,7 +279,7 @@ export default function ScoresPage() {
                 HEADER
             ============================================ */}
             <header className="bg-[#1a2744]">
-                <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 pb-16">
+                <div className="max-w-6xl mx-auto p-4 sm:px-6 py-6 pb-16">
                     <button
                         onClick={() => router.push("/dashboard")}
                         className="inline-flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors mb-6"
@@ -316,11 +305,11 @@ export default function ScoresPage() {
                 </div>
             </header>
 
-            <main className="max-w-6xl mx-auto px-4 sm:px-6 -mt-10">
+            <main className="max-w-6xl mx-auto px-4 sm:px-6">
                 {/* ============================================
                     STAT CARDS
                 ============================================ */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8 ">
                     <div className="bg-white rounded-xl p-4 shadow-sm border border-slate-100">
                         <div className="flex items-center gap-2 mb-2">
                             <FileText className="h-4 w-4 text-slate-400" />
@@ -396,10 +385,7 @@ export default function ScoresPage() {
                         <SelectContent>
                             <SelectItem value="all">All Subjects</SelectItem>
                             {subjects.map((subject) => (
-                                <SelectItem
-                                    key={subject.id}
-                                    value={subject.id}
-                                >
+                                <SelectItem key={subject.id} value={subject.id}>
                                     {subject.name}
                                 </SelectItem>
                             ))}

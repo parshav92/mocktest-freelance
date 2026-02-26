@@ -97,7 +97,7 @@ export const TEST_CONFIG = {
         /** Track tab/window visibility changes */
         detectTabSwitch: true,
         /** Number of warnings before auto-submit */
-        maxWarnings: 10,
+        maxWarnings: 5,
         /** Warning message template */
         warningMessage: (remaining: number) =>
             `Warning: Switching tabs or windows is not allowed during the test. You have ${remaining} warning${remaining === 1 ? "" : "s"} remaining before your test is automatically submitted.`,

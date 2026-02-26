@@ -1,4 +1,10 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import {
+    ESSAY_CONFIG,
+    validateRubric,
+    getRubricMaxScore,
+} from "@/lib/config/essay-config";
+import { stripHtmlToText, countWords } from "@/lib/utils";
 
 export interface EssayEvaluationInput {
     test_id: string;
@@ -30,7 +36,7 @@ interface EssayEvalRow {
     attempts: number;
 }
 
-const MAX_ATTEMPTS = 3;
+const MAX_ATTEMPTS = ESSAY_CONFIG.evaluation.maxAttempts;
 
 /**
  * Service for LLM-based essay evaluation using Gemini AI.
@@ -47,6 +53,9 @@ export class EssayEvaluationService {
      * Queue an essay for evaluation (called on test submit)
      */
     async queueEssayEvaluation(input: EssayEvaluationInput): Promise<string> {
+        console.log(
+            `[EssayEval] Queueing evaluation for test=${input.test_id}, question=${input.question_id}`,
+        );
         const { data, error } = await this.supabase
             .from("essay_evaluations")
             .upsert(
@@ -72,10 +81,16 @@ export class EssayEvaluationService {
             .single();
 
         if (error) {
-            console.error("Failed to queue essay evaluation:", error);
-            throw new Error(`Failed to queue essay evaluation: ${error.message}`);
+            console.error(
+                "[EssayEval] Failed to queue essay evaluation:",
+                error,
+            );
+            throw new Error(
+                `Failed to queue essay evaluation: ${error.message}`,
+            );
         }
 
+        console.log(`[EssayEval] Queued successfully, id=${data.id}`);
         return data.id;
     }
 
@@ -89,6 +104,7 @@ export class EssayEvaluationService {
         failed: number;
     }> {
         // Fetch pending evaluations (oldest first)
+        console.log(`[EssayEval] processQueue called, batchSize=${batchSize}`);
         const { data: pending, error: fetchError } = await this.supabase
             .from("essay_evaluations")
             .select("*")
@@ -103,23 +119,41 @@ export class EssayEvaluationService {
         }
 
         if (!pending || pending.length === 0) {
+            console.log(`[EssayEval] No pending evaluations found in queue`);
             return { processed: 0, succeeded: 0, failed: 0 };
         }
+
+        console.log(
+            `[EssayEval] Found ${pending.length} pending evaluation(s) to process`,
+        );
 
         let succeeded = 0;
         let failed = 0;
 
         for (const row of pending as EssayEvalRow[]) {
             try {
-                // Mark as processing
-                await this.supabase
-                    .from("essay_evaluations")
-                    .update({
-                        status: "processing",
-                        started_processing_at: new Date().toISOString(),
-                        attempts: row.attempts + 1,
-                    })
-                    .eq("id", row.id);
+                // Mark as processing with optimistic locking to prevent race conditions
+                // Only update if status is still pending/failed (not already being processed)
+                const { data: updated, error: updateError } =
+                    await this.supabase
+                        .from("essay_evaluations")
+                        .update({
+                            status: "processing",
+                            started_processing_at: new Date().toISOString(),
+                            attempts: row.attempts + 1,
+                        })
+                        .eq("id", row.id)
+                        .in("status", ["pending", "failed"])
+                        .select("id")
+                        .maybeSingle();
+
+                // If no rows updated, another process is already handling this
+                if (updateError || !updated) {
+                    console.log(
+                        `[EssayEval] Skipping ${row.id} - already being processed by another worker`,
+                    );
+                    continue;
+                }
 
                 // Call Gemini for evaluation
                 const result = await this.evaluateWithGemini(row);
@@ -139,14 +173,31 @@ export class EssayEvaluationService {
                     .eq("id", row.id);
 
                 // Also update the test's essay_evaluation field
-                await this.updateTestEssayEvaluation(row.test_id, row.question_id, result);
+                await this.updateTestEssayEvaluation(
+                    row.test_id,
+                    row.question_id,
+                    result,
+                );
 
+                console.log(
+                    `[EssayEval] Successfully evaluated ${row.id} - score: ${result.score}/${result.max_score}`,
+                );
                 succeeded++;
             } catch (err) {
-                const errorMsg = err instanceof Error ? err.message : "Unknown error";
-                console.error(`Essay evaluation failed for ${row.id}:`, errorMsg);
+                const errorMsg =
+                    err instanceof Error ? err.message : "Unknown error";
 
-                const newStatus = row.attempts + 1 >= MAX_ATTEMPTS ? "failed" : "pending";
+                // Calculate the actual attempt number (we already incremented in the DB)
+                const attemptNumber = row.attempts + 1;
+                const newStatus =
+                    attemptNumber >= MAX_ATTEMPTS ? "failed" : "pending";
+
+                console.error(
+                    `[EssayEval] Evaluation failed for ${row.id} (attempt ${attemptNumber}/${MAX_ATTEMPTS}): ${errorMsg}`,
+                );
+                console.log(
+                    `[EssayEval] Setting status to '${newStatus}' for ${row.id}`,
+                );
 
                 await this.supabase
                     .from("essay_evaluations")
@@ -166,19 +217,23 @@ export class EssayEvaluationService {
     /**
      * Get evaluation status for a test's essay questions
      */
-    async getEvaluationsForTest(testId: string): Promise<Array<{
-        id: string;
-        question_id: string;
-        status: string;
-        rubric_scores: Record<string, number> | null;
-        score: number | null;
-        max_score: number | null;
-        feedback: string | null;
-        completed_at: string | null;
-    }>> {
+    async getEvaluationsForTest(testId: string): Promise<
+        Array<{
+            id: string;
+            question_id: string;
+            status: string;
+            rubric_scores: Record<string, number> | null;
+            score: number | null;
+            max_score: number | null;
+            feedback: string | null;
+            completed_at: string | null;
+        }>
+    > {
         const { data, error } = await this.supabase
             .from("essay_evaluations")
-            .select("id, question_id, status, rubric_scores, score, max_score, feedback, completed_at")
+            .select(
+                "id, question_id, status, rubric_scores, score, max_score, feedback, completed_at",
+            )
             .eq("test_id", testId);
 
         if (error) {
@@ -251,18 +306,26 @@ export class EssayEvaluationService {
     /**
      * Call Gemini AI to evaluate an essay
      */
-    private async evaluateWithGemini(row: EssayEvalRow): Promise<EssayEvaluationResult> {
+    private async evaluateWithGemini(
+        row: EssayEvalRow,
+    ): Promise<EssayEvaluationResult> {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
             throw new Error("GEMINI_API_KEY environment variable is not set");
         }
 
-        const rubricEntries = Object.entries(row.rubric);
-        const maxScore = rubricEntries.reduce((sum, [, points]) => sum + points, 0);
+        // Validate and normalize rubric, using defaults if invalid
+        const validatedRubric = validateRubric(row.rubric);
+        const rubricEntries = Object.entries(validatedRubric);
+        const maxScore = getRubricMaxScore(validatedRubric);
 
         const rubricDescription = rubricEntries
             .map(([category, points]) => `- ${category}: ${points} points`)
             .join("\n");
+
+        // Strip HTML from student answer to save tokens and improve evaluation
+        const plainTextAnswer = stripHtmlToText(row.student_answer);
+        const actualWordCount = countWords(row.student_answer);
 
         const systemPrompt = `You are an expert essay evaluator for student assessments. 
 You must evaluate the student's essay based on the provided rubric criteria and return a structured JSON response.
@@ -288,18 +351,21 @@ Do not include any text outside the JSON.`;
 RUBRIC CRITERIA:
 ${rubricDescription}
 
-${row.word_limit ? `WORD LIMIT: ${row.word_limit} words` : ""}
+${row.word_limit ? `WORD LIMIT: ${row.word_limit} words (Student used: ${actualWordCount} words)` : ""}
 
 STUDENT'S ESSAY:
 """
-${row.student_answer}
+${plainTextAnswer}
 """
 
 Evaluate this essay against each rubric criterion and provide scores and feedback.`;
 
+        // Get model from config
+        const model = ESSAY_CONFIG.evaluation.model;
+
         // Call Gemini API
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -307,12 +373,15 @@ Evaluate this essay against each rubric criterion and provide scores and feedbac
                     contents: [
                         {
                             role: "user",
-                            parts: [{ text: `${systemPrompt}\n\n${userPrompt}` }],
+                            parts: [
+                                { text: `${systemPrompt}\n\n${userPrompt}` },
+                            ],
                         },
                     ],
                     generationConfig: {
-                        temperature: 0.3,
-                        maxOutputTokens: 1024,
+                        temperature: ESSAY_CONFIG.evaluation.temperature,
+                        maxOutputTokens:
+                            ESSAY_CONFIG.evaluation.maxOutputTokens,
                         responseMimeType: "application/json",
                     },
                 }),
@@ -321,7 +390,9 @@ Evaluate this essay against each rubric criterion and provide scores and feedbac
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`Gemini API error (${response.status}): ${errorText}`);
+            throw new Error(
+                `Gemini API error (${response.status}): ${errorText}`,
+            );
         }
 
         const geminiResponse = await response.json();
@@ -330,9 +401,21 @@ Evaluate this essay against each rubric criterion and provide scores and feedbac
         const textContent =
             geminiResponse.candidates?.[0]?.content?.parts?.[0]?.text;
 
+        // Check for finish reason - if stopped due to max tokens, we have truncated output
+        const finishReason = geminiResponse.candidates?.[0]?.finishReason;
+        if (finishReason === "MAX_TOKENS") {
+            console.warn(
+                `[EssayEval] Response truncated due to MAX_TOKENS for question ${row.question_id}`,
+            );
+        }
+
         if (!textContent) {
             throw new Error("Empty response from Gemini API");
         }
+
+        console.log(
+            `[EssayEval] Raw response for ${row.question_id}: ${textContent.substring(0, 500)}`,
+        );
 
         // Parse the JSON response
         let parsed: { scores: Record<string, number>; feedback: string };
@@ -342,9 +425,17 @@ Evaluate this essay against each rubric criterion and provide scores and feedbac
             // Try to extract JSON from the response if it has extra text
             const jsonMatch = textContent.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
-                parsed = JSON.parse(jsonMatch[0]);
+                try {
+                    parsed = JSON.parse(jsonMatch[0]);
+                } catch {
+                    throw new Error(
+                        `Failed to parse Gemini response as JSON (truncated?): ${textContent.substring(0, 300)}`,
+                    );
+                }
             } else {
-                throw new Error(`Failed to parse Gemini response as JSON: ${textContent.substring(0, 200)}`);
+                throw new Error(
+                    `Failed to parse Gemini response as JSON: ${textContent.substring(0, 300)}`,
+                );
             }
         }
 
@@ -353,13 +444,19 @@ Evaluate this essay against each rubric criterion and provide scores and feedbac
         for (const [category, maxPoints] of rubricEntries) {
             const score = parsed.scores?.[category];
             if (typeof score === "number") {
-                validatedScores[category] = Math.max(0, Math.min(score, maxPoints));
+                validatedScores[category] = Math.max(
+                    0,
+                    Math.min(score, maxPoints),
+                );
             } else {
                 validatedScores[category] = 0;
             }
         }
 
-        const totalScore = Object.values(validatedScores).reduce((sum, s) => sum + s, 0);
+        const totalScore = Object.values(validatedScores).reduce(
+            (sum, s) => sum + s,
+            0,
+        );
 
         return {
             rubric_scores: validatedScores,

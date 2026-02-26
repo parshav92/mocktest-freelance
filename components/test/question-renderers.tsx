@@ -1,13 +1,20 @@
 "use client";
 
 import { memo, useState } from "react";
-import dynamic from "next/dynamic";
-import * as MDEditorCommands from "@uiw/react-md-editor/commands";
-import { cn } from "@/lib/utils";
+import { cn, countWords } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StorageImage } from "@/components/ui/storage-image";
+import { SafeRichTextEditor } from "@/components/ui/rich-text-editor";
+import { ESSAY_CONFIG, isWithinWordLimit } from "@/lib/config/essay-config";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import type {
     QuestionForTest,
     MCQContent,
@@ -16,11 +23,6 @@ import type {
     EssayContent,
     MCQOption,
 } from "@/types/test";
-import "@uiw/react-md-editor/markdown-editor.css";
-import "@uiw/react-markdown-preview/markdown.css";
-
-// Dynamically import MDEditor to avoid SSR issues
-const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
 // ============================================
 // LAYOUT TYPE
@@ -275,36 +277,40 @@ export const FillBlankRenderer = memo(
                         <span key={`fb-part-${index}`}>
                             {part}
                             {index < content.blanks.length && (
-                                <select
-                                    value={answers[index] ?? -1}
-                                    onChange={(e) =>
-                                        handleSelect(
-                                            index,
-                                            parseInt(e.target.value),
-                                        )
-                                    }
-                                    className={cn(
-                                        "mx-1 px-3 py-1.5 rounded-md bg-white text-sm transition-colors cursor-pointer",
-                                        "border-2 border-gray-300 text-gray-800",
-                                        "focus:border-[#2563eb] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20",
-                                        "hover:border-gray-400",
+                                <Select
+                                    value={
                                         answers[index] !== undefined &&
-                                            answers[index] !== -1 &&
-                                            "border-[#2563eb]/50 bg-blue-50/50",
-                                    )}
+                                        answers[index] !== -1
+                                            ? String(answers[index])
+                                            : ""
+                                    }
+                                    onValueChange={(val) =>
+                                        handleSelect(index, parseInt(val))
+                                    }
                                 >
-                                    <option value={-1}>Select...</option>
-                                    {content.blanks[index]?.options.map(
-                                        (opt, optIdx) => (
-                                            <option
-                                                key={`fb-${index}-opt-${optIdx}`}
-                                                value={optIdx}
-                                            >
-                                                {opt}
-                                            </option>
-                                        ),
-                                    )}
-                                </select>
+                                    <SelectTrigger
+                                        className={cn(
+                                            "mx-1 inline-flex h-8 w-auto min-w-32 text-sm",
+                                            answers[index] !== undefined &&
+                                                answers[index] !== -1 &&
+                                                "border-[#2563eb]/60 bg-blue-50/50",
+                                        )}
+                                    >
+                                        <SelectValue placeholder="Select..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {content.blanks[index]?.options.map(
+                                            (opt, optIdx) => (
+                                                <SelectItem
+                                                    key={`fb-${index}-opt-${optIdx}`}
+                                                    value={String(optIdx)}
+                                                >
+                                                    {opt}
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                    </SelectContent>
+                                </Select>
                             )}
                         </span>
                     ))}
@@ -382,38 +388,41 @@ export const FillMissingSentenceRenderer = memo(
                             mapping[part.value] !== undefined &&
                             mapping[part.value] !== -1;
                         return (
-                            <select
+                            <Select
                                 key={`fms-gap-${i}`}
-                                value={mapping[part.value] ?? -1}
-                                onChange={(e) =>
-                                    handleSelect(
-                                        part.value,
-                                        parseInt(e.target.value),
-                                    )
+                                value={
+                                    hasSelection
+                                        ? String(mapping[part.value])
+                                        : ""
                                 }
-                                className={cn(
-                                    "mx-1 px-3 py-1.5 rounded-md bg-white text-sm transition-colors cursor-pointer min-w-50",
-                                    "border-2 border-gray-300 text-gray-800",
-                                    "focus:border-[#2563eb] focus:outline-none focus:ring-2 focus:ring-[#2563eb]/20",
-                                    "hover:border-gray-400",
-                                    hasSelection &&
-                                        "border-[#2563eb]/50 bg-blue-50/50",
-                                )}
+                                onValueChange={(val) =>
+                                    handleSelect(part.value, parseInt(val))
+                                }
                             >
-                                <option value={-1}>Select a sentence...</option>
-                                {content.sentences.map((sentence, idx) => (
-                                    <option
-                                        key={`fms-sentence-${idx}`}
-                                        value={idx}
-                                        disabled={
-                                            usedIndices.has(idx) &&
-                                            mapping[part.value] !== idx
-                                        }
-                                    >
-                                        {sentence}
-                                    </option>
-                                ))}
-                            </select>
+                                <SelectTrigger
+                                    className={cn(
+                                        "mx-1 inline-flex h-8 w-auto min-w-48 max-w-72 text-sm",
+                                        hasSelection &&
+                                            "border-[#2563eb]/60 bg-blue-50/50",
+                                    )}
+                                >
+                                    <SelectValue placeholder="Select a sentence..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {content.sentences.map((sentence, idx) => (
+                                        <SelectItem
+                                            key={`fms-sentence-${idx}`}
+                                            value={String(idx)}
+                                            disabled={
+                                                usedIndices.has(idx) &&
+                                                mapping[part.value] !== idx
+                                            }
+                                        >
+                                            {sentence}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         );
                     })}
                 </div>
@@ -470,13 +479,35 @@ interface EssayRendererProps {
     selected: string | null;
     onSelect: (text: string) => void;
     layout: RendererLayout;
+    /** Unique question ID - forces editor remount when switching questions */
+    questionId: string;
 }
 
 export const EssayRenderer = memo(
-    ({ content, selected, onSelect, layout }: EssayRendererProps) => {
+    ({
+        content,
+        selected,
+        onSelect,
+        layout,
+        questionId,
+    }: EssayRendererProps) => {
         const [editorCollapsed, setEditorCollapsed] = useState(false);
-        const wordCount = (selected || "").split(/\s+/).filter(Boolean).length;
-        const isOverLimit = wordCount > content.word_limit;
+        const wordCount = countWords(selected || "");
+
+        // Use config helper for word limit status
+        const { isOver: isOverLimit, isApproaching: isApproachingLimit } =
+            isWithinWordLimit(wordCount, content.word_limit);
+
+        // Word limit is now enforced at the editor level via WordLimitExtension
+        const handleChange = (val: string) => {
+            onSelect(val);
+        };
+
+        // Get editor height from config
+        const editorHeight =
+            layout === "split"
+                ? ESSAY_CONFIG.editor.heightSplit
+                : ESSAY_CONFIG.editor.heightStacked;
 
         const promptSection = (
             <div className="space-y-4">
@@ -495,37 +526,34 @@ export const EssayRenderer = memo(
         );
 
         const editorSection = (
-            <div className="space-y-2" data-color-mode="light">
-                <MDEditor
+            <div className="space-y-2">
+                <SafeRichTextEditor
                     value={selected || ""}
-                    onChange={(val) => onSelect(val || "")}
-                    preview="edit"
-                    height={layout === "split" ? 450 : 350}
-                    enableScroll={true}
-                    visibleDragbar={true}
-                    textareaProps={{
-                        placeholder: "Write your essay here...",
-                    }}
-                    commands={[
-                        MDEditorCommands.heading1,
-                        MDEditorCommands.heading2,
-                        MDEditorCommands.bold,
-                        MDEditorCommands.italic,
-                        MDEditorCommands.divider,
-                        MDEditorCommands.unorderedListCommand,
-                        MDEditorCommands.orderedListCommand,
-
-                        MDEditorCommands.fullscreen,
-                    ]}
-                    extraCommands={[]}
+                    onChange={handleChange}
+                    placeholder={ESSAY_CONFIG.editor.placeholder}
+                    height={editorHeight}
+                    wordLimit={content.word_limit}
+                    editorKey={questionId}
                 />
-                <div className="flex items-center justify-end">
+                <div className="flex items-center justify-end gap-2">
+                    {isOverLimit && (
+                        <span className="text-xs font-medium text-red-600">
+                            Word limit exceeded — please shorten your response.
+                        </span>
+                    )}
+                    {!isOverLimit && isApproachingLimit && (
+                        <span className="text-xs font-medium text-amber-600">
+                            Approaching word limit
+                        </span>
+                    )}
                     <span
                         className={cn(
                             "text-xs font-medium tabular-nums",
                             isOverLimit
-                                ? "text-red-600"
-                                : "text-muted-foreground",
+                                ? "text-red-600 font-bold"
+                                : isApproachingLimit
+                                  ? "text-amber-600"
+                                  : "text-muted-foreground",
                         )}
                     >
                         {wordCount} / {content.word_limit} words
@@ -656,6 +684,7 @@ export function QuestionRenderer({
                     selected={(answer as string) || null}
                     onSelect={onAnswer}
                     layout={layout}
+                    questionId={question.id}
                 />
             );
 

@@ -219,13 +219,13 @@ export function ParentDashboard({
                         <div className="w-7 h-7 rounded-md bg-sky-500 flex items-center justify-center text-[11px] font-bold text-white leading-none">
                             MT
                         </div>
-                        <span className="text-sm font-medium text-white">
+                        <span className="text-md font-medium text-white">
                             {user.fullName}
                         </span>
                     </div>
                     <button
                         onClick={handleSignOut}
-                        className="text-xs text-white/60 hover:text-white transition-colors flex items-center gap-1.5"
+                        className="text-md text-white/60 hover:text-white transition-colors flex items-center gap-1.5"
                     >
                         <LogOut className="h-3.5 w-3.5" />
                         Sign out
@@ -283,7 +283,7 @@ function Overview({
                     <h1 className="text-xl font-semibold text-[#1a2744]">
                         Dashboard
                     </h1>
-                    <p className="text-sm text-slate-500 mt-0.5">
+                    <p className="text-md text-slate-500 mt-0.5">
                         {students.length} student
                         {students.length !== 1 ? "s" : ""} &middot;{" "}
                         {activeCount} active plan
@@ -293,7 +293,7 @@ function Overview({
                 <Link href="/dashboard/subscribe">
                     <Button
                         size="sm"
-                        className="bg-[#1a2744] hover:bg-[#1a2744]/90 h-8 text-xs px-3.5"
+                        className="bg-[#1a2744] hover:bg-[#1a2744]/90 h-8 text-md px-3.5"
                     >
                         <Plus className="h-3.5 w-3.5 mr-1.5" />
                         Add Student
@@ -306,11 +306,11 @@ function Overview({
                 <div className="mb-5 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-start gap-3">
                     <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-amber-900">
+                        <p className="text-md font-medium text-amber-900">
                             {unassigned.length} subscription
                             {unassigned.length > 1 ? "s" : ""} pending setup
                         </p>
-                        <p className="text-xs text-amber-700/80 mt-0.5">
+                        <p className="text-md text-amber-700/80 mt-0.5">
                             Create a student profile to activate access.
                         </p>
                     </div>
@@ -320,7 +320,7 @@ function Overview({
                         <Button
                             size="sm"
                             variant="outline"
-                            className="border-amber-300 text-amber-800 hover:bg-amber-100 h-7 text-xs shrink-0"
+                            className="border-amber-300 text-amber-800 hover:bg-amber-100 h-7 text-md shrink-0"
                         >
                             <UserPlus className="h-3 w-3 mr-1.5" />
                             Setup
@@ -335,25 +335,36 @@ function Overview({
                     <p className="text-slate-800 font-medium mb-1">
                         No subscriptions yet
                     </p>
-                    <p className="text-sm text-slate-500 max-w-sm mx-auto mb-5">
+                    <p className="text-md text-slate-500 max-w-sm mx-auto mb-5">
                         Purchase a plan to enroll your first student and unlock
-                        practice tests.
+                        practice tests — or try a free sample test first.
                     </p>
-                    <Link href="/dashboard/subscribe">
-                        <Button
-                            size="sm"
-                            className="bg-[#1a2744] hover:bg-[#1a2744]/90 h-8 text-xs"
-                        >
-                            Get Started
-                        </Button>
-                    </Link>
+                    <div className="flex items-center justify-center gap-3">
+                        <Link href="/free-trial">
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-8 text-md border-sky-200 text-sky-600 hover:bg-sky-50"
+                            >
+                                ✦ Take Free Trial
+                            </Button>
+                        </Link>
+                        <Link href="/dashboard/subscribe">
+                            <Button
+                                size="sm"
+                                className="bg-[#1a2744] hover:bg-[#1a2744]/90 h-8 text-md"
+                            >
+                                Get Started
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
             )}
 
             {/* Student list */}
             {students.length > 0 && (
                 <section>
-                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2.5">
+                    <p className="text-md font-medium text-slate-400 uppercase tracking-wider mb-2.5">
                         Students
                     </p>
                     <div className="space-y-2">
@@ -364,14 +375,14 @@ function Overview({
                                 className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3.5 flex items-center gap-4 text-left hover:border-slate-300 transition-colors group"
                             >
                                 {/* Initial */}
-                                <div className="w-9 h-9 rounded-full bg-[#1a2744] flex items-center justify-center text-white text-sm font-semibold shrink-0">
+                                <div className="w-9 h-9 rounded-full bg-[#1a2744] flex items-center justify-center text-white text-md font-semibold shrink-0">
                                     {s.full_name.charAt(0).toUpperCase()}
                                 </div>
 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <p className="text-sm font-medium text-slate-900 truncate">
+                                        <p className="text-md font-medium text-slate-900 truncate">
                                             {s.full_name}
                                         </p>
                                         <Badge
@@ -383,7 +394,7 @@ function Overview({
                                             )}
                                         </Badge>
                                     </div>
-                                    <p className="text-xs text-slate-400 mt-0.5 truncate">
+                                    <p className="text-md text-slate-400 mt-0.5 truncate">
                                         {s.student_id} &middot;{" "}
                                         {s.subscription.plan === "yearly"
                                             ? "Yearly"
@@ -404,7 +415,7 @@ function Overview({
             {/* Additional pending subs (when more than 1 unassigned) */}
             {unassigned.length > 1 && (
                 <section className="mt-6">
-                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-2.5">
+                    <p className="text-md font-medium text-slate-400 uppercase tracking-wider mb-2.5">
                         Pending Subscriptions
                     </p>
                     <div className="space-y-2">
@@ -414,13 +425,13 @@ function Overview({
                                 className="bg-white border border-slate-200 rounded-lg px-4 py-3 flex items-center justify-between"
                             >
                                 <div>
-                                    <p className="text-sm font-medium text-slate-900">
+                                    <p className="text-md font-medium text-slate-900">
                                         {sub.plan === "yearly"
                                             ? "Yearly"
                                             : "Half-Yearly"}{" "}
                                         Plan
                                     </p>
-                                    <p className="text-xs text-slate-400 mt-0.5">
+                                    <p className="text-md text-slate-400 mt-0.5">
                                         Expires {fmtDate(sub.expires_at)}
                                     </p>
                                 </div>
@@ -430,7 +441,7 @@ function Overview({
                                     <Button
                                         size="sm"
                                         variant="outline"
-                                        className="h-7 text-xs"
+                                        className="h-7 text-md"
                                     >
                                         <UserPlus className="h-3 w-3 mr-1.5" />
                                         Assign Student
@@ -464,7 +475,7 @@ function StudentDetail({
         return (
             <div className="flex flex-col items-center justify-center py-32">
                 <Loader2 className="h-6 w-6 animate-spin text-slate-400 mb-3" />
-                <p className="text-sm text-slate-400">Loading&hellip;</p>
+                <p className="text-md text-slate-400">Loading&hellip;</p>
             </div>
         );
     }
@@ -472,7 +483,7 @@ function StudentDetail({
     if (!stats) {
         return (
             <div className="text-center py-32">
-                <p className="text-sm text-slate-400 mb-4">
+                <p className="text-md text-slate-400 mb-4">
                     Could not load student data.
                 </p>
                 <Button variant="outline" size="sm" onClick={onBack}>
@@ -490,7 +501,7 @@ function StudentDetail({
             {/* Back */}
             <button
                 onClick={onBack}
-                className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-700 transition-colors mb-5"
+                className="flex items-center gap-1.5 text-md text-slate-400 hover:text-slate-700 transition-colors mb-5"
             >
                 <ArrowLeft className="h-3.5 w-3.5" />
                 Dashboard
@@ -498,7 +509,7 @@ function StudentDetail({
 
             {/* Student identity */}
             <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-[#1a2744] flex items-center justify-center text-white text-sm font-semibold shrink-0">
+                <div className="w-10 h-10 rounded-full bg-[#1a2744] flex items-center justify-center text-white text-md font-semibold shrink-0">
                     {student.full_name.charAt(0).toUpperCase()}
                 </div>
                 <div>
@@ -506,7 +517,7 @@ function StudentDetail({
                         {student.full_name}
                     </h1>
                     <div className="flex items-center gap-2 mt-0.5">
-                        <span className="text-xs text-slate-400 font-mono">
+                        <span className="text-md text-slate-400 font-mono">
                             {student.student_id}
                         </span>
                         {subscription && (
@@ -530,7 +541,7 @@ function StudentDetail({
                     <p className="text-2xl font-bold text-[#1a2744] tabular-nums">
                         {summary.totalTests}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-md text-slate-400 mt-0.5">
                         Tests taken
                     </p>
                 </div>
@@ -539,22 +550,22 @@ function StudentDetail({
                         className={`text-2xl font-bold tabular-nums ${scoreFg(summary.avgPercentage)}`}
                     >
                         {summary.avgPercentage}
-                        <span className="text-sm font-normal text-slate-400">
+                        <span className="text-md font-normal text-slate-400">
                             %
                         </span>
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">Avg. score</p>
+                    <p className="text-md text-slate-400 mt-0.5">Avg. score</p>
                 </div>
                 <div className="bg-white p-4">
                     <p
                         className={`text-2xl font-bold tabular-nums ${scoreFg(summary.bestScore)}`}
                     >
                         {summary.bestScore}
-                        <span className="text-sm font-normal text-slate-400">
+                        <span className="text-md font-normal text-slate-400">
                             %
                         </span>
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-md text-slate-400 mt-0.5">
                         Best score
                     </p>
                 </div>
@@ -562,7 +573,7 @@ function StudentDetail({
                     <p className="text-2xl font-bold text-[#1a2744] tabular-nums">
                         {fmtTime(summary.totalTimeSpent)}
                     </p>
-                    <p className="text-xs text-slate-400 mt-0.5">
+                    <p className="text-md text-slate-400 mt-0.5">
                         Practice time
                     </p>
                 </div>
@@ -571,7 +582,7 @@ function StudentDetail({
             {/* Subject performance */}
             {subjectStats.length > 0 && (
                 <section className="mb-6">
-                    <h2 className="text-sm font-medium text-slate-900 mb-3">
+                    <h2 className="text-md font-medium text-slate-900 mb-3">
                         Subjects
                     </h2>
                     <div className="grid gap-3 md:grid-cols-2">
@@ -585,10 +596,10 @@ function StudentDetail({
                                     {/* Header row */}
                                     <div className="flex items-center justify-between mb-3">
                                         <div>
-                                            <p className="text-sm font-medium text-slate-900">
+                                            <p className="text-md font-medium text-slate-900">
                                                 {s.subject.name}
                                             </p>
-                                            <p className="text-xs text-slate-400">
+                                            <p className="text-md text-slate-400">
                                                 {s.tests_taken} test
                                                 {s.tests_taken !== 1
                                                     ? "s"
@@ -614,14 +625,14 @@ function StudentDetail({
                                             />
                                         </div>
                                         <span
-                                            className={`text-xs font-semibold tabular-nums w-9 text-right ${scoreFg(acc)}`}
+                                            className={`text-md font-semibold tabular-nums w-9 text-right ${scoreFg(acc)}`}
                                         >
                                             {acc}%
                                         </span>
                                     </div>
 
                                     {/* Difficulty split — inline text, no colored boxes */}
-                                    <div className="flex items-center gap-4 text-xs text-slate-400">
+                                    <div className="flex items-center gap-4 text-md text-slate-400">
                                         <span>
                                             Easy{" "}
                                             <span className="font-medium text-slate-600">
@@ -662,13 +673,13 @@ function StudentDetail({
 
             {/* Recent tests */}
             <section>
-                <h2 className="text-sm font-medium text-slate-900 mb-3">
+                <h2 className="text-md font-medium text-slate-900 mb-3">
                     Recent Tests
                 </h2>
 
                 {recentTests.length === 0 ? (
                     <div className="bg-white border border-slate-200 rounded-lg py-12 text-center">
-                        <p className="text-sm text-slate-400">
+                        <p className="text-md text-slate-400">
                             No tests completed yet
                         </p>
                     </div>
@@ -683,10 +694,10 @@ function StudentDetail({
                                 >
                                     {/* Subject + date */}
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-slate-900 truncate">
+                                        <p className="text-md font-medium text-slate-900 truncate">
                                             {t.subject?.name || "Test"}
                                         </p>
-                                        <p className="text-xs text-slate-400 mt-0.5">
+                                        <p className="text-md text-slate-400 mt-0.5">
                                             {fmtDate(t.created_at)}
                                         </p>
                                     </div>
@@ -694,7 +705,7 @@ function StudentDetail({
                                     {/* Score + marks */}
                                     <div className="text-right shrink-0">
                                         <p
-                                            className={`text-sm font-semibold tabular-nums ${scoreFg(p)}`}
+                                            className={`text-md font-semibold tabular-nums ${scoreFg(p)}`}
                                         >
                                             {p}%
                                         </p>
@@ -704,7 +715,7 @@ function StudentDetail({
                                     </div>
 
                                     {/* Time */}
-                                    <div className="flex items-center gap-1 text-xs text-slate-400 shrink-0 w-14 justify-end">
+                                    <div className="flex items-center gap-1 text-md text-slate-400 shrink-0 w-14 justify-end">
                                         <Clock className="h-3 w-3" />
                                         {fmtTime(t.time_spent_secs)}
                                     </div>
