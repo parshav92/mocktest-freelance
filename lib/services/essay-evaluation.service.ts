@@ -132,15 +132,28 @@ export class EssayEvaluationService {
 
         for (const row of pending as EssayEvalRow[]) {
             try {
-                // Mark as processing
-                await this.supabase
-                    .from("essay_evaluations")
-                    .update({
-                        status: "processing",
-                        started_processing_at: new Date().toISOString(),
-                        attempts: row.attempts + 1,
-                    })
-                    .eq("id", row.id);
+                // Mark as processing with optimistic locking to prevent race conditions
+                // Only update if status is still pending/failed (not already being processed)
+                const { data: updated, error: updateError } =
+                    await this.supabase
+                        .from("essay_evaluations")
+                        .update({
+                            status: "processing",
+                            started_processing_at: new Date().toISOString(),
+                            attempts: row.attempts + 1,
+                        })
+                        .eq("id", row.id)
+                        .in("status", ["pending", "failed"])
+                        .select("id")
+                        .maybeSingle();
+
+                // If no rows updated, another process is already handling this
+                if (updateError || !updated) {
+                    console.log(
+                        `[EssayEval] Skipping ${row.id} - already being processed by another worker`,
+                    );
+                    continue;
+                }
 
                 // Call Gemini for evaluation
                 const result = await this.evaluateWithGemini(row);
@@ -166,17 +179,25 @@ export class EssayEvaluationService {
                     result,
                 );
 
+                console.log(
+                    `[EssayEval] Successfully evaluated ${row.id} - score: ${result.score}/${result.max_score}`,
+                );
                 succeeded++;
             } catch (err) {
                 const errorMsg =
                     err instanceof Error ? err.message : "Unknown error";
-                console.error(
-                    `Essay evaluation failed for ${row.id}:`,
-                    errorMsg,
-                );
 
+                // Calculate the actual attempt number (we already incremented in the DB)
+                const attemptNumber = row.attempts + 1;
                 const newStatus =
-                    row.attempts + 1 >= MAX_ATTEMPTS ? "failed" : "pending";
+                    attemptNumber >= MAX_ATTEMPTS ? "failed" : "pending";
+
+                console.error(
+                    `[EssayEval] Evaluation failed for ${row.id} (attempt ${attemptNumber}/${MAX_ATTEMPTS}): ${errorMsg}`,
+                );
+                console.log(
+                    `[EssayEval] Setting status to '${newStatus}' for ${row.id}`,
+                );
 
                 await this.supabase
                     .from("essay_evaluations")
@@ -380,9 +401,21 @@ Evaluate this essay against each rubric criterion and provide scores and feedbac
         const textContent =
             geminiResponse.candidates?.[0]?.content?.parts?.[0]?.text;
 
+        // Check for finish reason - if stopped due to max tokens, we have truncated output
+        const finishReason = geminiResponse.candidates?.[0]?.finishReason;
+        if (finishReason === "MAX_TOKENS") {
+            console.warn(
+                `[EssayEval] Response truncated due to MAX_TOKENS for question ${row.question_id}`,
+            );
+        }
+
         if (!textContent) {
             throw new Error("Empty response from Gemini API");
         }
+
+        console.log(
+            `[EssayEval] Raw response for ${row.question_id}: ${textContent.substring(0, 500)}`,
+        );
 
         // Parse the JSON response
         let parsed: { scores: Record<string, number>; feedback: string };
@@ -392,10 +425,16 @@ Evaluate this essay against each rubric criterion and provide scores and feedbac
             // Try to extract JSON from the response if it has extra text
             const jsonMatch = textContent.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
-                parsed = JSON.parse(jsonMatch[0]);
+                try {
+                    parsed = JSON.parse(jsonMatch[0]);
+                } catch {
+                    throw new Error(
+                        `Failed to parse Gemini response as JSON (truncated?): ${textContent.substring(0, 300)}`,
+                    );
+                }
             } else {
                 throw new Error(
-                    `Failed to parse Gemini response as JSON: ${textContent.substring(0, 200)}`,
+                    `Failed to parse Gemini response as JSON: ${textContent.substring(0, 300)}`,
                 );
             }
         }

@@ -13,7 +13,7 @@ import type {
     EssayContent,
 } from "@/types/test";
 import { EssayEvaluationService } from "@/lib/services/essay-evaluation.service";
-import { countWords } from "@/lib/utils";
+import { countWords, stripHtmlToText } from "@/lib/utils";
 import { validateRubric } from "@/lib/config/essay-config";
 
 // Internal type for questions with answers during grading
@@ -757,9 +757,19 @@ export class TestService {
 
         const essayService = new EssayEvaluationService(this.supabase);
 
+        let queuedCount = 0;
         for (const question of essayQuestions) {
             const answer = answers.find((a) => a.question_id === question.id);
             if (!answer || !answer.selected) continue;
+
+            // Skip empty essays (just whitespace or empty HTML tags like <p></p>)
+            const plainText = stripHtmlToText(String(answer.selected));
+            if (!plainText.trim()) {
+                console.log(
+                    `[EssayEval] Skipping empty essay for question ${question.id}`,
+                );
+                continue;
+            }
 
             const content = question.content as EssayContent;
 
@@ -773,6 +783,7 @@ export class TestService {
                     rubric: validateRubric(content.rubric),
                     word_limit: content.word_limit,
                 });
+                queuedCount++;
             } catch (err) {
                 // Don't fail the entire submission if queuing fails
                 console.error(
@@ -782,13 +793,21 @@ export class TestService {
             }
         }
 
+        // Only trigger background processing if we actually queued any essays
+        if (queuedCount === 0) {
+            console.log(
+                `[EssayEval] No essays to process for test ${testId} (all empty or skipped)`,
+            );
+            return;
+        }
+
         // Process evaluations in background (non-blocking).
         // Don't await — let the response return immediately.
         // Cron job will retry if this fails.
         console.log(
-            `[EssayEval] Triggering background processing for ${essayQuestions.length} essay(s) on test ${testId}`,
+            `[EssayEval] Triggering background processing for ${queuedCount} essay(s) on test ${testId}`,
         );
-        void essayService.processQueue(essayQuestions.length).then(
+        void essayService.processQueue(queuedCount).then(
             (result) =>
                 console.log(
                     `[EssayEval] Background processing completed:`,
@@ -828,7 +847,22 @@ export class TestService {
             breakdown[q.difficulty].total++;
         }
 
-        const gradedAnswers: TestAnswer[] = answers.map((answer) => {
+        // Filter out empty essay answers (treat as unattempted)
+        const filteredAnswers = answers.filter((answer) => {
+            const question = questionMap.get(answer.question_id);
+            if (question?.question_type === "essay") {
+                const plainText = stripHtmlToText(
+                    String(answer.selected || ""),
+                );
+                if (!plainText.trim()) {
+                    // Empty essay - treat as unattempted (don't include in answers)
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        const gradedAnswers: TestAnswer[] = filteredAnswers.map((answer) => {
             const question = questionMap.get(answer.question_id);
 
             if (!question) {

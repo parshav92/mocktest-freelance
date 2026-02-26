@@ -108,7 +108,9 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
 
             router.push(`/dashboard/tests/${data.test.id}`);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to start test");
+            setError(
+                err instanceof Error ? err.message : "Failed to start test",
+            );
             setStartingSubject(null);
         }
     };
@@ -154,7 +156,7 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                         variant="ghost"
                         size="sm"
                         onClick={handleSignOut}
-                        className="text-white hover:bg-white/10"
+                        className="text-white hover:bg-white/10 hover:text-white/90 transition-colors"
                     >
                         <LogOut className="h-4 w-4 mr-2" />
                         Sign Out
@@ -341,8 +343,13 @@ export function StudentDashboard({ user }: StudentDashboardProps) {
                                     {subjects.map((subject) => (
                                         <button
                                             key={subject.id}
-                                            onClick={() => handleStartTest(subject)}
-                                            disabled={user.isReadOnly || startingSubject !== null}
+                                            onClick={() =>
+                                                handleStartTest(subject)
+                                            }
+                                            disabled={
+                                                user.isReadOnly ||
+                                                startingSubject !== null
+                                            }
                                             className="w-full py-4 px-6 bg-[#1a2744] text-white font-medium rounded-md
                                                 hover:bg-[#1a2744]/90 transition-colors text-center
                                                 disabled:opacity-50 disabled:cursor-not-allowed
