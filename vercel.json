@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/essays/evaluate",
-      "schedule": "*/5 * * * *"
+      "schedule": "0 9 * * *" 
     }
   ]
 }
