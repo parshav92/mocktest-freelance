@@ -168,17 +168,12 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Infer subject slug from passage code prefix
- * RD_P_xxx -> reading, WR_P_xxx -> writing, etc.
+ * Extract prefix from a question/passage code
+ * e.g., "RD_P_001" -> "RD", "MR_MCQ_001" -> "MR"
  */
-function inferSubjectSlugFromPassageCode(code: string): string {
-    const upperCode = (code || "").toUpperCase();
-    if (upperCode.startsWith("RD_")) return "reading";
-    if (upperCode.startsWith("WR_")) return "writing";
-    if (upperCode.startsWith("MR_")) return "mathematical-reasoning";
-    if (upperCode.startsWith("TS_")) return "thinking-skills";
-    // Default to reading for passages
-    return "reading";
+function extractCodePrefix(code: string): string {
+    const match = (code || "").toUpperCase().match(/^([A-Z]{2,5})_/);
+    return match ? match[1] : "";
 }
 
 /**
@@ -193,16 +188,21 @@ async function insertPassages(
         return { inserted: 0, batchId: null };
     }
 
-    // Get subject IDs for mapping
+    // Get subject IDs and code_prefix mappings
     const { data: subjects, error: subjectError } = await supabase
         .from("subjects")
-        .select("id, slug");
+        .select("id, slug, code_prefix");
 
     if (subjectError || !subjects) {
         throw new Error("Failed to fetch subjects");
     }
 
-    const subjectMap = new Map(subjects.map((s) => [s.slug, s.id]));
+    // Map: code_prefix -> subject_id (e.g., "RD" -> uuid)
+    const prefixToSubjectId = new Map(
+        subjects
+            .filter((s) => s.code_prefix)
+            .map((s) => [s.code_prefix.toUpperCase(), s.id])
+    );
 
     // Check for duplicate codes
     const codes = passages.map((p) => p.code);
@@ -220,13 +220,13 @@ async function insertPassages(
 
     // Prepare passages for insert
     const passagesToInsert = passages.map((p) => {
-        // Infer subject from passage code
-        const subjectSlug = inferSubjectSlugFromPassageCode(p.code);
-        const subjectId = subjectMap.get(subjectSlug);
+        // Infer subject from code prefix
+        const prefix = extractCodePrefix(p.code);
+        const subjectId = prefixToSubjectId.get(prefix);
 
         if (!subjectId) {
             throw new Error(
-                `Invalid subject for passage ${p.code}. Subject "${subjectSlug}" not found.`,
+                `Cannot determine subject for passage "${p.code}". Code prefix "${prefix}" not recognized. Available prefixes: ${Array.from(prefixToSubjectId.keys()).join(", ")}`,
             );
         }
 
@@ -280,16 +280,23 @@ async function insertQuestions(
         return { inserted: 0, batchId: null };
     }
 
-    // Get subject IDs
+    // Get subject IDs and code_prefix mappings
     const { data: subjects, error: subjectError } = await supabase
         .from("subjects")
-        .select("id, slug");
+        .select("id, slug, code_prefix");
 
     if (subjectError || !subjects) {
         throw new Error("Failed to fetch subjects");
     }
 
+    // Map: slug -> subject_id
     const subjectMap = new Map(subjects.map((s) => [s.slug, s.id]));
+    // Map: code_prefix -> slug (e.g., "RD" -> "reading")
+    const prefixToSlug = new Map(
+        subjects
+            .filter((s) => s.code_prefix)
+            .map((s) => [s.code_prefix.toUpperCase(), s.slug])
+    );
 
     // Get passage IDs if any questions reference passages
     const passageCodes = [
@@ -339,16 +346,16 @@ async function insertQuestions(
         throw new Error(`Duplicate question codes: ${duplicates.join(", ")}`);
     }
 
-    // Infer subject slug from various sources
+    // Infer subject slug from various sources (using DB prefix map)
     function inferSubjectSlug(data: Record<string, string>): string {
+        // 1. If subject is explicitly provided in CSV, use it
         if (data.subject)
             return data.subject.toLowerCase().replace(/\s+/g, "-");
-        // Infer from question code prefix (e.g. RD_ → reading, WR_ → writing, MR_ → mathematical-reasoning, TS_ → thinking-skills)
-        const code = (data.code || "").toUpperCase();
-        if (code.startsWith("RD_")) return "reading";
-        if (code.startsWith("WR_")) return "writing";
-        if (code.startsWith("MR_")) return "mathematical-reasoning";
-        if (code.startsWith("TS_")) return "thinking-skills";
+        // 2. Infer from question code prefix using DB mapping
+        const prefix = extractCodePrefix(data.code);
+        if (prefix && prefixToSlug.has(prefix)) {
+            return prefixToSlug.get(prefix)!;
+        }
         return "";
     }
 

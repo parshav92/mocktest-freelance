@@ -99,6 +99,24 @@ export function AdminDashboardContent({ stats }: AdminDashboardContentProps) {
                         </Link>
                     </div>
                 </section>
+
+                <section className="rounded-3xl border border-slate-200/70 bg-zinc-50 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl font-semibold text-zinc-900">
+                            Manage Subjects
+                        </h2>
+                        <p className="text-sm text-zinc-600 mt-1">
+                            Add and configure test subjects. Set up question
+                            distribution and test instructions.
+                        </p>
+                    </div>
+                    <Link
+                        href="/dashboard/subjects"
+                        className="inline-flex items-center justify-center rounded-full bg-zinc-900 text-white px-5 py-2 text-sm font-medium hover:bg-zinc-800 transition-colors"
+                    >
+                        Manage Subjects
+                    </Link>
+                </section>
             </div>
         </div>
     );
