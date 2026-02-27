@@ -9,6 +9,7 @@ import React, {
     useEffect,
     useRef,
     useMemo,
+    useState,
     Component,
     type ReactNode,
 } from "react";
@@ -85,27 +86,33 @@ const WordLimitExtension = Extension.create<WordLimitOptions>({
 function ToolbarButton({
     active,
     disabled,
-    onClick,
+    onAction,
     title,
     children,
 }: {
     active?: boolean;
     disabled?: boolean;
-    onClick: () => void;
+    onAction: () => void;
     title: string;
     children: React.ReactNode;
 }) {
     return (
         <button
             type="button"
-            onMouseDown={(e) => {
-                e.preventDefault(); // prevent editor blur
-                onClick();
+            tabIndex={-1}
+            // Prevent focus theft on mousedown
+            onMouseDown={(e) => e.preventDefault()}
+            // Execute action on click (after mousedown prevented focus loss)
+            onClick={() => {
+                if (!disabled) {
+                    onAction();
+                }
             }}
             disabled={disabled}
             title={title}
+            aria-pressed={active}
             className={cn(
-                "p-1.5 rounded transition-colors",
+                "p-1.5 rounded transition-colors select-none cursor-pointer",
                 active
                     ? "bg-slate-200 text-slate-900"
                     : "text-slate-500 hover:bg-slate-100 hover:text-slate-700",
@@ -121,19 +128,19 @@ function EditorToolbar({ editor }: { editor: Editor }) {
     const iconSize = "h-4 w-4";
 
     return (
-        <div className="flex items-center gap-0.5 border-b border-slate-200 px-2 py-1.5 bg-slate-50/80 rounded-t-lg flex-wrap">
+        <div className="flex items-center gap-0.5 border-b border-slate-200 px-2 py-1.5 bg-slate-50/80 rounded-t-lg flex-wrap select-none">
             <ToolbarButton
-                onClick={() => editor.chain().focus().toggleBold().run()}
+                onAction={() => editor.chain().focus().toggleBold().run()}
                 active={editor.isActive("bold")}
-                title="Bold"
+                title="Bold (Ctrl+B)"
             >
                 <Bold className={iconSize} />
             </ToolbarButton>
 
             <ToolbarButton
-                onClick={() => editor.chain().focus().toggleItalic().run()}
+                onAction={() => editor.chain().focus().toggleItalic().run()}
                 active={editor.isActive("italic")}
-                title="Italic"
+                title="Italic (Ctrl+I)"
             >
                 <Italic className={iconSize} />
             </ToolbarButton>
@@ -141,7 +148,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
             <div className="w-px h-5 bg-slate-200 mx-1" />
 
             <ToolbarButton
-                onClick={() =>
+                onAction={() =>
                     editor.chain().focus().toggleHeading({ level: 1 }).run()
                 }
                 active={editor.isActive("heading", { level: 1 })}
@@ -151,7 +158,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
             </ToolbarButton>
 
             <ToolbarButton
-                onClick={() =>
+                onAction={() =>
                     editor.chain().focus().toggleHeading({ level: 2 }).run()
                 }
                 active={editor.isActive("heading", { level: 2 })}
@@ -163,7 +170,7 @@ function EditorToolbar({ editor }: { editor: Editor }) {
             <div className="w-px h-5 bg-slate-200 mx-1" />
 
             <ToolbarButton
-                onClick={() => editor.chain().focus().toggleBulletList().run()}
+                onAction={() => editor.chain().focus().toggleBulletList().run()}
                 active={editor.isActive("bulletList")}
                 title="Bullet list"
             >
@@ -171,7 +178,9 @@ function EditorToolbar({ editor }: { editor: Editor }) {
             </ToolbarButton>
 
             <ToolbarButton
-                onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                onAction={() =>
+                    editor.chain().focus().toggleOrderedList().run()
+                }
                 active={editor.isActive("orderedList")}
                 title="Numbered list"
             >
@@ -179,7 +188,9 @@ function EditorToolbar({ editor }: { editor: Editor }) {
             </ToolbarButton>
 
             <ToolbarButton
-                onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                onAction={() =>
+                    editor.chain().focus().setHorizontalRule().run()
+                }
                 title="Divider"
             >
                 <Minus className={iconSize} />
@@ -188,17 +199,17 @@ function EditorToolbar({ editor }: { editor: Editor }) {
             <div className="w-px h-5 bg-slate-200 mx-1" />
 
             <ToolbarButton
-                onClick={() => editor.chain().focus().undo().run()}
+                onAction={() => editor.chain().focus().undo().run()}
                 disabled={!editor.can().undo()}
-                title="Undo"
+                title="Undo (Ctrl+Z)"
             >
                 <Undo2 className={iconSize} />
             </ToolbarButton>
 
             <ToolbarButton
-                onClick={() => editor.chain().focus().redo().run()}
+                onAction={() => editor.chain().focus().redo().run()}
                 disabled={!editor.can().redo()}
-                title="Redo"
+                title="Redo (Ctrl+Y)"
             >
                 <Redo2 className={iconSize} />
             </ToolbarButton>
@@ -236,6 +247,8 @@ export function RichTextEditor({
     // Track the last external value to detect external changes
     const lastExternalValue = useRef<string>(value);
     const isInternalUpdate = useRef(false);
+    // Force re-render on selection/mark changes so toolbar updates immediately
+    const [, forceRender] = useState(0);
 
     // Memoize extensions to prevent recreation on every render
     const extensions = useMemo(() => {
@@ -271,9 +284,11 @@ export function RichTextEditor({
                 lastExternalValue.current = html;
                 onChange(html);
             },
+            // Re-render toolbar on any transaction (mark toggles, selection, etc.)
+            onTransaction: () => forceRender((n) => n + 1),
             editorProps: {
                 attributes: {
-                    class: "prose prose-sm prose-slate max-w-none focus:outline-none px-4 py-3",
+                    class: "tiptap-editor focus:outline-none px-4 py-3 text-sm text-slate-700",
                     style: `min-height: ${height - 50}px`,
                 },
             },
@@ -340,7 +355,7 @@ export function RichTextViewer({ content, className }: RichTextViewerProps) {
         editable: false,
         editorProps: {
             attributes: {
-                class: "prose prose-sm prose-slate max-w-none",
+                class: "tiptap-editor text-sm text-slate-700",
             },
         },
     });

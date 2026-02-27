@@ -170,20 +170,22 @@ export const MCQRenderer = memo(
 
         if (layout === "split") {
             return (
-                <div className="overflow-scroll flex min-h-0 relative">
+                <div className="flex min-h-0 h-full relative">
                     {/* Left column: Question stem */}
                     <div
                         className={cn(
-                            "transition-all duration-300 ease-in-out",
-                            optionsCollapsed ? "flex-1 pr-4" : "w-1/2 pr-8",
+                            "transition-all duration-300 ease-in-out overflow-y-auto shrink-0",
+                            optionsCollapsed ? "w-full pr-4" : "w-1/2 pr-8",
                         )}
                     >
                         <MCQQuestionStem content={content} />
                     </div>
 
                     {/* Divider with toggle button */}
-                    <div className="relative flex items-stretch">
-                        <div className="w-px bg-gray-200" />
+                    <div className="relative flex items-stretch shrink-0">
+                        {!optionsCollapsed && (
+                            <div className="w-px bg-gray-200" />
+                        )}
                         <button
                             onClick={() =>
                                 setOptionsCollapsed(!optionsCollapsed)
@@ -193,7 +195,7 @@ export const MCQRenderer = memo(
                                 "w-6 h-12 flex items-center justify-center",
                                 "bg-white border border-gray-300 rounded-full shadow-sm",
                                 "hover:bg-gray-50 hover:border-gray-400 transition-colors",
-                                "z-10 cursor-pointer",
+                                "z-5 cursor-pointer",
                             )}
                             title={
                                 optionsCollapsed
@@ -212,10 +214,10 @@ export const MCQRenderer = memo(
                     {/* Right column: Options (collapsible) */}
                     <div
                         className={cn(
-                            "transition-all duration-300 ease-in-out ",
+                            "transition-[width] duration-300 ease-in-out overflow-hidden pl-8",
                             optionsCollapsed
-                                ? "w-0 opacity-0 pl-0"
-                                : "w-1/2 opacity-100 pl-8",
+                                ? "w-0 pl-0"
+                                : "w-1/2 overflow-y-auto",
                         )}
                     >
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
@@ -564,20 +566,20 @@ export const EssayRenderer = memo(
 
         if (layout === "split") {
             return (
-                <div className="flex min-h-0 relative">
+                <div className="flex min-h-0 h-full relative">
                     {/* Left column: Prompt */}
                     <div
                         className={cn(
-                            "transition-all duration-300 ease-in-out",
-                            editorCollapsed ? "flex-1 pr-4" : "w-1/2 pr-8",
+                            "transition-all duration-300 overflow-y-auto ease-in-out shrink-0",
+                            editorCollapsed ? "w-full pr-4" : "w-1/2 pr-8",
                         )}
                     >
                         {promptSection}
                     </div>
 
                     {/* Divider with toggle button */}
-                    <div className="relative flex items-stretch">
-                        <div className="w-px bg-gray-200" />
+                    <div className="relative flex items-stretch shrink-0">
+                        <div className="absolute inset-y-0 w-px h-full bg-gray-200" />
                         <button
                             onClick={() => setEditorCollapsed(!editorCollapsed)}
                             className={cn(
@@ -585,7 +587,7 @@ export const EssayRenderer = memo(
                                 "w-6 h-12 flex items-center justify-center",
                                 "bg-white border border-gray-300 rounded-full shadow-sm",
                                 "hover:bg-gray-50 hover:border-gray-400 transition-colors",
-                                "z-10 cursor-pointer",
+                                "z-5 cursor-pointer",
                             )}
                             title={
                                 editorCollapsed ? "Show editor" : "Hide editor"
@@ -602,10 +604,10 @@ export const EssayRenderer = memo(
                     {/* Right column: Editor (collapsible) */}
                     <div
                         className={cn(
-                            "transition-all duration-300 ease-in-out ",
+                            "transition-[width] duration-300 ease-in-out overflow-hidden pl-8",
                             editorCollapsed
-                                ? "w-0 opacity-0 pl-0"
-                                : "w-1/2 opacity-100 pl-8",
+                                ? "w-0 pl-0"
+                                : "w-1/2 overflow-y-auto",
                         )}
                     >
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">

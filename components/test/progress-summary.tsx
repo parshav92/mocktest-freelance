@@ -143,7 +143,7 @@ export function ProgressSummary({
                     {/* Panel */}
                     <div className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white z-50 shadow-xl flex flex-col">
                         {/* Panel Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b bg-[#1a2744] text-white">
+                        <div className="flex items-center justify-between px-6 py-3 border-b bg-[#1a2744] text-white">
                             <h2 className="font-semibold text-lg">
                                 Progress Summary
                             </h2>
@@ -285,18 +285,18 @@ export function PreSubmitSummary({
                         <SummaryRow
                             label="Total Questions"
                             value={totalQuestions}
-                            color="text-gray-800"
+                            color="text-neutral-800"
                         />
                         <SummaryRow
                             label="Answered"
                             value={answeredSet.size}
-                            color="text-green-600"
+                            color="text-blue-600"
                         />
                         {unanswered > 0 && (
                             <SummaryRow
                                 label="Unanswered"
                                 value={unanswered}
-                                color="text-red-600"
+                                color="text-gray-500"
                             />
                         )}
                         {flaggedCount > 0 && (
@@ -333,7 +333,7 @@ export function PreSubmitSummary({
                                     <div
                                         key={idx}
                                         className={`relative w-full aspect-square rounded flex items-center justify-center text-xs font-medium
-                      ${isAnswered ? "bg-green-100 text-green-800" : "bg-red-100 text-red-700"}
+                      ${isAnswered ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-700"}
                     `}
                                     >
                                         {idx + 1}
