@@ -5,7 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
+import { cn, stripHtmlToText } from "@/lib/utils";
 import {
     ArrowLeft,
     ArrowRight,
@@ -141,7 +141,29 @@ export default function TestEnvironmentPage() {
     );
 
     // Memoize answered set to avoid recreation on every render
-    const answeredSet = useMemo(() => new Set(Object.keys(answers)), [answers]);
+    // For essays, check that content is not empty (Tiptap emits <p></p> on init)
+    const answeredSet = useMemo(() => {
+        const set = new Set<string>();
+        for (const [qId, answer] of Object.entries(answers)) {
+            const question = questions.find((q) => q.id === qId);
+            if (!question) continue;
+
+            if (question.question_type === "essay") {
+                // Essay: only count as answered if there's actual text content
+                const text =
+                    typeof answer === "string"
+                        ? stripHtmlToText(answer).trim()
+                        : "";
+                if (text.length > 0) {
+                    set.add(qId);
+                }
+            } else {
+                // Other types: any answer counts
+                set.add(qId);
+            }
+        }
+        return set;
+    }, [answers, questions]);
 
     // ============================================
     // TIMER
