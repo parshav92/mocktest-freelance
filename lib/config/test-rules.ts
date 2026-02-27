@@ -83,19 +83,19 @@ export const TEST_CONFIG = {
     // ============================================
     antiCheat: {
         /** Enable fullscreen mode */
-        requireFullscreen: true,
+        requireFullscreen: false,
         /** Open test in a new browser tab */
-        openInNewTab: true,
+        openInNewTab: false,
         /** Disable right-click context menu */
-        disableRightClick: true,
+        disableRightClick: false,
         /** Disable keyboard shortcuts (F12, Ctrl+Shift+I, etc.) */
-        disableDevTools: true,
+        disableDevTools: false,
         /** Disable copy/paste from outside */
-        disableCopyPaste: true,
+        disableCopyPaste: false,
         /** Disable text selection on question content */
-        disableTextSelection: true,
+        disableTextSelection: false,
         /** Track tab/window visibility changes */
-        detectTabSwitch: true,
+        detectTabSwitch: false,
         /** Number of warnings before auto-submit */
         maxWarnings: 5,
         /** Warning message template */

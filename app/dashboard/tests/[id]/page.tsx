@@ -39,6 +39,47 @@ import type {
 } from "@/types/test";
 
 // ============================================
+// LOCAL STORAGE HELPERS (essay draft persistence)
+// ============================================
+const ESSAY_DRAFT_PREFIX = "test_essay_draft:";
+
+function getLocalEssayDrafts(
+    testId: string,
+): Record<string, string> {
+    try {
+        const raw = localStorage.getItem(`${ESSAY_DRAFT_PREFIX}${testId}`);
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+}
+
+function saveLocalEssayDraft(
+    testId: string,
+    questionId: string,
+    content: string,
+): void {
+    try {
+        const drafts = getLocalEssayDrafts(testId);
+        drafts[questionId] = content;
+        localStorage.setItem(
+            `${ESSAY_DRAFT_PREFIX}${testId}`,
+            JSON.stringify(drafts),
+        );
+    } catch {
+        // Storage full or unavailable — silent fail
+    }
+}
+
+function clearLocalEssayDrafts(testId: string): void {
+    try {
+        localStorage.removeItem(`${ESSAY_DRAFT_PREFIX}${testId}`);
+    } catch {
+        // Silent fail
+    }
+}
+
+// ============================================
 // TEST PHASES
 // ============================================
 type TestPhase =
@@ -168,11 +209,11 @@ export default function TestEnvironmentPage() {
             );
 
             // Restore answers if resuming
+            const restoredAnswers: Record<
+                string,
+                string | number[] | Record<string, number>
+            > = {};
             if (testData.answers?.length) {
-                const restoredAnswers: Record<
-                    string,
-                    string | number[] | Record<string, number>
-                > = {};
                 for (const a of testData.answers) {
                     if (a.selected !== null && a.selected !== undefined) {
                         restoredAnswers[a.question_id] = a.selected as
@@ -181,8 +222,24 @@ export default function TestEnvironmentPage() {
                             | Record<string, number>;
                     }
                 }
-                setAnswers(restoredAnswers);
             }
+
+            // Seed lastSavedRef with DB answers so they're skipped on submit
+            // (they're already persisted — no need to re-save)
+            for (const [qId, val] of Object.entries(restoredAnswers)) {
+                lastSavedRef.current[qId] = val;
+            }
+
+            // Merge localStorage essay drafts (takes priority — more recent)
+            const localDrafts = getLocalEssayDrafts(testId);
+            for (const [qId, draft] of Object.entries(localDrafts)) {
+                if (draft && testData.questions_order.includes(qId)) {
+                    restoredAnswers[qId] = draft;
+                    // Don't add to lastSavedRef — these need to be saved to DB on submit
+                }
+            }
+
+            setAnswers(restoredAnswers);
 
             // Determine starting phase
             if (testData.status === "in_progress") {
@@ -287,23 +344,49 @@ export default function TestEnvironmentPage() {
     );
 
     // ============================================
+    // HELPERS
+    // ============================================
+    /** Check if a question ID belongs to an essay question */
+    const isEssayQuestion = useCallback(
+        (questionId: string): boolean => {
+            return questions.some(
+                (q) => q.id === questionId && q.question_type === "essay",
+            );
+        },
+        [questions],
+    );
+
+    // ============================================
     // HANDLERS
     // ============================================
     const handleAnswer = useCallback(
         (value: string | number[] | Record<string, number>) => {
             if (!currentQuestion) return;
             setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
-            if (TEST_CONFIG.navigation.autoSaveOnNavigate) {
+
+            // Essays: save to localStorage only (no API call)
+            // Other types: auto-save via API as before
+            if (currentQuestion.question_type === "essay") {
+                saveLocalEssayDraft(
+                    testId,
+                    currentQuestion.id,
+                    value as string,
+                );
+            } else if (TEST_CONFIG.navigation.autoSaveOnNavigate) {
                 debouncedSave(currentQuestion.id, value);
             }
         },
-        [currentQuestion, debouncedSave],
+        [currentQuestion, debouncedSave, testId],
     );
 
     const handleNavigate = useCallback(
         (direction: "prev" | "next") => {
-            // Save current answer before navigating
-            if (currentQuestion && answers[currentQuestion.id] !== undefined) {
+            // Save current answer before navigating (skip essays — they use localStorage)
+            if (
+                currentQuestion &&
+                answers[currentQuestion.id] !== undefined &&
+                !isEssayQuestion(currentQuestion.id)
+            ) {
                 saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
             }
 
@@ -325,23 +408,24 @@ export default function TestEnvironmentPage() {
                 }
             }
         },
-        [currentQuestion, answers, saveAnswer, currentIndex, questions.length],
+        [currentQuestion, answers, saveAnswer, isEssayQuestion, currentIndex, questions.length],
     );
 
     const handleJumpTo = useCallback(
         (index: number) => {
             if (TEST_CONFIG.navigation.allowQuestionJump) {
-                // Save current answer before jumping
+                // Save current answer before jumping (skip essays — they use localStorage)
                 if (
                     currentQuestion &&
-                    answers[currentQuestion.id] !== undefined
+                    answers[currentQuestion.id] !== undefined &&
+                    !isEssayQuestion(currentQuestion.id)
                 ) {
                     saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
                 }
                 setCurrentIndex(index);
             }
         },
-        [currentQuestion, answers, saveAnswer],
+        [currentQuestion, answers, saveAnswer, isEssayQuestion],
     );
 
     const handleToggleFlag = useCallback(() => {
@@ -426,12 +510,14 @@ export default function TestEnvironmentPage() {
         setPhase("submitting");
 
         try {
-            // Save any pending answer
-            if (currentQuestion && answers[currentQuestion.id] !== undefined) {
-                await saveAnswer(
-                    currentQuestion.id,
-                    answers[currentQuestion.id],
-                );
+            // Save all answers to DB sequentially before submitting.
+            // Sequential to avoid race conditions — each saveAnswer reads
+            // the full answers array from DB, merges one answer, and writes
+            // back. Parallel writes would clobber each other.
+            // Note: lastSavedRef is seeded with DB answers on load, so only
+            // truly changed answers (e.g. essays from localStorage) hit the API.
+            for (const [questionId, selected] of Object.entries(answers)) {
+                await saveAnswer(questionId, selected);
             }
 
             const res = await fetch(`/api/tests/${testId}/submit`, {
@@ -440,6 +526,9 @@ export default function TestEnvironmentPage() {
 
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Failed to submit test");
+
+            // Clear localStorage essay drafts after successful submit
+            clearLocalEssayDrafts(testId);
 
             setTest(data.test);
             antiCheat.exitFullscreen();
@@ -880,11 +969,12 @@ export default function TestEnvironmentPage() {
                         <Button
                             onClick={() => {
                                 if (TEST_CONFIG.submit.showPreSubmitSummary) {
-                                    // Save current answer first
+                                    // Save current non-essay answer first
                                     if (
                                         currentQuestion &&
                                         answers[currentQuestion.id] !==
-                                            undefined
+                                            undefined &&
+                                        !isEssayQuestion(currentQuestion.id)
                                     ) {
                                         saveAnswer(
                                             currentQuestion.id,
