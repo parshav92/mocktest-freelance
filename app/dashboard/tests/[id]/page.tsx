@@ -43,9 +43,7 @@ import type {
 // ============================================
 const ESSAY_DRAFT_PREFIX = "test_essay_draft:";
 
-function getLocalEssayDrafts(
-    testId: string,
-): Record<string, string> {
+function getLocalEssayDrafts(testId: string): Record<string, string> {
     try {
         const raw = localStorage.getItem(`${ESSAY_DRAFT_PREFIX}${testId}`);
         return raw ? JSON.parse(raw) : {};
@@ -430,7 +428,14 @@ export default function TestEnvironmentPage() {
                 }
             }
         },
-        [currentQuestion, answers, saveAnswer, isEssayQuestion, currentIndex, questions.length],
+        [
+            currentQuestion,
+            answers,
+            saveAnswer,
+            isEssayQuestion,
+            currentIndex,
+            questions.length,
+        ],
     );
 
     const handleJumpTo = useCallback(
