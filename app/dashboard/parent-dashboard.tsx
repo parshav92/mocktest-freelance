@@ -10,12 +10,20 @@ import {
     LogOut,
     Plus,
     ChevronRight,
+    ChevronLeft,
     ArrowLeft,
     Loader2,
     AlertTriangle,
     UserPlus,
     Clock,
 } from "lucide-react";
+
+function getGreeting() {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+}
 
 // ── Types ──────────────────────────────────────────────
 
@@ -157,10 +165,7 @@ function pct(correct: number, total: number) {
 
 // ── Main Component ─────────────────────────────────────
 
-export function ParentDashboard({
-    user,
-    subscriptions,
-}: ParentDashboardProps) {
+export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
     const router = useRouter();
     const supabase = createClient();
 
@@ -210,22 +215,26 @@ export function ParentDashboard({
         setStats(null);
     };
 
+    const firstName = user.fullName.split(" ")[0];
+
     return (
-        <div className="min-h-screen bg-[#e8eef3]">
+        <div className="min-h-screen bg-slate-50">
             {/* Header */}
             <header className="bg-[#1a2744]">
                 <div className="max-w-5xl mx-auto px-6 h-14 flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-md bg-sky-500 flex items-center justify-center text-[11px] font-bold text-white leading-none">
-                            MT
+                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-sm font-semibold text-white">
+                            {firstName.charAt(0).toUpperCase()}
                         </div>
-                        <span className="text-md font-medium text-white">
-                            {user.fullName}
-                        </span>
+                        <div>
+                            <span className="text-sm font-medium text-white tracking-tight">
+                                {user.fullName}
+                            </span>
+                        </div>
                     </div>
                     <button
                         onClick={handleSignOut}
-                        className="text-md text-white/60 hover:text-white transition-colors flex items-center gap-1.5"
+                        className="text-sm text-white/50 hover:text-white transition-colors flex items-center gap-1.5"
                     >
                         <LogOut className="h-3.5 w-3.5" />
                         Sign out
@@ -277,13 +286,13 @@ function Overview({
 }) {
     return (
         <>
-            {/* Page header */}
-            <div className="flex items-center justify-between mb-6">
+            {/* Greeting + Page header */}
+            <div className="flex items-center justify-between mb-6 animate-[fade-in-up_0.4s_ease-out_both]">
                 <div>
-                    <h1 className="text-xl font-semibold text-[#1a2744]">
-                        Dashboard
+                    <h1 className="text-xl font-semibold text-[#1a2744] tracking-tight">
+                        {getGreeting()}
                     </h1>
-                    <p className="text-md text-slate-500 mt-0.5">
+                    <p className="text-sm text-slate-400 mt-0.5">
                         {students.length} student
                         {students.length !== 1 ? "s" : ""} &middot;{" "}
                         {activeCount} active plan
@@ -293,7 +302,7 @@ function Overview({
                 <Link href="/dashboard/subscribe">
                     <Button
                         size="sm"
-                        className="bg-[#1a2744] hover:bg-[#1a2744]/90 h-8 text-md px-3.5"
+                        className="bg-[#1a2744] hover:bg-[#1a2744]/90 h-8 text-sm px-3.5 rounded-lg"
                     >
                         <Plus className="h-3.5 w-3.5 mr-1.5" />
                         Add Student
@@ -303,7 +312,10 @@ function Overview({
 
             {/* Alert: unassigned subscriptions */}
             {unassigned.length > 0 && (
-                <div className="mb-5 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex items-start gap-3">
+                <div
+                    className="mb-5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-3 animate-[fade-in-up_0.4s_ease-out_both]"
+                    style={{ animationDelay: "50ms" }}
+                >
                     <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                     <div className="flex-1 min-w-0">
                         <p className="text-md font-medium text-amber-900">
@@ -331,7 +343,10 @@ function Overview({
 
             {/* Empty state: no subscriptions at all */}
             {totalSubs === 0 && (
-                <div className="bg-white border border-slate-200 rounded-lg py-16 text-center">
+                <div
+                    className="bg-white border border-slate-200 rounded-xl py-16 text-center animate-[fade-in-up_0.4s_ease-out_both]"
+                    style={{ animationDelay: "100ms" }}
+                >
                     <p className="text-slate-800 font-medium mb-1">
                         No subscriptions yet
                     </p>
@@ -363,38 +378,40 @@ function Overview({
 
             {/* Student list */}
             {students.length > 0 && (
-                <section>
-                    <p className="text-md font-medium text-slate-400 uppercase tracking-wider mb-2.5">
+                <section
+                    className="animate-[fade-in-up_0.4s_ease-out_both]"
+                    style={{ animationDelay: "100ms" }}
+                >
+                    <p className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-2.5">
                         Students
                     </p>
                     <div className="space-y-2">
-                        {students.map((s) => (
+                        {students.map((s, i) => (
                             <button
                                 key={s.id}
                                 onClick={() => onViewStats(s.id)}
-                                className="w-full bg-white border border-slate-200 rounded-lg px-4 py-3.5 flex items-center gap-4 text-left hover:border-slate-300 transition-colors group"
+                                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3.5 flex items-center gap-4 text-left hover:border-slate-300 hover:shadow-sm transition-all duration-200 group animate-[fade-in-up_0.3s_ease-out_both]"
+                                style={{ animationDelay: `${150 + i * 60}ms` }}
                             >
                                 {/* Initial */}
-                                <div className="w-9 h-9 rounded-full bg-[#1a2744] flex items-center justify-center text-white text-md font-semibold shrink-0">
+                                <div className="w-9 h-9 rounded-full bg-[#1a2744] flex items-center justify-center text-white text-sm font-semibold shrink-0">
                                     {s.full_name.charAt(0).toUpperCase()}
                                 </div>
 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <p className="text-md font-medium text-slate-900 truncate">
+                                        <p className="text-sm font-medium text-slate-900 truncate">
                                             {s.full_name}
                                         </p>
                                         <Badge
                                             variant="outline"
                                             className={`text-[10px] leading-none px-1.5 py-0.5 border font-medium ${statusCls(s.subscription.status)}`}
                                         >
-                                            {statusLabel(
-                                                s.subscription.status,
-                                            )}
+                                            {statusLabel(s.subscription.status)}
                                         </Badge>
                                     </div>
-                                    <p className="text-md text-slate-400 mt-0.5 truncate">
+                                    <p className="text-xs text-slate-400 mt-0.5 truncate">
                                         {s.student_id} &middot;{" "}
                                         {s.subscription.plan === "yearly"
                                             ? "Yearly"
@@ -414,15 +431,18 @@ function Overview({
 
             {/* Additional pending subs (when more than 1 unassigned) */}
             {unassigned.length > 1 && (
-                <section className="mt-6">
-                    <p className="text-md font-medium text-slate-400 uppercase tracking-wider mb-2.5">
+                <section
+                    className="mt-6 animate-[fade-in-up_0.4s_ease-out_both]"
+                    style={{ animationDelay: "200ms" }}
+                >
+                    <p className="text-sm font-medium text-slate-400 uppercase tracking-wider mb-2.5">
                         Pending Subscriptions
                     </p>
                     <div className="space-y-2">
                         {unassigned.map((sub) => (
                             <div
                                 key={sub.id}
-                                className="bg-white border border-slate-200 rounded-lg px-4 py-3 flex items-center justify-between"
+                                className="bg-white border border-slate-200 rounded-xl px-4 py-3 flex items-center justify-between"
                             >
                                 <div>
                                     <p className="text-md font-medium text-slate-900">
@@ -460,6 +480,8 @@ function Overview({
 // STUDENT DETAIL
 // ════════════════════════════════════════════════════════
 
+const TESTS_PER_PAGE = 10;
+
 function StudentDetail({
     stats,
     loading,
@@ -471,6 +493,8 @@ function StudentDetail({
     subscription?: Subscription;
     onBack: () => void;
 }) {
+    const [testPage, setTestPage] = useState(1);
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center py-32">
@@ -508,8 +532,8 @@ function StudentDetail({
             </button>
 
             {/* Student identity */}
-            <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-[#1a2744] flex items-center justify-center text-white text-md font-semibold shrink-0">
+            <div className="flex items-center gap-3 mb-6 animate-[fade-in-up_0.4s_ease-out_both]">
+                <div className="w-10 h-10 rounded-full bg-[#1a2744] flex items-center justify-center text-white text-sm font-semibold shrink-0">
                     {student.full_name.charAt(0).toUpperCase()}
                 </div>
                 <div>
@@ -536,14 +560,15 @@ function StudentDetail({
             </div>
 
             {/* Stats row — gap-px trick creates 1px internal borders */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-slate-200 rounded-lg overflow-hidden mb-6">
+            <div
+                className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-slate-200 rounded-xl overflow-hidden mb-6 animate-[fade-in-up_0.4s_ease-out_both]"
+                style={{ animationDelay: "100ms" }}
+            >
                 <div className="bg-white p-4">
                     <p className="text-2xl font-bold text-[#1a2744] tabular-nums">
                         {summary.totalTests}
                     </p>
-                    <p className="text-md text-slate-400 mt-0.5">
-                        Tests taken
-                    </p>
+                    <p className="text-md text-slate-400 mt-0.5">Tests taken</p>
                 </div>
                 <div className="bg-white p-4">
                     <p
@@ -565,9 +590,7 @@ function StudentDetail({
                             %
                         </span>
                     </p>
-                    <p className="text-md text-slate-400 mt-0.5">
-                        Best score
-                    </p>
+                    <p className="text-md text-slate-400 mt-0.5">Best score</p>
                 </div>
                 <div className="bg-white p-4">
                     <p className="text-2xl font-bold text-[#1a2744] tabular-nums">
@@ -581,8 +604,11 @@ function StudentDetail({
 
             {/* Subject performance */}
             {subjectStats.length > 0 && (
-                <section className="mb-6">
-                    <h2 className="text-md font-medium text-slate-900 mb-3">
+                <section
+                    className="mb-6 animate-[fade-in-up_0.4s_ease-out_both]"
+                    style={{ animationDelay: "150ms" }}
+                >
+                    <h2 className="text-sm font-medium text-slate-900 mb-3">
                         Subjects
                     </h2>
                     <div className="grid gap-3 md:grid-cols-2">
@@ -591,7 +617,7 @@ function StudentDetail({
                             return (
                                 <div
                                     key={s.id}
-                                    className="bg-white border border-slate-200 rounded-lg p-4"
+                                    className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm transition-shadow duration-200"
                                 >
                                     {/* Header row */}
                                     <div className="flex items-center justify-between mb-3">
@@ -601,9 +627,7 @@ function StudentDetail({
                                             </p>
                                             <p className="text-md text-slate-400">
                                                 {s.tests_taken} test
-                                                {s.tests_taken !== 1
-                                                    ? "s"
-                                                    : ""}
+                                                {s.tests_taken !== 1 ? "s" : ""}
                                             </p>
                                         </div>
                                         <Badge
@@ -672,57 +696,118 @@ function StudentDetail({
             )}
 
             {/* Recent tests */}
-            <section>
-                <h2 className="text-md font-medium text-slate-900 mb-3">
+            <section
+                className="animate-[fade-in-up_0.4s_ease-out_both]"
+                style={{ animationDelay: "200ms" }}
+            >
+                <h2 className="text-sm font-medium text-slate-900 mb-3">
                     Recent Tests
                 </h2>
 
                 {recentTests.length === 0 ? (
-                    <div className="bg-white border border-slate-200 rounded-lg py-12 text-center">
-                        <p className="text-md text-slate-400">
+                    <div className="bg-white border border-slate-200 rounded-xl py-12 text-center">
+                        <p className="text-sm text-slate-400">
                             No tests completed yet
                         </p>
                     </div>
                 ) : (
-                    <div className="bg-white border border-slate-200 rounded-lg overflow-hidden divide-y divide-slate-100">
-                        {recentTests.map((t) => {
-                            const p = Math.round(t.percentage || 0);
-                            return (
-                                <div
-                                    key={t.id}
-                                    className={`flex items-center gap-4 px-4 py-3 border-l-[3px] ${accentBorder(p)}`}
-                                >
-                                    {/* Subject + date */}
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-md font-medium text-slate-900 truncate">
-                                            {t.subject?.name || "Test"}
-                                        </p>
-                                        <p className="text-md text-slate-400 mt-0.5">
-                                            {fmtDate(t.created_at)}
-                                        </p>
-                                    </div>
-
-                                    {/* Score + marks */}
-                                    <div className="text-right shrink-0">
-                                        <p
-                                            className={`text-md font-semibold tabular-nums ${scoreFg(p)}`}
+                    <>
+                        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                            {recentTests
+                                .slice(
+                                    (testPage - 1) * TESTS_PER_PAGE,
+                                    testPage * TESTS_PER_PAGE,
+                                )
+                                .map((t) => {
+                                    const p = Math.round(t.percentage || 0);
+                                    return (
+                                        <div
+                                            key={t.id}
+                                            className={`flex items-center gap-4 px-4 py-3 border-l-[3px] ${accentBorder(p)}`}
                                         >
-                                            {p}%
-                                        </p>
-                                        <p className="text-[11px] text-slate-400">
-                                            {t.marks_obtained}/{t.total_marks}
-                                        </p>
-                                    </div>
+                                            {/* Subject + date */}
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-slate-900 truncate">
+                                                    {t.subject?.name || "Test"}
+                                                </p>
+                                                <p className="text-xs text-slate-400 mt-0.5">
+                                                    {fmtDate(t.created_at)}
+                                                </p>
+                                            </div>
 
-                                    {/* Time */}
-                                    <div className="flex items-center gap-1 text-md text-slate-400 shrink-0 w-14 justify-end">
-                                        <Clock className="h-3 w-3" />
-                                        {fmtTime(t.time_spent_secs)}
-                                    </div>
+                                            {/* Score + marks */}
+                                            <div className="text-right shrink-0">
+                                                <p
+                                                    className={`text-sm font-semibold tabular-nums ${scoreFg(p)}`}
+                                                >
+                                                    {p}%
+                                                </p>
+                                                <p className="text-[11px] text-slate-400">
+                                                    {t.marks_obtained}/
+                                                    {t.total_marks}
+                                                </p>
+                                            </div>
+
+                                            {/* Time */}
+                                            <div className="flex items-center gap-1 text-xs text-slate-400 shrink-0 w-14 justify-end">
+                                                <Clock className="h-3 w-3" />
+                                                {fmtTime(t.time_spent_secs)}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+
+                        {/* Pagination */}
+                        {recentTests.length > TESTS_PER_PAGE && (
+                            <div className="flex items-center justify-between mt-3">
+                                <p className="text-xs text-slate-400 tabular-nums">
+                                    {(testPage - 1) * TESTS_PER_PAGE + 1}&ndash;
+                                    {Math.min(
+                                        testPage * TESTS_PER_PAGE,
+                                        recentTests.length,
+                                    )}{" "}
+                                    of {recentTests.length}
+                                </p>
+                                <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() =>
+                                            setTestPage((p) =>
+                                                Math.max(1, p - 1),
+                                            )
+                                        }
+                                        disabled={testPage === 1}
+                                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                    >
+                                        <ChevronLeft className="h-3.5 w-3.5" />
+                                    </button>
+                                    <button
+                                        onClick={() =>
+                                            setTestPage((p) =>
+                                                Math.min(
+                                                    Math.ceil(
+                                                        recentTests.length /
+                                                            TESTS_PER_PAGE,
+                                                    ),
+                                                    p + 1,
+                                                ),
+                                            )
+                                        }
+                                        disabled={
+                                            testPage >=
+                                            Math.ceil(
+                                                recentTests.length /
+                                                    TESTS_PER_PAGE,
+                                            )
+                                        }
+                                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                    >
+                                        <ChevronRight className="h-3.5 w-3.5" />
+                                    </button>
                                 </div>
-                            );
-                        })}
-                    </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </section>
         </>
