@@ -25,7 +25,7 @@ export interface TrialQuestion {
     difficulty: DifficultyLevel;
     content: QuestionContent;
     marks: number;
-    passage?: Passage;
+    passages?: Passage[];
     /** The correct answer — used for local grading + review */
     correct_answer: unknown;
     /** Explanation shown in review */
@@ -77,7 +77,7 @@ const readingQuestions: TrialQuestion[] = [
             ],
         } as MCQContent,
         marks: 1,
-        passage: readingPassage,
+        passages: [readingPassage],
         correct_answer: { label: "B" },
         solution_text:
             "The passage states 'Below 200 metres, sunlight fades to nothing.'",
@@ -98,7 +98,7 @@ const readingQuestions: TrialQuestion[] = [
             ],
         } as MCQContent,
         marks: 1,
-        passage: readingPassage,
+        passages: [readingPassage],
         correct_answer: { label: "C" },
         solution_text:
             "The passage says 'The anglerfish dangles a glowing lure above its gaping mouth, attracting prey.'",
@@ -119,7 +119,7 @@ const readingQuestions: TrialQuestion[] = [
             ],
         } as MCQContent,
         marks: 1,
-        passage: readingPassage,
+        passages: [readingPassage],
         correct_answer: { label: "B" },
         solution_text:
             "'Revolutionised' means to completely change something. The discovery of life independent of sunlight fundamentally changed how scientists viewed where life could survive.",
@@ -140,7 +140,7 @@ const readingQuestions: TrialQuestion[] = [
             ],
         } as MCQContent,
         marks: 1,
-        passage: readingPassage,
+        passages: [readingPassage],
         correct_answer: { label: "C" },
         solution_text:
             "The final paragraph discusses thermohaline circulation and how the deep ocean regulates Earth's climate, including distributing heat and nutrients.",

@@ -69,7 +69,7 @@ export interface Passage {
 export interface Question {
     id: string;
     subject_id: string;
-    passage_id: string | null;
+    passage_ids: string[];
     code: string;
     question_type: QuestionType;
     difficulty: DifficultyLevel;
@@ -83,7 +83,7 @@ export interface Question {
     created_at: string;
     updated_at: string;
     // Joined data
-    passage?: Passage;
+    passages?: Passage[];
 }
 
 // ============================================
@@ -264,7 +264,7 @@ export interface QuestionForTest {
     content: QuestionContent;
     marks: number;
     // Note: correct_answer is NOT included
-    passage?: Passage;
+    passages?: Passage[];
 }
 
 export interface SubmitAnswerRequest {

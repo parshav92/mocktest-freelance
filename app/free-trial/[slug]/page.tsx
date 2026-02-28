@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
     ArrowLeft,
@@ -639,7 +640,7 @@ export default function TrialTestPage() {
 
         // Helpers for detailed table
         const getQuestionTitle = (q: TrialQuestion) => {
-            if (q.passage?.title) return `${q.passage.title}`;
+            if (q.passages?.[0]?.title) return `${q.passages[0].title}`;
             const c = q.content as unknown as Record<string, unknown>;
             if (c.question) {
                 const qt = c.question as string;
@@ -986,12 +987,12 @@ export default function TrialTestPage() {
     if (phase !== "testing" || !currentQuestion) return null;
 
     const isFlagged = flaggedSet.has(currentQuestion.id);
-    const passage: Passage | null =
+    const passages: Passage[] =
         currentQuestion.question_type === "passage_mcq" ||
         currentQuestion.question_type === "poem_mcq"
-            ? currentQuestion.passage ?? null
-            : null;
-    const hasPassage = !!passage;
+            ? currentQuestion.passages ?? []
+            : [];
+    const hasPassage = passages.length > 0;
 
     const questionLayout: "split" | "stacked" =
         !hasPassage &&
@@ -1065,34 +1066,83 @@ export default function TrialTestPage() {
             {/* SPLIT PANEL CONTENT */}
             <div className="flex-1 flex overflow-hidden">
                 {/* Passage panel */}
-                {hasPassage && passage && (
+                {hasPassage && (
                     <div className="w-1/2 border-r bg-white flex flex-col overflow-y-auto">
-                        <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
-                            <span className="text-sm font-medium text-[#1a2744]">
-                                {passage.passage_type === "poem"
-                                    ? "Poem"
-                                    : passage.title || "Extract"}
-                            </span>
-                        </div>
-                        <ScrollArea className="flex-1">
-                            <div className="p-6 md:p-8">
-                                {passage.title && (
-                                    <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                        {passage.title}
-                                    </h3>
-                                )}
-                                <div
-                                    className={`leading-relaxed text-gray-800 ${
-                                        passage.passage_type === "poem"
-                                            ? "whitespace-pre-line italic"
-                                            : ""
-                                    }`}
-                                    dangerouslySetInnerHTML={{
-                                        __html: passage.content,
-                                    }}
-                                />
-                            </div>
-                        </ScrollArea>
+                        {passages.length === 1 ? (
+                            <>
+                                <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
+                                    <span className="text-sm font-medium text-[#1a2744]">
+                                        {passages[0].passage_type === "poem"
+                                            ? "Poem"
+                                            : passages[0].title || "Extract"}
+                                    </span>
+                                </div>
+                                <ScrollArea className="flex-1">
+                                    <div className="p-6 md:p-8">
+                                        {passages[0].title && (
+                                            <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                {passages[0].title}
+                                            </h3>
+                                        )}
+                                        <div
+                                            className={`leading-relaxed text-gray-800 ${
+                                                passages[0].passage_type === "poem"
+                                                    ? "whitespace-pre-line italic"
+                                                    : ""
+                                            }`}
+                                            dangerouslySetInnerHTML={{
+                                                __html: passages[0].content,
+                                            }}
+                                        />
+                                    </div>
+                                </ScrollArea>
+                            </>
+                        ) : (
+                            <Tabs defaultValue="passage-0" className="flex flex-col h-full">
+                                <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
+                                    <TabsList className="bg-transparent h-auto p-0 gap-0">
+                                        {passages.map((p, idx) => (
+                                            <TabsTrigger
+                                                key={p.id}
+                                                value={`passage-${idx}`}
+                                                className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
+                                            >
+                                                {p.passage_type === "poem"
+                                                    ? `Poem ${idx + 1}`
+                                                    : p.title || `Extract ${idx + 1}`}
+                                            </TabsTrigger>
+                                        ))}
+                                    </TabsList>
+                                </div>
+                                {passages.map((p, idx) => (
+                                    <TabsContent
+                                        key={p.id}
+                                        value={`passage-${idx}`}
+                                        className="flex-1 m-0 data-[state=inactive]:hidden"
+                                    >
+                                        <ScrollArea className="h-full">
+                                            <div className="p-6 md:p-8">
+                                                {p.title && (
+                                                    <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                        {p.title}
+                                                    </h3>
+                                                )}
+                                                <div
+                                                    className={`leading-relaxed text-gray-800 ${
+                                                        p.passage_type === "poem"
+                                                            ? "whitespace-pre-line italic"
+                                                            : ""
+                                                    }`}
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: p.content,
+                                                    }}
+                                                />
+                                            </div>
+                                        </ScrollArea>
+                                    </TabsContent>
+                                ))}
+                            </Tabs>
+                        )}
                     </div>
                 )}
 
@@ -1217,8 +1267,8 @@ function TrialReviewOverlay({
     const openHasPassage =
         (openItem.question_type === "passage_mcq" ||
             openItem.question_type === "poem_mcq") &&
-        !!openItem.passage;
-    const passage = openItem.passage;
+        !!(openItem.passages && openItem.passages.length > 0);
+    const openPassages = openItem.passages || [];
 
     // formatTime not needed in overlay - time shown in summary
 
@@ -1595,34 +1645,83 @@ function TrialReviewOverlay({
             {/* ── SPLIT PANEL CONTENT ── */}
             <div className="flex-1 flex overflow-y-scroll">
                 {/* Passage panel */}
-                {openHasPassage && passage && (
+                {openHasPassage && openPassages.length > 0 && (
                     <div className="w-1/2 border-r bg-white flex flex-col">
-                        <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
-                            <span className="text-sm font-medium text-[#1a2744]">
-                                {passage.passage_type === "poem"
-                                    ? "Poem"
-                                    : passage.title || "Extract"}
-                            </span>
-                        </div>
-                        <ScrollArea className="flex-1">
-                            <div className="p-6 md:p-8">
-                                {passage.title && (
-                                    <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                        {passage.title}
-                                    </h3>
-                                )}
-                                <div
-                                    className={`leading-relaxed text-gray-800 ${
-                                        passage.passage_type === "poem"
-                                            ? "whitespace-pre-line italic"
-                                            : ""
-                                    }`}
-                                    dangerouslySetInnerHTML={{
-                                        __html: passage.content,
-                                    }}
-                                />
-                            </div>
-                        </ScrollArea>
+                        {openPassages.length === 1 ? (
+                            <>
+                                <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
+                                    <span className="text-sm font-medium text-[#1a2744]">
+                                        {openPassages[0].passage_type === "poem"
+                                            ? "Poem"
+                                            : openPassages[0].title || "Extract"}
+                                    </span>
+                                </div>
+                                <ScrollArea className="flex-1">
+                                    <div className="p-6 md:p-8">
+                                        {openPassages[0].title && (
+                                            <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                {openPassages[0].title}
+                                            </h3>
+                                        )}
+                                        <div
+                                            className={`leading-relaxed text-gray-800 ${
+                                                openPassages[0].passage_type === "poem"
+                                                    ? "whitespace-pre-line italic"
+                                                    : ""
+                                            }`}
+                                            dangerouslySetInnerHTML={{
+                                                __html: openPassages[0].content,
+                                            }}
+                                        />
+                                    </div>
+                                </ScrollArea>
+                            </>
+                        ) : (
+                            <Tabs defaultValue="passage-0" className="flex flex-col h-full">
+                                <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
+                                    <TabsList className="bg-transparent h-auto p-0 gap-0">
+                                        {openPassages.map((p, idx) => (
+                                            <TabsTrigger
+                                                key={p.id}
+                                                value={`passage-${idx}`}
+                                                className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
+                                            >
+                                                {p.passage_type === "poem"
+                                                    ? `Poem ${idx + 1}`
+                                                    : p.title || `Extract ${idx + 1}`}
+                                            </TabsTrigger>
+                                        ))}
+                                    </TabsList>
+                                </div>
+                                {openPassages.map((p, idx) => (
+                                    <TabsContent
+                                        key={p.id}
+                                        value={`passage-${idx}`}
+                                        className="flex-1 m-0 data-[state=inactive]:hidden"
+                                    >
+                                        <ScrollArea className="h-full">
+                                            <div className="p-6 md:p-8">
+                                                {p.title && (
+                                                    <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                        {p.title}
+                                                    </h3>
+                                                )}
+                                                <div
+                                                    className={`leading-relaxed text-gray-800 ${
+                                                        p.passage_type === "poem"
+                                                            ? "whitespace-pre-line italic"
+                                                            : ""
+                                                    }`}
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: p.content,
+                                                    }}
+                                                />
+                                            </div>
+                                        </ScrollArea>
+                                    </TabsContent>
+                                ))}
+                            </Tabs>
+                        )}
                     </div>
                 )}
 

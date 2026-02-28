@@ -5,6 +5,7 @@ import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn, stripHtmlToText } from "@/lib/utils";
 import {
     ArrowLeft,
@@ -603,39 +604,39 @@ export default function TestEnvironmentPage() {
     };
 
     // ============================================
-    // PASSAGE DATA (memoized)
+    // PASSAGE DATA (memoized) - supports multiple passages
     // ============================================
-    const passage = useMemo((): Passage | null => {
-        if (!currentQuestion) return null;
+    const passages = useMemo((): Passage[] => {
+        if (!currentQuestion) return [];
         if (
             currentQuestion.question_type === "passage_mcq" ||
             currentQuestion.question_type === "poem_mcq"
         ) {
-            return currentQuestion.passage || null;
+            return currentQuestion.passages || [];
         }
-        return null;
+        return [];
     }, [currentQuestion]);
 
-    // Check if adjacent questions share the same passage (for passage group indicator)
+    // Check if adjacent questions share the same primary passage (for passage group indicator)
     const passageGroup = useMemo((): { start: number; end: number } | null => {
-        if (!passage || !currentQuestion?.passage) return null;
-        const passageId = currentQuestion.passage.id;
+        if (passages.length === 0 || !currentQuestion?.passages?.length) return null;
+        const primaryPassageId = currentQuestion.passages[0].id;
 
         let start = currentIndex;
         let end = currentIndex;
 
-        while (start > 0 && questions[start - 1]?.passage?.id === passageId) {
+        while (start > 0 && questions[start - 1]?.passages?.[0]?.id === primaryPassageId) {
             start--;
         }
         while (
             end < questions.length - 1 &&
-            questions[end + 1]?.passage?.id === passageId
+            questions[end + 1]?.passages?.[0]?.id === primaryPassageId
         ) {
             end++;
         }
 
         return { start, end };
-    }, [passage, currentQuestion?.passage, currentIndex, questions]);
+    }, [passages, currentQuestion?.passages, currentIndex, questions]);
 
     // Derive isResuming from test data (test started more than 10 seconds ago)
     const isResuming = useMemo(() => {
@@ -777,7 +778,7 @@ export default function TestEnvironmentPage() {
     if (phase !== "testing" || !currentQuestion || !test) return null;
 
     const isFlagged = flaggedSet.has(currentQuestion.id);
-    const hasPassage = !!passage;
+    const hasPassage = passages.length > 0;
 
     // Determine layout: 2-column split for standalone MCQ/essay, stacked for passage-based or inline types
     const questionLayout: "split" | "stacked" =
@@ -878,47 +879,102 @@ export default function TestEnvironmentPage() {
             {/* SPLIT PANEL CONTENT */}
             {/* ============================================ */}
             <div className="flex-1 flex overflow-hidden">
-                {/* LEFT PANEL: Passage (if applicable) */}
-                {hasPassage && passage && (
+                {/* LEFT PANEL: Passage(s) (if applicable) */}
+                {hasPassage && (
                     <div className="w-1/2 border-r bg-white flex flex-col overflow-y-auto">
-                        {/* Passage header */}
-                        <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
-                            <span className="text-sm font-medium text-[#1a2744]">
-                                {passage.passage_type === "poem"
-                                    ? "Poem"
-                                    : passage.title || "Extract"}
-                            </span>
-                        </div>
-                        {/* Passage content */}
-                        <ScrollArea className="flex-1">
-                            <div className="p-6 md:p-8">
-                                {passage.title && (
-                                    <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                        {passage.title}
-                                    </h3>
-                                )}
-                                {passage.image_url && (
-                                    <div className="mb-4">
-                                        <img
-                                            src={passage.image_url}
-                                            alt={
-                                                passage.title || "Passage image"
-                                            }
-                                            className="max-w-full rounded-lg"
-                                        />
-                                    </div>
-                                )}
-                                <div
-                                    className={`leading-relaxed text-gray-800 ${
-                                        passage.passage_type === "poem"
-                                            ? "whitespace-pre-line italic"
-                                            : ""
-                                    }`}
-                                >
-                                    {passage.content}
+                        {passages.length === 1 ? (
+                            /* Single passage - no tabs needed */
+                            <>
+                                <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
+                                    <span className="text-sm font-medium text-[#1a2744]">
+                                        {passages[0].passage_type === "poem"
+                                            ? "Poem"
+                                            : passages[0].title || "Extract"}
+                                    </span>
                                 </div>
-                            </div>
-                        </ScrollArea>
+                                <ScrollArea className="flex-1">
+                                    <div className="p-6 md:p-8">
+                                        {passages[0].title && (
+                                            <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                {passages[0].title}
+                                            </h3>
+                                        )}
+                                        {passages[0].image_url && (
+                                            <div className="mb-4">
+                                                <img
+                                                    src={passages[0].image_url}
+                                                    alt={passages[0].title || "Passage image"}
+                                                    className="max-w-full rounded-lg"
+                                                />
+                                            </div>
+                                        )}
+                                        <div
+                                            className={`leading-relaxed text-gray-800 ${
+                                                passages[0].passage_type === "poem"
+                                                    ? "whitespace-pre-line italic"
+                                                    : ""
+                                            }`}
+                                        >
+                                            {passages[0].content}
+                                        </div>
+                                    </div>
+                                </ScrollArea>
+                            </>
+                        ) : (
+                            /* Multiple passages - show tabs */
+                            <Tabs defaultValue={`passage-0`} className="flex flex-col h-full">
+                                <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
+                                    <TabsList className="bg-transparent h-auto p-0 gap-0">
+                                        {passages.map((p, idx) => (
+                                            <TabsTrigger
+                                                key={p.id}
+                                                value={`passage-${idx}`}
+                                                className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
+                                            >
+                                                {p.passage_type === "poem"
+                                                    ? `Poem ${idx + 1}`
+                                                    : p.title || `Extract ${idx + 1}`}
+                                            </TabsTrigger>
+                                        ))}
+                                    </TabsList>
+                                </div>
+                                {passages.map((p, idx) => (
+                                    <TabsContent
+                                        key={p.id}
+                                        value={`passage-${idx}`}
+                                        className="flex-1 m-0 data-[state=inactive]:hidden"
+                                    >
+                                        <ScrollArea className="h-full">
+                                            <div className="p-6 md:p-8">
+                                                {p.title && (
+                                                    <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                        {p.title}
+                                                    </h3>
+                                                )}
+                                                {p.image_url && (
+                                                    <div className="mb-4">
+                                                        <img
+                                                            src={p.image_url}
+                                                            alt={p.title || "Passage image"}
+                                                            className="max-w-full rounded-lg"
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div
+                                                    className={`leading-relaxed text-gray-800 ${
+                                                        p.passage_type === "poem"
+                                                            ? "whitespace-pre-line italic"
+                                                            : ""
+                                                    }`}
+                                                >
+                                                    {p.content}
+                                                </div>
+                                            </div>
+                                        </ScrollArea>
+                                    </TabsContent>
+                                ))}
+                            </Tabs>
+                        )}
                     </div>
                 )}
 

@@ -11,6 +11,7 @@ import type {
     FillBlankAnswer,
     FillMissingSentenceAnswer,
     EssayContent,
+    Passage,
 } from "@/types/test";
 import { EssayEvaluationService } from "@/lib/services/essay-evaluation.service";
 import { countWords, stripHtmlToText } from "@/lib/utils";
@@ -114,7 +115,7 @@ export class TestService {
 
     /**
      * Group questions by passage and shuffle groups while keeping passage questions together.
-     * Order: All passage-based questions first (grouped by passage), then standalone questions.
+     * Order: All passage-based questions first (grouped by primary passage), then standalone questions.
      * This ensures reading comprehension questions appear before fill-in-the-blanks, etc.
      */
     private async groupAndShuffleQuestions(
@@ -122,10 +123,10 @@ export class TestService {
     ): Promise<string[]> {
         if (questionIds.length === 0) return [];
 
-        // Fetch passage_id for each question
+        // Fetch passage_ids for each question
         const { data: questionsWithPassage, error } = await this.supabase
             .from("questions")
-            .select("id, passage_id, question_type")
+            .select("id, passage_ids, question_type")
             .in("id", questionIds);
 
         if (error || !questionsWithPassage) {
@@ -136,27 +137,27 @@ export class TestService {
         // Create maps for question info
         const questionInfoMap = new Map<
             string,
-            { passage_id: string | null; question_type: string }
+            { passage_ids: string[]; question_type: string }
         >();
         for (const q of questionsWithPassage) {
             questionInfoMap.set(q.id, {
-                passage_id: q.passage_id,
+                passage_ids: (q.passage_ids as string[]) || [],
                 question_type: q.question_type,
             });
         }
 
-        // Group questions: passage questions grouped together, standalone questions separate
-        const passageGroups = new Map<string, string[]>(); // passage_id -> question_ids
+        // Group questions: passage questions grouped by primary passage (first in array), standalone separate
+        const passageGroups = new Map<string, string[]>(); // primary_passage_id -> question_ids
         const standaloneQuestions: string[] = [];
 
         for (const qId of questionIds) {
             const info = questionInfoMap.get(qId);
-            const passageId = info?.passage_id;
-            if (passageId) {
-                if (!passageGroups.has(passageId)) {
-                    passageGroups.set(passageId, []);
+            const primaryPassageId = info?.passage_ids?.[0];
+            if (primaryPassageId) {
+                if (!passageGroups.has(primaryPassageId)) {
+                    passageGroups.set(primaryPassageId, []);
                 }
-                passageGroups.get(passageId)!.push(qId);
+                passageGroups.get(primaryPassageId)!.push(qId);
             } else {
                 standaloneQuestions.push(qId);
             }
@@ -410,29 +411,28 @@ export class TestService {
 
     /**
      * Get questions for a test (without correct answers for in-progress tests)
+     * Fetches passage data separately based on passage_ids JSONB array
      */
     async getQuestionsForTest(
         questionIds: string[],
         includeAnswers = false,
     ): Promise<QuestionForTest[]> {
-        // Build select query - use separate queries to avoid parser issues
+        // Build select query
         const baseSelect =
-            "id, code, question_type, difficulty, content, marks";
-        const passageSelect =
-            "passage:passages(id, code, passage_type, title, content, image_url)";
+            "id, code, question_type, difficulty, content, marks, passage_ids";
 
         let query;
         if (includeAnswers) {
             query = this.supabase
                 .from("questions")
                 .select(
-                    `${baseSelect}, correct_answer, solution_text, ${passageSelect}`,
+                    `${baseSelect}, correct_answer, solution_text`,
                 )
                 .in("id", questionIds);
         } else {
             query = this.supabase
                 .from("questions")
-                .select(`${baseSelect}, ${passageSelect}`)
+                .select(baseSelect)
                 .in("id", questionIds);
         }
 
@@ -443,11 +443,57 @@ export class TestService {
             throw new Error("Failed to fetch questions");
         }
 
-        // Sort questions in the order they appear in questionIds
+        // Safely parse passage_ids from JSONB (may come as string or array)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const parsePassageIds = (raw: any): string[] => {
+            if (!raw) return [];
+            if (Array.isArray(raw)) return raw;
+            if (typeof raw === "string") {
+                try { const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+            }
+            return [];
+        };
+
+        // Collect all unique passage IDs from all questions
+        const allPassageIds = new Set<string>();
+        for (const q of data || []) {
+            const pids = parsePassageIds(q.passage_ids);
+            for (const pid of pids) {
+                allPassageIds.add(pid);
+            }
+        }
+
+        // Fetch all passages in one query
+        let passageMap = new Map<string, Passage>();
+        if (allPassageIds.size > 0) {
+            const { data: passages } = await this.supabase
+                .from("passages")
+                .select("id, code, passage_type, title, content, image_url")
+                .in("id", Array.from(allPassageIds));
+
+            if (passages) {
+                passageMap = new Map(passages.map((p) => [p.id, p as unknown as Passage]));
+            }
+        }
+
+        // Sort questions and attach passages
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const questionMap = new Map((data || []).map((q: any) => [q.id, q]));
         const sortedQuestions = questionIds
-            .map((id) => questionMap.get(id))
+            .map((id) => {
+                const q = questionMap.get(id);
+                if (!q) return null;
+                // Map passage_ids to passage objects, preserving order
+                const pids = parsePassageIds(q.passage_ids);
+                const passages = pids
+                    .map((pid: string) => passageMap.get(pid))
+                    .filter(Boolean) as Passage[];
+                return {
+                    ...q,
+                    passages: passages.length > 0 ? passages : undefined,
+                    passage_ids: undefined, // Don't leak raw IDs to client
+                };
+            })
             .filter(Boolean) as unknown as QuestionForTest[];
 
         return sortedQuestions;

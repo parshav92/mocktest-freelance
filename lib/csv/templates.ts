@@ -36,7 +36,7 @@ export const CSV_COLUMNS = {
   // Passage-based MCQ (Reading)
   passage_mcq: [
     "code",           // Question code (e.g., RD_MCQ_001)
-    "passage_code",   // Reference to passage (e.g., RD_P_001)
+    "passage_code",   // Reference to passage(s) - comma-separated for multiple (e.g., RD_P_001 or RD_P_001,RD_P_002)
     "difficulty",     // easy, medium, hard
     "question",       // Question text
     "option_a",       // Option A
@@ -55,7 +55,7 @@ export const CSV_COLUMNS = {
   // Poem-based MCQ (Reading)
   poem_mcq: [
     "code",           // Question code
-    "passage_code",   // Reference to poem passage
+    "passage_code",   // Reference to poem passage(s) - comma-separated for multiple
     "difficulty",     // easy, medium, hard
     "question",       // Question text
     "option_a",       // Option A
@@ -121,7 +121,8 @@ TS_001,thinking-skills,easy,Which shape comes next?,Shape 1,Shape 2,Shape 3,Shap
 
   passage_mcq: `code,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image
 RD_MCQ_001,RD_P_001,easy,What is the main idea of the passage?,Friendship,Adventure,Nature,Science,A,The passage discusses friendship,no,no,no,no,no
-RD_MCQ_002,RD_P_001,medium,What does the author mean by 'stood tall'?,Was very tall,Was brave,Was proud,Was angry,B,Context shows bravery,no,no,no,no,no`,
+RD_MCQ_002,RD_P_001,medium,What does the author mean by 'stood tall'?,Was very tall,Was brave,Was proud,Was angry,B,Context shows bravery,no,no,no,no,no
+RD_MCQ_003,"RD_P_001,RD_P_002",medium,Compare the two extracts. What theme do they share?,Friendship,Loss,Growth,Conflict,C,Both passages explore growth,no,no,no,no,no`,
 
   poem_mcq: `code,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image
 RD_POEM_001,RD_POEM_P_001,easy,What rhyme scheme does the poem follow?,ABAB,AABB,ABBA,Free verse,B,Lines 1-2 and 3-4 rhyme,no,no,no,no,no`,

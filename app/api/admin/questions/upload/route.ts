@@ -299,11 +299,17 @@ async function insertQuestions(
     );
 
     // Get passage IDs if any questions reference passages
+    // Support comma-separated passage codes (e.g., "RD_P_001,RD_P_002")
     const passageCodes = [
         ...new Set(
             questions
                 .filter((q) => q.data.passage_code)
-                .map((q) => q.data.passage_code!),
+                .flatMap((q) =>
+                    q.data.passage_code!
+                        .split(",")
+                        .map((c) => c.trim())
+                        .filter(Boolean)
+                ),
         ),
     ];
 
@@ -504,11 +510,19 @@ async function insertQuestions(
             correctAnswer = { rubric };
         }
 
+        // Build passage_ids array from comma-separated passage codes
+        const passageIds: string[] = q.data.passage_code
+            ? q.data.passage_code
+                  .split(",")
+                  .map((c) => c.trim())
+                  .filter(Boolean)
+                  .map((code) => passageMap.get(code)!)
+                  .filter(Boolean)
+            : [];
+
         return {
             subject_id: subjectId || null,
-            passage_id: q.data.passage_code
-                ? passageMap.get(q.data.passage_code)
-                : null,
+            passage_ids: JSON.stringify(passageIds),
             code: q.code,
             question_type: getQuestionType(uploadType),
             difficulty: q.data.difficulty?.toLowerCase() || "medium",

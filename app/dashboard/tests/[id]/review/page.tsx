@@ -39,12 +39,13 @@ interface ReviewQuestion {
         marks: number;
         correct_answer: Record<string, unknown>;
         solution_text: string | null;
-        passage?: {
+        passages?: Array<{
+            id: string;
             title: string;
             content: string;
             image_url?: string;
             passage_type?: string;
-        };
+        }>;
     };
     student_answer: unknown;
     is_correct: boolean;
@@ -230,7 +231,7 @@ export default function TestReviewPage() {
 
     const { test, questions, summary } = reviewData;
     const openItem = openIndex !== null ? questions[openIndex] : null;
-    const openHasPassage = !!openItem?.question.passage;
+    const openHasPassage = !!(openItem?.question.passages && openItem.question.passages.length > 0);
 
     const barColor = (pct: number) =>
         pct >= 75
@@ -490,8 +491,8 @@ export default function TestReviewPage() {
 
                                 // Get question title/description
                                 const getQuestionTitle = () => {
-                                    if (item.question.passage?.title) {
-                                        return `${item.question.passage.title} Q${item.question_number}`;
+                                    if (item.question.passages?.[0]?.title) {
+                                        return `${item.question.passages[0].title} Q${item.question_number}`;
                                     }
                                     if (content.question) {
                                         const q = content.question as string;
@@ -660,87 +661,100 @@ export default function TestReviewPage() {
 
                     {/* ── SPLIT PANEL CONTENT ── */}
                     <div className="flex-1 flex overflow-y-scroll">
-                        {/* Left panel: passage */}
-                        {openHasPassage && (
+                        {/* Left panel: passage(s) */}
+                        {openHasPassage && openItem.question.passages && (
                             <div className="w-1/2 border-r bg-white flex flex-col">
-                                {openItem.question.passage && (
-                                    <Tabs
-                                        defaultValue="extract"
-                                        className="flex flex-col h-full"
-                                    >
+                                {openItem.question.passages.length === 1 ? (
+                                    /* Single passage - simple header */
+                                    <>
+                                        <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
+                                            <span className="text-sm font-medium text-[#1a2744]">
+                                                {openItem.question.passages[0].passage_type === "poem"
+                                                    ? "Poem"
+                                                    : openItem.question.passages[0].title || "Extract"}
+                                            </span>
+                                        </div>
+                                        <ScrollArea className="flex-1">
+                                            <div className="p-6 md:p-8">
+                                                {openItem.question.passages[0].title && (
+                                                    <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                        {openItem.question.passages[0].title}
+                                                    </h3>
+                                                )}
+                                                {openItem.question.passages[0].image_url && (
+                                                    <div className="mb-4">
+                                                        <img
+                                                            src={openItem.question.passages[0].image_url}
+                                                            alt={openItem.question.passages[0].title || "Passage image"}
+                                                            className="max-w-full rounded-lg"
+                                                        />
+                                                    </div>
+                                                )}
+                                                <div
+                                                    className={`leading-relaxed text-gray-800 ${
+                                                        openItem.question.passages[0].passage_type === "poem"
+                                                            ? "whitespace-pre-line italic"
+                                                            : ""
+                                                    }`}
+                                                >
+                                                    {openItem.question.passages[0].content}
+                                                </div>
+                                            </div>
+                                        </ScrollArea>
+                                    </>
+                                ) : (
+                                    /* Multiple passages - tabs */
+                                    <Tabs defaultValue="passage-0" className="flex flex-col h-full">
                                         <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
                                             <TabsList className="bg-transparent h-auto p-0 gap-0">
-                                                <TabsTrigger
-                                                    value="extract"
-                                                    className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
-                                                >
-                                                    {openItem.question.passage
-                                                        ?.passage_type ===
-                                                    "poem"
-                                                        ? "Poem"
-                                                        : openItem.question
-                                                              .passage?.title ||
-                                                          "Extract"}
-                                                </TabsTrigger>
+                                                {openItem.question.passages.map((p, idx) => (
+                                                    <TabsTrigger
+                                                        key={p.id}
+                                                        value={`passage-${idx}`}
+                                                        className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
+                                                    >
+                                                        {p.passage_type === "poem"
+                                                            ? `Poem ${idx + 1}`
+                                                            : p.title || `Extract ${idx + 1}`}
+                                                    </TabsTrigger>
+                                                ))}
                                             </TabsList>
                                         </div>
-                                        <TabsContent
-                                            value="extract"
-                                            className="flex-1 m-0"
-                                        >
-                                            <ScrollArea className="h-full">
-                                                <div className="p-6 md:p-8">
-                                                    {openItem.question.passage
-                                                        ?.title && (
-                                                        <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                            {
-                                                                openItem
-                                                                    .question
-                                                                    .passage
-                                                                    .title
-                                                            }
-                                                        </h3>
-                                                    )}
-                                                    {openItem.question.passage
-                                                        ?.image_url && (
-                                                        <div className="mb-4">
-                                                            <img
-                                                                src={
-                                                                    openItem
-                                                                        .question
-                                                                        .passage
-                                                                        .image_url
-                                                                }
-                                                                alt={
-                                                                    openItem
-                                                                        .question
-                                                                        .passage
-                                                                        .title ||
-                                                                    "Passage image"
-                                                                }
-                                                                className="max-w-full rounded-lg"
-                                                            />
+                                        {openItem.question.passages.map((p, idx) => (
+                                            <TabsContent
+                                                key={p.id}
+                                                value={`passage-${idx}`}
+                                                className="flex-1 m-0 data-[state=inactive]:hidden"
+                                            >
+                                                <ScrollArea className="h-full">
+                                                    <div className="p-6 md:p-8">
+                                                        {p.title && (
+                                                            <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                                {p.title}
+                                                            </h3>
+                                                        )}
+                                                        {p.image_url && (
+                                                            <div className="mb-4">
+                                                                <img
+                                                                    src={p.image_url}
+                                                                    alt={p.title || "Passage image"}
+                                                                    className="max-w-full rounded-lg"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        <div
+                                                            className={`leading-relaxed text-gray-800 ${
+                                                                p.passage_type === "poem"
+                                                                    ? "whitespace-pre-line italic"
+                                                                    : ""
+                                                            }`}
+                                                        >
+                                                            {p.content}
                                                         </div>
-                                                    )}
-                                                    <div
-                                                        className={`leading-relaxed text-gray-800 ${
-                                                            openItem.question
-                                                                .passage
-                                                                ?.passage_type ===
-                                                            "poem"
-                                                                ? "whitespace-pre-line italic"
-                                                                : ""
-                                                        }`}
-                                                    >
-                                                        {
-                                                            openItem.question
-                                                                .passage
-                                                                ?.content
-                                                        }
                                                     </div>
-                                                </div>
-                                            </ScrollArea>
-                                        </TabsContent>
+                                                </ScrollArea>
+                                            </TabsContent>
+                                        ))}
                                     </Tabs>
                                 )}
                             </div>
