@@ -309,6 +309,46 @@ style="backdrop-filter: blur(20px); background-color: rgba(255, 255, 255, 0.8); 
 }
 
 /* ============================================
+   MATH CONTENT RENDERING
+   ============================================ */
+
+/* Container for any text that may contain math symbols */
+.math-content {
+    /* Use a font stack that covers Unicode math symbols well */
+    font-family:
+        "STIX Two Text",
+        "Cambria Math",
+        "Latin Modern Math",
+        "DejaVu Serif",
+        "Times New Roman",
+        var(--font-geist-sans),
+        serif;
+}
+
+/* KaTeX inline rendering adjustments */
+.math-rendered {
+    line-height: inherit;
+}
+
+.math-rendered .katex {
+    /* Match surrounding text size */
+    font-size: 1em;
+    /* Prevent KaTeX from forcing its own line-height */
+    line-height: inherit;
+}
+
+.math-rendered .katex .katex-html {
+    /* Keep inline math truly inline with text flow */
+    white-space: normal;
+}
+
+/* When math-content is inside question options, don't override the font for labels (A, B, C, D) */
+.math-content .katex .mathnormal,
+.math-content .katex .mathit {
+    font-style: italic;
+}
+
+/* ============================================
    TIPTAP EDITOR STYLES
    ============================================ */
 .tiptap-editor {

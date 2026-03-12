@@ -1,0 +1,11 @@
+code,subject,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image
+SC_001,science,easy,"If θ = 90° and sin θ = 1, what is cos θ?",0,1,½,−1,A,cos 90° = 0 because the adjacent side is 0,no,no,no,no,no
+SC_002,science,medium,"Simplify: √144 + √25 − √9",14,16,10,12,A,√144 = 12 and √25 = 5 and √9 = 3 so 12 + 5 − 3 = 14,no,no,no,no,no
+SC_003,science,medium,"What is the value of π × r² when r = 7? (Use π ≈ 22/7)",154,144,148,156,A,π × r² = 22/7 × 7² = 22/7 × 49 = 154,no,no,no,no,no
+SC_004,science,hard,"If x² + y² = 25 and x = 3, find y (y > 0)",±4,4,−4,16,B,y² = 25 − 9 = 16 so y = √16 = 4 (since y > 0),no,no,no,no,no
+SC_005,science,hard,"Evaluate: ⅓ + ⅔ + ¼ − ⅛",1⅛,1¼,⅞,1⅜,A,⅓ + ⅔ = 1 and ¼ − ⅛ = ⅛ so total = 1⅛,no,no,no,no,no
+SC_006,science,medium,"If α = 60° and β = 30°, what is α + β?",90°,120°,45°,180°,A,α + β = 60° + 30° = 90°,no,no,no,no,no
+SC_007,science,hard,"Given f(x) = x³ − 2x² + x, find f(2)",2,0,−2,4,A,f(2) = 2³ − 2(2²) + 2 = 8 − 8 + 2 = 2,no,no,no,no,no
+SC_008,science,medium,"Which is true: ∞ > 10⁶ or 10⁶ > ∞?",∞ > 10⁶,10⁶ > ∞,∞ = 10⁶,Cannot compare,A,∞ (infinity) is greater than any finite number including 10⁶,no,no,no,no,no
+SC_009,science,hard,"Solve: Δx = x₂ − x₁ where x₂ = 5½ and x₁ = 2¾",2¾,3¼,2½,3¾,A,Δx = 5½ − 2¾ = 5²⁄₄ − 2¾ = 4⁶⁄₄ − 2¾ = 2¾,no,no,no,no,no
+SC_010,science,hard,"If ∑ of (n²) from n=1 to 4 equals S, what is √S?",√30,√20,5,6,A,∑n² = 1² + 2² + 3² + 4² = 1 + 4 + 9 + 16 = 30 so √S = √30,no,no,no,no,no

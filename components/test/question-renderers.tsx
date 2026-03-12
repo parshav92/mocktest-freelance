@@ -23,6 +23,7 @@ import type {
     EssayContent,
     MCQOption,
 } from "@/types/test";
+import { MathText } from "@/components/ui/math-text";
 
 // ============================================
 // LAYOUT TYPE
@@ -38,7 +39,7 @@ const MCQQuestionStem = memo(({ content }: { content: MCQContent }) => {
     return (
         <div className="space-y-4">
             <p className="text-base leading-relaxed text-foreground whitespace-pre-line">
-                {content.question}
+                <MathText content={content.question} />
             </p>
             {content.question_image && (
                 <StorageImage
@@ -131,7 +132,7 @@ const MCQOptionsList = memo(
                                                 : "text-gray-700",
                                         )}
                                     >
-                                        {optionText}
+                                        <MathText content={optionText} />
                                     </span>
                                 )}
                                 {optionImage && (
@@ -277,7 +278,7 @@ export const FillBlankRenderer = memo(
                 <div className="text-base leading-relaxed text-foreground">
                     {parts.map((part, index) => (
                         <span key={`fb-part-${index}`}>
-                            {part}
+                            <MathText content={part} />
                             {index < content.blanks.length && (
                                 <Select
                                     value={
@@ -307,7 +308,7 @@ export const FillBlankRenderer = memo(
                                                     key={`fb-${index}-opt-${optIdx}`}
                                                     value={String(optIdx)}
                                                 >
-                                                    {opt}
+                                                    <MathText content={opt} />
                                                 </SelectItem>
                                             ),
                                         )}
@@ -383,7 +384,7 @@ export const FillMissingSentenceRenderer = memo(
                     {parts.map((part, i) => {
                         if (part.type === "text") {
                             return (
-                                <span key={`fms-text-${i}`}>{part.value}</span>
+                                <span key={`fms-text-${i}`}><MathText content={part.value} /></span>
                             );
                         }
                         const hasSelection =
@@ -420,7 +421,7 @@ export const FillMissingSentenceRenderer = memo(
                                                 mapping[part.value] !== idx
                                             }
                                         >
-                                            {sentence}
+                                            <MathText content={sentence} />
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -460,7 +461,7 @@ export const FillMissingSentenceRenderer = memo(
                                     >
                                         {String.fromCharCode(65 + idx)}
                                     </Badge>
-                                    <span className="flex-1">{sentence}</span>
+                                    <span className="flex-1"><MathText content={sentence} /></span>
                                 </div>
                             );
                         })}
@@ -514,7 +515,7 @@ export const EssayRenderer = memo(
         const promptSection = (
             <div className="space-y-4">
                 <p className="text-base leading-relaxed text-foreground whitespace-pre-line">
-                    {content.prompt}
+                    <MathText content={content.prompt} />
                 </p>
                 <div className="flex items-center gap-3 flex-wrap">
                     <Badge variant="outline" className="text-xs gap-1">
