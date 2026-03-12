@@ -60,12 +60,12 @@ export function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
         {
             href: "/dashboard/questions",
             icon: FileText,
-            label: "Manage Questions (TBD)",
+            label: "Manage Questions ",
         },
         {
-            href: "/dashboard/passages",
+            href: "/dashboard/passage",
             icon: BookOpen,
-            label: "Manage Passages (TBD)",
+            label: "Manage Passages ",
         },
         {
             href: "/dashboard/subscriptions",
