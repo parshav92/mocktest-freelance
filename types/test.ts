@@ -248,6 +248,44 @@ export interface StudentQuestionHistory {
 }
 
 // ============================================
+// CUSTOM TEST TYPES (admin-created)
+// ============================================
+
+export type CustomTestVisibility =
+    | "admin_only"
+    | "subscribers_only"
+    | "free_trial";
+
+export interface CustomTest {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    visibility: CustomTestVisibility;
+    duration_mins: number;
+    instructions: InstructionPage[] | null;
+    is_active: boolean;
+    display_order: number;
+    available_from: string | null;
+    available_until: string | null;
+    created_by: string;
+    created_at: string;
+    updated_at: string;
+    // Joined
+    question_count?: number;
+    questions?: CustomTestQuestion[];
+}
+
+export interface CustomTestQuestion {
+    id: string;
+    custom_test_id: string;
+    question_id: string;
+    sort_order: number;
+    // Joined
+    question?: Question;
+}
+
+// ============================================
 // API RESPONSE TYPES
 // ============================================
 

@@ -103,6 +103,50 @@ export function AdminDashboardContent({ stats }: AdminDashboardContentProps) {
                 <section className="rounded-3xl border border-slate-200/70 bg-zinc-50 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                     <div>
                         <h2 className="text-xl font-semibold text-zinc-900">
+                            Passage Bank
+                        </h2>
+                        <p className="text-sm text-zinc-600 mt-1">
+                            Browse, manage, and review passages used in
+                            reading comprehension and poem-based questions.
+                        </p>
+                    </div>
+                    <Link
+                        href="/dashboard/passage"
+                        className="inline-flex items-center justify-center rounded-full bg-zinc-900 text-white px-5 py-2 text-sm font-medium hover:bg-zinc-800 transition-colors"
+                    >
+                        View Passages
+                    </Link>
+                </section>
+
+                <section className="rounded-3xl border border-slate-200/70 bg-zinc-50 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl font-semibold text-zinc-900">
+                            Custom Tests
+                        </h2>
+                        <p className="text-sm text-zinc-600 mt-1">
+                            Create and manage hand-picked tests with custom
+                            visibility (admin only, subscribers, free trial).
+                        </p>
+                    </div>
+                    <div className="flex gap-3">
+                        <Link
+                            href="/dashboard/custom-tests/create"
+                            className="inline-flex items-center justify-center rounded-full bg-emerald-600 text-white px-5 py-2 text-sm font-medium hover:bg-emerald-700 transition-colors"
+                        >
+                            Create Test
+                        </Link>
+                        <Link
+                            href="/dashboard/custom-tests"
+                            className="inline-flex items-center justify-center rounded-full border border-zinc-300 text-zinc-900 px-5 py-2 text-sm font-medium hover:bg-zinc-100 transition-colors"
+                        >
+                            View Tests
+                        </Link>
+                    </div>
+                </section>
+
+                <section className="rounded-3xl border border-slate-200/70 bg-zinc-50 p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl font-semibold text-zinc-900">
                             Manage Subjects
                         </h2>
                         <p className="text-sm text-zinc-600 mt-1">

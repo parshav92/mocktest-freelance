@@ -3,19 +3,15 @@
 import { useParams } from "next/navigation";
 import { CustomTestRunner } from "@/components/test/custom-test-runner";
 
-export default function FreeTrialTestPage() {
+export default function AdminTakeTestPage() {
     const params = useParams();
     const slug = params.slug as string;
 
     return (
         <CustomTestRunner
             slug={slug}
-            backUrl="/free-trial"
-            backLabel="Back to Trial Tests"
-            resultCta={{
-                label: "Get Full Access",
-                href: "/dashboard/subscribe",
-            }}
+            backUrl="/dashboard/custom-tests"
+            backLabel="Back to Custom Tests"
         />
     );
 }
