@@ -426,7 +426,7 @@ export class TestService {
             query = this.supabase
                 .from("questions")
                 .select(
-                    `${baseSelect}, correct_answer, solution_text`,
+                    `${baseSelect}, correct_answer, solution_text, solution_images`,
                 )
                 .in("id", questionIds);
         } else {

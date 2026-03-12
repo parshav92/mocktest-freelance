@@ -40,6 +40,7 @@ interface ReviewQuestion {
         marks: number;
         correct_answer: Record<string, unknown>;
         solution_text: string | null;
+        solution_images?: string[];
         passages?: Array<{
             id: string;
             title: string;
@@ -774,6 +775,9 @@ export default function TestReviewPage() {
                                     solutionText={
                                         openItem.question.solution_text
                                     }
+                                    solutionImages={
+                                        openItem.question.solution_images || []
+                                    }
                                     showSolution={showSolution}
                                     onToggleSolution={() =>
                                         setShowSolution(!showSolution)
@@ -870,6 +874,7 @@ function ReviewQuestionDisplay({
     studentAnswer,
     wasAttempted,
     solutionText,
+    solutionImages,
     showSolution,
     onToggleSolution,
     essayEvaluation,
@@ -879,6 +884,7 @@ function ReviewQuestionDisplay({
     studentAnswer: unknown;
     wasAttempted: boolean;
     solutionText: string | null;
+    solutionImages: string[];
     showSolution: boolean;
     onToggleSolution: () => void;
     essayEvaluation?: EssayEvaluation | null;
@@ -897,7 +903,9 @@ function ReviewQuestionDisplay({
         </div>
     );
 
-    const solutionBlock = solutionText ? (
+    const hasSolution = solutionText || solutionImages.length > 0;
+
+    const solutionBlock = hasSolution ? (
         <div className="mt-6 pt-6 border-t border-gray-100">
             <button
                 onClick={onToggleSolution}
@@ -908,9 +916,23 @@ function ReviewQuestionDisplay({
             </button>
             {showSolution && (
                 <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                        {solutionText}
-                    </p>
+                    {solutionText && (
+                        <p className="text-sm text-slate-700 leading-relaxed">
+                            {solutionText}
+                        </p>
+                    )}
+                    {solutionImages.length > 0 && (
+                        <div className={`grid gap-3 ${solutionText ? "mt-3" : ""} ${solutionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}>
+                            {solutionImages.map((imgUrl, idx) => (
+                                <img
+                                    key={`solution-img-${idx}`}
+                                    src={imgUrl}
+                                    alt={`Solution image ${idx + 1}`}
+                                    className="max-w-full rounded-lg border border-amber-300"
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
         </div>

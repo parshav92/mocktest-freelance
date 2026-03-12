@@ -12,7 +12,7 @@ export interface ParseError {
 
 // Image requirement for a single question
 export interface ImageRequirement {
-  field: "question" | "option_a" | "option_b" | "option_c" | "option_d" | "passage";
+  field: string; // e.g. "question", "option_a".."option_d", "passage", "solution_1".."solution_N"
   label: string;
   storagePath: string; // e.g., "questions/math/MR_001_q.png"
 }
@@ -109,13 +109,16 @@ function getImageStoragePath(
   field: string
 ): string {
   const bucket = type === "passage" ? "passages" : "questions";
+  // Dynamic suffix: solution_N -> sN
+  const solutionMatch = field.match(/^solution_(\d+)$/);
   const suffix =
     field === "question" ? "q" :
     field === "option_a" ? "a" :
     field === "option_b" ? "b" :
     field === "option_c" ? "c" :
     field === "option_d" ? "d" :
-    field === "passage" ? "p" : "x";
+    field === "passage" ? "p" :
+    solutionMatch ? `s${solutionMatch[1]}` : "x";
   
   return `${bucket}/${subjectSlug}/${code}_${suffix}.png`;
 }
@@ -130,7 +133,11 @@ function getFieldLabel(field: string): string {
     option_d: "Option D Image",
     passage: "Passage Image",
   };
-  return labels[field] || field;
+  if (labels[field]) return labels[field];
+  // Dynamic: solution_N -> "Solution Image N"
+  const solMatch = field.match(/^solution_(\d+)$/);
+  if (solMatch) return `Solution Image ${solMatch[1]}`;
+  return field;
 }
 
 // Parse CSV for MCQ types (mcq, passage_mcq, poem_mcq)
@@ -221,6 +228,17 @@ function parseMCQ(
         field: "option_d",
         label: getFieldLabel("option_d"),
         storagePath: getImageStoragePath("question", subjectSlug, code, "option_d"),
+      });
+    }
+
+    // Solution images (dynamic count from solution_images column, default 0)
+    const solutionImageCount = parseInt(rowData.solution_images || "0", 10) || 0;
+    for (let si = 1; si <= solutionImageCount; si++) {
+      const field = `solution_${si}`;
+      imageRequirements.push({
+        field,
+        label: getFieldLabel(field),
+        storagePath: getImageStoragePath("question", subjectSlug, code, field),
       });
     }
 

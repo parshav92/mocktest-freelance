@@ -1,0 +1,8 @@
+code,subject,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
+MR_SOL_001,mathematical-reasoning,easy,What is 15 + 27?,32,42,52,62,B,Add tens (10+20=30) then ones (5+7=12) to get 42,no,no,no,no,no,0
+MR_SOL_002,mathematical-reasoning,medium,"If a rectangle has length 8 cm and width 5 cm, what is its area?",13 sq cm,26 sq cm,40 sq cm,80 sq cm,C,Area = length × width = 8 × 5 = 40 sq cm. See diagram for step-by-step calculation.,no,no,no,no,no,1
+MR_SOL_003,mathematical-reasoning,medium,What is 3/4 of 24?,6,12,18,21,C,Step 1: Multiply 3 × 24 = 72. Step 2: Divide by 4 = 18. See visual representation.,no,no,no,no,no,2
+MR_SOL_004,mathematical-reasoning,hard,"In a class of 30 students, 40% are girls. How many boys are there?",12,14,16,18,D,See pie chart and calculation steps in images.,no,no,no,no,no,3
+MR_SOL_005,mathematical-reasoning,hard,Look at the shape and find its perimeter:,20 cm,24 cm,28 cm,32 cm,B,Add all sides: 6+6+6+6=24. See annotated diagram.,yes,no,no,no,no,1
+TS_SOL_001,thinking-skills,medium,Which shape comes next in the pattern?,○,□,△,◇,B,The pattern follows a specific rule. See explanation with visual breakdown.,yes,yes,yes,yes,yes,2
+TS_SOL_002,thinking-skills,hard,Complete the matrix - what goes in the empty cell?,Pattern A,Pattern B,Pattern C,Pattern D,C,Follow both row and column patterns. See step-by-step analysis in the solution images.,yes,yes,yes,yes,yes,4
