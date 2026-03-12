@@ -93,6 +93,17 @@ export async function POST(
         );
     }
 
+    // Safely parse passage_ids from JSONB (may come as string or array)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parsePassageIds = (raw: any): string[] => {
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === "string") {
+            try { const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+        }
+        return [];
+    };
+
     // Fetch passages for review
     const allPassageIds = new Set<string>();
     const questionsRaw = (assignments || []).map((a) => {
@@ -105,12 +116,11 @@ export async function POST(
             correct_answer: Record<string, unknown> | null;
             solution_text: string | null;
             marks: number;
-            passage_ids: string[] | null;
+            passage_ids: unknown;
         };
-        if (q.passage_ids) {
-            for (const pid of q.passage_ids) allPassageIds.add(pid);
-        }
-        return q;
+        const pids = parsePassageIds(q.passage_ids);
+        for (const pid of pids) allPassageIds.add(pid);
+        return { ...q, passage_ids: pids };
     });
 
     let passagesMap: Record<string, unknown> = {};
@@ -168,7 +178,7 @@ export async function POST(
             correct_answer: q.correct_answer,
             solution_text: q.solution_text,
             marks: q.marks,
-            passages: (q.passage_ids || [])
+            passages: q.passage_ids
                 .map((pid: string) => passagesMap[pid])
                 .filter(Boolean),
             selected,

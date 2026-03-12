@@ -119,6 +119,17 @@ export async function GET(
         );
     }
 
+    // Safely parse passage_ids from JSONB (may come as string or array)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const parsePassageIds = (raw: any): string[] => {
+        if (!raw) return [];
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === "string") {
+            try { const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+        }
+        return [];
+    };
+
     // Flatten questions and collect passage IDs
     const allPassageIds = new Set<string>();
     const questions = (assignments || []).map((a) => {
@@ -129,13 +140,12 @@ export async function GET(
             difficulty: string;
             content: Record<string, unknown>;
             marks: number;
-            passage_ids: string[] | null;
+            passage_ids: unknown;
         };
 
-        if (q.passage_ids) {
-            for (const pid of q.passage_ids) {
-                allPassageIds.add(pid);
-            }
+        const pids = parsePassageIds(q.passage_ids);
+        for (const pid of pids) {
+            allPassageIds.add(pid);
         }
 
         return {
@@ -145,7 +155,7 @@ export async function GET(
             difficulty: q.difficulty,
             content: q.content,
             marks: q.marks,
-            passage_ids: q.passage_ids || [],
+            passage_ids: pids,
         };
     });
 
@@ -183,7 +193,7 @@ export async function GET(
         difficulty: q.difficulty,
         content: q.content,
         marks: q.marks,
-        passages: (q.passage_ids || [])
+        passages: q.passage_ids
             .map((pid: string) => passagesMap[pid])
             .filter(Boolean),
     }));

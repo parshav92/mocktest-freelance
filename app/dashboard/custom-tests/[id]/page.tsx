@@ -234,7 +234,7 @@ export default function CustomTestDetailPage() {
                         </p>
                     </div>
                     {test.is_active && questions.length > 0 && (
-                        <Link href={`/dashboard/custom-tests/take/${test.slug}`}>
+                        <Link href={`/custom-test/${test.slug}`}>
                             <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2">
                                 <Play className="h-4 w-4" />
                                 Take Test
