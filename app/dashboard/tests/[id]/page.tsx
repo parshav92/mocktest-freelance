@@ -30,6 +30,7 @@ import {
     AntiCheatWarning,
 } from "@/components/test/confirmation-modal";
 import { PostSubmitResult } from "@/components/test/post-submit-result";
+import { MathText } from "@/components/ui/math-text";
 import { useTimer } from "@/hooks/use-timer";
 import { useAntiCheat } from "@/hooks/use-anti-cheat";
 import type {
@@ -915,7 +916,7 @@ export default function TestEnvironmentPage() {
                                                     : ""
                                             }`}
                                         >
-                                            {passages[0].content}
+                                            <MathText content={passages[0].content} block />
                                         </div>
                                     </div>
                                 </ScrollArea>
@@ -967,7 +968,7 @@ export default function TestEnvironmentPage() {
                                                             : ""
                                                     }`}
                                                 >
-                                                    {p.content}
+                                                    <MathText content={p.content} block />
                                                 </div>
                                             </div>
                                         </ScrollArea>

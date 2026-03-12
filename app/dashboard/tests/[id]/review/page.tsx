@@ -27,6 +27,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { RichTextViewer } from "@/components/ui/rich-text-editor";
+import { MathText } from "@/components/ui/math-text";
 
 interface ReviewQuestion {
     question_number: number;
@@ -697,7 +698,7 @@ export default function TestReviewPage() {
                                                             : ""
                                                     }`}
                                                 >
-                                                    {openItem.question.passages[0].content}
+                                                    <MathText content={openItem.question.passages[0].content} block />
                                                 </div>
                                             </div>
                                         </ScrollArea>
@@ -749,7 +750,7 @@ export default function TestReviewPage() {
                                                                     : ""
                                                             }`}
                                                         >
-                                                            {p.content}
+                                                            <MathText content={p.content} block />
                                                         </div>
                                                     </div>
                                                 </ScrollArea>
@@ -937,7 +938,7 @@ function ReviewQuestionDisplay({
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
                         <p className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
-                            {questionText}
+                            <MathText content={questionText} />
                         </p>
                         {questionImage && (
                             <img
@@ -1001,7 +1002,7 @@ function ReviewQuestionDisplay({
                                                             : "text-gray-700",
                                                     )}
                                                 >
-                                                    {option.text}
+                                                    <MathText content={option.text} />
                                                 </span>
                                             )}
                                             {option.image_url && (
@@ -1050,7 +1051,7 @@ function ReviewQuestionDisplay({
                         <div className="text-base leading-relaxed text-slate-800">
                             {parts.map((part, index) => (
                                 <span key={`fb-part-${index}`}>
-                                    {part}
+                                    <MathText content={part} />
                                     {index < blanks.length &&
                                         (() => {
                                             const isCorrectBlank =
@@ -1070,7 +1071,7 @@ function ReviewQuestionDisplay({
                                                             : "bg-rose-50 border-rose-300 text-rose-700",
                                                     )}
                                                 >
-                                                    {studentOption || "Skipped"}
+                                                    {studentOption ? <MathText content={studentOption} /> : "Skipped"}
                                                     {isCorrectBlank ? (
                                                         <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
                                                     ) : (
@@ -1108,7 +1109,7 @@ function ReviewQuestionDisplay({
                                                 Blank {idx + 1}
                                             </span>
                                             <span className="text-emerald-700 font-medium">
-                                                {correctOpt}
+                                                {correctOpt ? <MathText content={correctOpt} /> : "—"}
                                             </span>
                                             {isCorrectBlank && (
                                                 <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
@@ -1165,7 +1166,7 @@ function ReviewQuestionDisplay({
                                 if (part.type === "text") {
                                     return (
                                         <span key={`fms-text-${i}`}>
-                                            {part.value}
+                                            <MathText content={part.value} />
                                         </span>
                                     );
                                 }
@@ -1187,7 +1188,7 @@ function ReviewQuestionDisplay({
                                                 : "bg-rose-50 border-rose-300 text-rose-700",
                                         )}
                                     >
-                                        {selectedSentence || "Empty"}
+                                        {selectedSentence ? <MathText content={selectedSentence} /> : "Empty"}
                                         {isCorrectGap ? (
                                             <CheckCircle className="inline h-3.5 w-3.5 ml-1 text-emerald-500" />
                                         ) : (
@@ -1217,11 +1218,11 @@ function ReviewQuestionDisplay({
                                                 {gapKey.replace("_", " ")}
                                             </span>
                                             <span className="text-emerald-700">
-                                                {
+                                                <MathText content={
                                                     sentences[
                                                         sentenceIdx as number
                                                     ]
-                                                }
+                                                } />
                                             </span>
                                         </div>
                                     ),
@@ -1245,7 +1246,7 @@ function ReviewQuestionDisplay({
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
                         <p className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
-                            {prompt}
+                            <MathText content={prompt} />
                         </p>
                         {wordLimit && (
                             <Badge variant="outline" className="text-xs mt-3">

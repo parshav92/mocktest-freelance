@@ -182,7 +182,20 @@ export default function AdminUploadPage() {
             const csv = XLSX.utils.sheet_to_csv(firstSheet);
             setCsvText(csv);
         } else {
-            const text = await selectedFile.text();
+            // Read CSV with explicit UTF-8 decoding.
+            // Fall back to Windows-1252 (common Excel CSV encoding on Windows)
+            // to prevent mangled math symbols like θ, π, √, ÷
+            const buffer = await selectedFile.arrayBuffer();
+            let text: string;
+            try {
+                text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+            } catch {
+                text = new TextDecoder("windows-1252").decode(buffer);
+            }
+            // Strip BOM if present (Excel UTF-8 CSV includes BOM)
+            if (text.charCodeAt(0) === 0xFEFF) {
+                text = text.slice(1);
+            }
             setCsvText(text);
         }
     }, []);
