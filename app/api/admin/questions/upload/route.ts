@@ -520,6 +520,14 @@ async function insertQuestions(
                   .filter(Boolean)
             : [];
 
+        // Build solution_images array from uploaded solution images (dynamic count)
+        const solutionImages: string[] = [];
+        const solImgCount = parseInt(q.data.solution_images || "0", 10) || 0;
+        for (let si = 1; si <= solImgCount; si++) {
+            const url = findImageUrl(imageUrls, q.code, `solution_${si}`);
+            if (url) solutionImages.push(url);
+        }
+
         return {
             subject_id: subjectId || null,
             passage_ids: JSON.stringify(passageIds),
@@ -529,6 +537,7 @@ async function insertQuestions(
             content,
             correct_answer: correctAnswer,
             solution_text: q.data.solution || null,
+            solution_images: solutionImages,
             marks: 1,
             is_active: true,
         };
@@ -580,6 +589,8 @@ function findImageUrl(
     code: string,
     field: string,
 ): string | null {
+    // Dynamic suffix: solution_N -> _sN
+    const solutionMatch = field.match(/^solution_(\d+)$/);
     const fieldSuffix =
         field === "question"
             ? "_q"
@@ -591,7 +602,9 @@ function findImageUrl(
                   ? "_c"
                   : field === "option_d"
                     ? "_d"
-                    : "";
+                    : solutionMatch
+                      ? `_s${solutionMatch[1]}`
+                      : "";
 
     if (!fieldSuffix) return null;
 

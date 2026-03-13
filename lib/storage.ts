@@ -130,13 +130,13 @@ export async function getSignedUrl(
  * Generate storage path for question images
  * @param subjectSlug - e.g., "mathematical-reasoning"
  * @param questionCode - e.g., "MR_001"
- * @param type - "q" for question, "a"/"b"/"c"/"d" for options
+ * @param type - "q" for question, "a"/"b"/"c"/"d" for options, "s1".."sN" for solution images
  * @param extension - File extension (default "png")
  */
 export function generateQuestionImagePath(
   subjectSlug: string,
   questionCode: string,
-  type: "q" | "a" | "b" | "c" | "d",
+  type: string,
   extension: string = "png"
 ): string {
   return `${subjectSlug}/${questionCode}_${type}.${extension}`;

@@ -426,7 +426,7 @@ export class TestService {
             query = this.supabase
                 .from("questions")
                 .select(
-                    `${baseSelect}, correct_answer, solution_text`,
+                    `${baseSelect}, correct_answer, solution_text, solution_images`,
                 )
                 .in("id", questionIds);
         } else {
@@ -449,7 +449,12 @@ export class TestService {
             if (!raw) return [];
             if (Array.isArray(raw)) return raw;
             if (typeof raw === "string") {
-                try { const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : []; } catch { return []; }
+                try {
+                    const parsed = JSON.parse(raw);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch {
+                    return [];
+                }
             }
             return [];
         };
@@ -472,7 +477,9 @@ export class TestService {
                 .in("id", Array.from(allPassageIds));
 
             if (passages) {
-                passageMap = new Map(passages.map((p) => [p.id, p as unknown as Passage]));
+                passageMap = new Map(
+                    passages.map((p) => [p.id, p as unknown as Passage]),
+                );
             }
         }
 

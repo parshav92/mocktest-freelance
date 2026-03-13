@@ -31,6 +31,7 @@ export const CSV_COLUMNS = {
     "option_b_image", // (Optional) yes/no - has option B image?
     "option_c_image", // (Optional) yes/no - has option C image?
     "option_d_image", // (Optional) yes/no - has option D image?
+    "solution_images", // (Optional) number of solution images (0 = none)
   ],
 
   // Passage-based MCQ (Reading)
@@ -50,6 +51,7 @@ export const CSV_COLUMNS = {
     "option_b_image", // (Optional) yes/no
     "option_c_image", // (Optional) yes/no
     "option_d_image", // (Optional) yes/no
+    "solution_images", // (Optional) number of solution images (0 = none)
   ],
 
   // Poem-based MCQ (Reading)
@@ -69,6 +71,7 @@ export const CSV_COLUMNS = {
     "option_b_image", // (Optional) yes/no
     "option_c_image", // (Optional) yes/no
     "option_d_image", // (Optional) yes/no
+    "solution_images", // (Optional) number of solution images (0 = none)
   ],
 
   // Fill-in-the-blank with dropdowns (Reading)
@@ -114,18 +117,18 @@ export const CSV_COLUMNS = {
 
 // Sample data for each template
 export const CSV_SAMPLES = {
-  mcq: `code,subject,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image
-MR_001,mathematical-reasoning,easy,What is 15 + 27?,32,42,52,62,B,Add tens then ones to get 42,no,no,no,no,no
-MR_002,mathematical-reasoning,medium,Look at the shape and find its area:,12 sq cm,24 sq cm,36 sq cm,48 sq cm,B,Area = length × width,yes,no,no,no,no
-TS_001,thinking-skills,easy,Which shape comes next?,Shape 1,Shape 2,Shape 3,Shape 4,C,The pattern alternates,yes,yes,yes,yes,yes`,
+  mcq: `code,subject,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
+MR_001,mathematical-reasoning,easy,What is 15 + 27?,32,42,52,62,B,Add tens then ones to get 42,no,no,no,no,no,0
+MR_002,mathematical-reasoning,medium,Look at the shape and find its area:,12 sq cm,24 sq cm,36 sq cm,48 sq cm,B,Area = length × width,yes,no,no,no,no,2
+TS_001,thinking-skills,easy,Which shape comes next?,Shape 1,Shape 2,Shape 3,Shape 4,C,The pattern alternates,yes,yes,yes,yes,yes,0`,
 
-  passage_mcq: `code,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image
-RD_MCQ_001,RD_P_001,easy,What is the main idea of the passage?,Friendship,Adventure,Nature,Science,A,The passage discusses friendship,no,no,no,no,no
-RD_MCQ_002,RD_P_001,medium,What does the author mean by 'stood tall'?,Was very tall,Was brave,Was proud,Was angry,B,Context shows bravery,no,no,no,no,no
-RD_MCQ_003,"RD_P_001,RD_P_002",medium,Compare the two extracts. What theme do they share?,Friendship,Loss,Growth,Conflict,C,Both passages explore growth,no,no,no,no,no`,
+  passage_mcq: `code,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
+RD_MCQ_001,RD_P_001,easy,What is the main idea of the passage?,Friendship,Adventure,Nature,Science,A,The passage discusses friendship,no,no,no,no,no,0
+RD_MCQ_002,RD_P_001,medium,What does the author mean by 'stood tall'?,Was very tall,Was brave,Was proud,Was angry,B,Context shows bravery,no,no,no,no,no,0
+RD_MCQ_003,"RD_P_001,RD_P_002",medium,Compare the two extracts. What theme do they share?,Friendship,Loss,Growth,Conflict,C,Both passages explore growth,no,no,no,no,no,0`,
 
-  poem_mcq: `code,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image
-RD_POEM_001,RD_POEM_P_001,easy,What rhyme scheme does the poem follow?,ABAB,AABB,ABBA,Free verse,B,Lines 1-2 and 3-4 rhyme,no,no,no,no,no`,
+  poem_mcq: `code,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_image,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
+RD_POEM_001,RD_POEM_P_001,easy,What rhyme scheme does the poem follow?,ABAB,AABB,ABBA,Free verse,B,Lines 1-2 and 3-4 rhyme,no,no,no,no,no,0`,
 
   fill_blank: `code,passage_code,difficulty,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
 RD_FB_001,,easy,"The cat [1] on the mat. It was [2] comfortable.",sat|sit|set,very|much|more,,,

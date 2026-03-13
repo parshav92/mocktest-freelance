@@ -30,6 +30,8 @@ export interface TrialQuestion {
     correct_answer: unknown;
     /** Explanation shown in review */
     solution_text: string | null;
+    /** Solution images shown in review */
+    solution_images?: string[];
 }
 
 export interface TrialTest {

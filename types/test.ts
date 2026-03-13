@@ -76,6 +76,7 @@ export interface Question {
     content: QuestionContent;
     correct_answer: CorrectAnswer;
     solution_text: string | null;
+    solution_images: string[];
     marks: number;
     is_active: boolean;
     times_shown: number;
@@ -319,6 +320,7 @@ export interface SubmitTestResponse {
 export interface QuestionWithAnswer extends QuestionForTest {
     correct_answer: CorrectAnswer;
     solution_text: string | null;
+    solution_images: string[];
     student_answer: TestAnswer;
 }
 
