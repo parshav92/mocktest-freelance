@@ -233,7 +233,9 @@ export default function TestReviewPage() {
 
     const { test, questions, summary } = reviewData;
     const openItem = openIndex !== null ? questions[openIndex] : null;
-    const openHasPassage = !!(openItem?.question.passages && openItem.question.passages.length > 0);
+    const openHasPassage = !!(
+        openItem?.question.passages && openItem.question.passages.length > 0
+    );
 
     const barColor = (pct: number) =>
         pct >= 75
@@ -671,92 +673,142 @@ export default function TestReviewPage() {
                                     <>
                                         <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
                                             <span className="text-sm font-medium text-[#1a2744]">
-                                                {openItem.question.passages[0].passage_type === "poem"
+                                                {openItem.question.passages[0]
+                                                    .passage_type === "poem"
                                                     ? "Poem"
-                                                    : openItem.question.passages[0].title || "Extract"}
+                                                    : openItem.question
+                                                          .passages[0].title ||
+                                                      "Extract"}
                                             </span>
                                         </div>
                                         <ScrollArea className="flex-1">
                                             <div className="p-6 md:p-8">
-                                                {openItem.question.passages[0].title && (
+                                                {openItem.question.passages[0]
+                                                    .title && (
                                                     <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                        {openItem.question.passages[0].title}
+                                                        {
+                                                            openItem.question
+                                                                .passages[0]
+                                                                .title
+                                                        }
                                                     </h3>
                                                 )}
-                                                {openItem.question.passages[0].image_url && (
+                                                {openItem.question.passages[0]
+                                                    .image_url && (
                                                     <div className="mb-4">
                                                         <img
-                                                            src={openItem.question.passages[0].image_url}
-                                                            alt={openItem.question.passages[0].title || "Passage image"}
+                                                            src={
+                                                                openItem
+                                                                    .question
+                                                                    .passages[0]
+                                                                    .image_url
+                                                            }
+                                                            alt={
+                                                                openItem
+                                                                    .question
+                                                                    .passages[0]
+                                                                    .title ||
+                                                                "Passage image"
+                                                            }
                                                             className="max-w-full rounded-lg"
                                                         />
                                                     </div>
                                                 )}
                                                 <div
                                                     className={`leading-relaxed text-gray-800 ${
-                                                        openItem.question.passages[0].passage_type === "poem"
+                                                        openItem.question
+                                                            .passages[0]
+                                                            .passage_type ===
+                                                        "poem"
                                                             ? "whitespace-pre-line italic"
                                                             : ""
                                                     }`}
                                                 >
-                                                    <MathText content={openItem.question.passages[0].content} block />
+                                                    <MathText
+                                                        content={
+                                                            openItem.question
+                                                                .passages[0]
+                                                                .content
+                                                        }
+                                                        block
+                                                    />
                                                 </div>
                                             </div>
                                         </ScrollArea>
                                     </>
                                 ) : (
                                     /* Multiple passages - tabs */
-                                    <Tabs defaultValue="passage-0" className="flex flex-col h-full">
+                                    <Tabs
+                                        defaultValue="passage-0"
+                                        className="flex flex-col h-full"
+                                    >
                                         <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
                                             <TabsList className="bg-transparent h-auto p-0 gap-0">
-                                                {openItem.question.passages.map((p, idx) => (
-                                                    <TabsTrigger
-                                                        key={p.id}
-                                                        value={`passage-${idx}`}
-                                                        className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
-                                                    >
-                                                        {p.passage_type === "poem"
-                                                            ? `Poem ${idx + 1}`
-                                                            : p.title || `Extract ${idx + 1}`}
-                                                    </TabsTrigger>
-                                                ))}
+                                                {openItem.question.passages.map(
+                                                    (p, idx) => (
+                                                        <TabsTrigger
+                                                            key={p.id}
+                                                            value={`passage-${idx}`}
+                                                            className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
+                                                        >
+                                                            {p.passage_type ===
+                                                            "poem"
+                                                                ? `Poem ${idx + 1}`
+                                                                : p.title ||
+                                                                  `Extract ${idx + 1}`}
+                                                        </TabsTrigger>
+                                                    ),
+                                                )}
                                             </TabsList>
                                         </div>
-                                        {openItem.question.passages.map((p, idx) => (
-                                            <TabsContent
-                                                key={p.id}
-                                                value={`passage-${idx}`}
-                                                className="flex-1 m-0 data-[state=inactive]:hidden"
-                                            >
-                                                <ScrollArea className="h-full">
-                                                    <div className="p-6 md:p-8">
-                                                        {p.title && (
-                                                            <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                                {p.title}
-                                                            </h3>
-                                                        )}
-                                                        {p.image_url && (
-                                                            <div className="mb-4">
-                                                                <img
-                                                                    src={p.image_url}
-                                                                    alt={p.title || "Passage image"}
-                                                                    className="max-w-full rounded-lg"
+                                        {openItem.question.passages.map(
+                                            (p, idx) => (
+                                                <TabsContent
+                                                    key={p.id}
+                                                    value={`passage-${idx}`}
+                                                    className="flex-1 m-0 data-[state=inactive]:hidden"
+                                                >
+                                                    <ScrollArea className="h-full">
+                                                        <div className="p-6 md:p-8">
+                                                            {p.title && (
+                                                                <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                                    {p.title}
+                                                                </h3>
+                                                            )}
+                                                            {p.image_url && (
+                                                                <div className="mb-4">
+                                                                    <img
+                                                                        src={
+                                                                            p.image_url
+                                                                        }
+                                                                        alt={
+                                                                            p.title ||
+                                                                            "Passage image"
+                                                                        }
+                                                                        className="max-w-full rounded-lg"
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                            <div
+                                                                className={`leading-relaxed text-gray-800 ${
+                                                                    p.passage_type ===
+                                                                    "poem"
+                                                                        ? "whitespace-pre-line italic"
+                                                                        : ""
+                                                                }`}
+                                                            >
+                                                                <MathText
+                                                                    content={
+                                                                        p.content
+                                                                    }
+                                                                    block
                                                                 />
                                                             </div>
-                                                        )}
-                                                        <div
-                                                            className={`leading-relaxed text-gray-800 ${
-                                                                p.passage_type === "poem"
-                                                                    ? "whitespace-pre-line italic"
-                                                                    : ""
-                                                            }`}
-                                                        >
-                                                            <MathText content={p.content} block />
                                                         </div>
-                                                    </div>
-                                                </ScrollArea>
-                                            </TabsContent>
-                                        ))}
+                                                    </ScrollArea>
+                                                </TabsContent>
+                                            ),
+                                        )}
                                     </Tabs>
                                 )}
                             </div>
@@ -922,7 +974,9 @@ function ReviewQuestionDisplay({
                         </p>
                     )}
                     {solutionImages.length > 0 && (
-                        <div className={`grid gap-3 ${solutionText ? "mt-3" : ""} ${solutionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}>
+                        <div
+                            className={`grid gap-3 ${solutionText ? "mt-3" : ""} ${solutionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
+                        >
                             {solutionImages.map((imgUrl, idx) => (
                                 <img
                                     key={`solution-img-${idx}`}
@@ -1024,7 +1078,9 @@ function ReviewQuestionDisplay({
                                                             : "text-gray-700",
                                                     )}
                                                 >
-                                                    <MathText content={option.text} />
+                                                    <MathText
+                                                        content={option.text}
+                                                    />
                                                 </span>
                                             )}
                                             {option.image_url && (
@@ -1093,7 +1149,15 @@ function ReviewQuestionDisplay({
                                                             : "bg-rose-50 border-rose-300 text-rose-700",
                                                     )}
                                                 >
-                                                    {studentOption ? <MathText content={studentOption} /> : "Skipped"}
+                                                    {studentOption ? (
+                                                        <MathText
+                                                            content={
+                                                                studentOption
+                                                            }
+                                                        />
+                                                    ) : (
+                                                        "Skipped"
+                                                    )}
                                                     {isCorrectBlank ? (
                                                         <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
                                                     ) : (
@@ -1131,7 +1195,13 @@ function ReviewQuestionDisplay({
                                                 Blank {idx + 1}
                                             </span>
                                             <span className="text-emerald-700 font-medium">
-                                                {correctOpt ? <MathText content={correctOpt} /> : "—"}
+                                                {correctOpt ? (
+                                                    <MathText
+                                                        content={correctOpt}
+                                                    />
+                                                ) : (
+                                                    "—"
+                                                )}
                                             </span>
                                             {isCorrectBlank && (
                                                 <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
@@ -1210,7 +1280,13 @@ function ReviewQuestionDisplay({
                                                 : "bg-rose-50 border-rose-300 text-rose-700",
                                         )}
                                     >
-                                        {selectedSentence ? <MathText content={selectedSentence} /> : "Empty"}
+                                        {selectedSentence ? (
+                                            <MathText
+                                                content={selectedSentence}
+                                            />
+                                        ) : (
+                                            "Empty"
+                                        )}
                                         {isCorrectGap ? (
                                             <CheckCircle className="inline h-3.5 w-3.5 ml-1 text-emerald-500" />
                                         ) : (
@@ -1240,11 +1316,13 @@ function ReviewQuestionDisplay({
                                                 {gapKey.replace("_", " ")}
                                             </span>
                                             <span className="text-emerald-700">
-                                                <MathText content={
-                                                    sentences[
-                                                        sentenceIdx as number
-                                                    ]
-                                                } />
+                                                <MathText
+                                                    content={
+                                                        sentences[
+                                                            sentenceIdx as number
+                                                        ]
+                                                    }
+                                                />
                                             </span>
                                         </div>
                                     ),
