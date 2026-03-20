@@ -15,6 +15,7 @@ export interface ImageRequirement {
   field: string; // e.g. "question", "option_a".."option_d", "passage", "solution_1".."solution_N"
   label: string;
   storagePath: string; // e.g., "questions/math/MR_001_q.png"
+  number?: number; // Serial number for [img:N] syntax (1-based) or field index
 }
 
 // Parsed question with image flags
@@ -190,12 +191,14 @@ function parseMCQ(
 
     // Determine image requirements
     const imageRequirements: ImageRequirement[] = [];
+    let imageNumber = 1; // Counter for [img:N] syntax
 
     if (isYes(rowData.question_image)) {
       imageRequirements.push({
         field: "question",
         label: getFieldLabel("question"),
         storagePath: getImageStoragePath("question", subjectSlug, code, "question"),
+        number: imageNumber++,
       });
     }
 
@@ -204,6 +207,7 @@ function parseMCQ(
         field: "option_a",
         label: getFieldLabel("option_a"),
         storagePath: getImageStoragePath("question", subjectSlug, code, "option_a"),
+        number: imageNumber++,
       });
     }
 
@@ -212,6 +216,7 @@ function parseMCQ(
         field: "option_b",
         label: getFieldLabel("option_b"),
         storagePath: getImageStoragePath("question", subjectSlug, code, "option_b"),
+        number: imageNumber++,
       });
     }
 
@@ -220,6 +225,7 @@ function parseMCQ(
         field: "option_c",
         label: getFieldLabel("option_c"),
         storagePath: getImageStoragePath("question", subjectSlug, code, "option_c"),
+        number: imageNumber++,
       });
     }
 
@@ -228,6 +234,7 @@ function parseMCQ(
         field: "option_d",
         label: getFieldLabel("option_d"),
         storagePath: getImageStoragePath("question", subjectSlug, code, "option_d"),
+        number: imageNumber++,
       });
     }
 
@@ -239,6 +246,7 @@ function parseMCQ(
         field,
         label: getFieldLabel(field),
         storagePath: getImageStoragePath("question", subjectSlug, code, field),
+        number: imageNumber++,
       });
     }
 
@@ -480,7 +488,10 @@ function parsePassages(
       rowIndex: i + 1,
       code,
       data: rowData,
-      imageRequirements,
+      imageRequirements: imageRequirements.map((ir, idx) => ({
+        ...ir,
+        number: idx + 1,
+      })),
     });
   }
 

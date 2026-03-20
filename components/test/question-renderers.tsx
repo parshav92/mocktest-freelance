@@ -24,6 +24,7 @@ import type {
     MCQOption,
 } from "@/types/test";
 import { MathText } from "@/components/ui/math-text";
+import { ImageEnhancedText } from "@/components/ui/image-enhanced-text";
 
 // ============================================
 // LAYOUT TYPE
@@ -36,18 +37,24 @@ type RendererLayout = "split" | "stacked";
 // ============================================
 
 const MCQQuestionStem = memo(({ content }: { content: MCQContent }) => {
+    // Normalize all legacy field variants into a single images array
+    // Priority: question_images (new) > question_image / question_image_url (old single-URL fields)
+    const images: string[] | undefined =
+        content.question_images ??
+        (content.question_image
+            ? [content.question_image]
+            : content.question_image_url
+              ? [content.question_image_url]
+              : undefined);
+
     return (
         <div className="space-y-4">
-            <p className="text-base leading-relaxed text-foreground whitespace-pre-line">
-                <MathText content={content.question} />
-            </p>
-            {content.question_image && (
-                <StorageImage
-                    src={content.question_image}
-                    alt="Question image"
-                    className="max-w-full rounded-lg border"
+            <div className="text-base leading-relaxed text-foreground whitespace-pre-line">
+                <ImageEnhancedText
+                    content={content.question}
+                    images={images}
                 />
-            )}
+            </div>
         </div>
     );
 });
@@ -278,7 +285,7 @@ export const FillBlankRenderer = memo(
                 <div className="text-base leading-relaxed text-foreground">
                     {parts.map((part, index) => (
                         <span key={`fb-part-${index}`}>
-                            <MathText content={part} />
+                            <ImageEnhancedText content={part} images={content.passage_images} />
                             {index < content.blanks.length && (
                                 <Select
                                     value={
@@ -384,7 +391,9 @@ export const FillMissingSentenceRenderer = memo(
                     {parts.map((part, i) => {
                         if (part.type === "text") {
                             return (
-                                <span key={`fms-text-${i}`}><MathText content={part.value} /></span>
+                                <span key={`fms-text-${i}`}>
+                                    <ImageEnhancedText content={part.value} images={content.passage_images} />
+                                </span>
                             );
                         }
                         const hasSelection =
@@ -514,9 +523,9 @@ export const EssayRenderer = memo(
 
         const promptSection = (
             <div className="space-y-4">
-                <p className="text-base leading-relaxed text-foreground whitespace-pre-line">
-                    <MathText content={content.prompt} />
-                </p>
+                <div className="text-base leading-relaxed text-foreground whitespace-pre-line">
+                    <ImageEnhancedText content={content.prompt} images={content.prompt_images} />
+                </div>
                 <div className="flex items-center gap-3 flex-wrap">
                     <Badge variant="outline" className="text-xs gap-1">
                         Word limit: {content.word_limit}

@@ -1,0 +1,16 @@
+code,passage_code,difficulty,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
+SC_FB_001,,easy,"The diagram below shows a plant cell: [img:1]
+
+The large structure labelled A is the [1], which stores water and maintains cell pressure. The green structures labelled B are [2], where photosynthesis occurs.",central vacuole|nucleus|mitochondria,chloroplasts|ribosomes|lysosomes,,,
+SC_FB_002,,medium,"Study the rock cycle shown in [img:1]:
+
+Igneous rock is formed when magma [1] and solidifies. When rocks are broken into smaller pieces by weathering, they form [2]. Under heat and pressure, existing rocks become [3] rocks.",cools|heats|dissolves,sediment|magma|crystals,metamorphic|sedimentary|igneous,,
+SC_FB_003,,easy,"Look at the food web in [img:1].
+
+The organism at the top of this food web is the [1]. The grass is the [2] in this ecosystem because it produces its own food through photosynthesis. An organism that eats only plants is called a [3].",hawk|snake|rabbit,producer|consumer|decomposer,herbivore|carnivore|omnivore,,
+SC_FB_004,,medium,"The graph [img:1] shows the population of rabbits and foxes over time. The graph [img:2] shows rainfall over the same period.
+
+When rainfall [1], more grass grows, causing the rabbit population to [2]. This in turn causes the fox population to [3] due to increased food availability.",increases|decreases|stays the same,increase|decrease|stay the same,increase|decrease|stay the same,,
+SC_FB_005,,hard,"Refer to the experimental results shown in [img:1] and the control results in [img:2].
+
+The independent variable in this experiment was [1]. The results in [img:1] show that increasing the variable caused enzyme activity to [2], until it reached the optimum at 37°C. Beyond this point, activity [3] due to [4].",temperature|pH|substrate concentration,increase|decrease|stay the same,decreased rapidly|increased slowly|plateaued,denaturation|inhibition|saturation,

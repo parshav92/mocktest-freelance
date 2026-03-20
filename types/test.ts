@@ -99,7 +99,9 @@ export type QuestionContent =
 
 export interface MCQContent {
     question: string;
-    question_image?: string | null;
+    question_image?: string | null;     // new upload code uses this
+    question_image_url?: string | null; // legacy: old upload code used this
+    question_images?: string[];         // new: supports [img:1], [img:2] etc in question text
     options: MCQOption[];
 }
 
@@ -111,6 +113,7 @@ export interface MCQOption {
 
 export interface FillBlankContent {
     passage_text: string;
+    passage_images?: string[]; // New: supports [img:1], [img:2] etc in passage text
     blanks: FillBlank[];
 }
 
@@ -122,12 +125,14 @@ export interface FillBlank {
 
 export interface FillMissingSentenceContent {
     passage_with_gaps: string;
+    passage_images?: string[]; // New: supports [img:1], [img:2] etc in passage text
     sentences: string[];
     correct_mapping: Record<string, number>; // e.g., {"GAP_1": 0, "GAP_2": 2}
 }
 
 export interface EssayContent {
     prompt: string;
+    prompt_images?: string[]; // New: supports [img:1], [img:2] etc in prompt text
     word_limit: number;
     time_mins: number;
     rubric: Record<string, number>; // e.g., {"content": 10, "structure": 5}

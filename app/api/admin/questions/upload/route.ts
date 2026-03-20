@@ -436,9 +436,26 @@ async function insertQuestions(
                 },
             ];
 
+            // Build question_images array for [img:N] inline syntax
+            // question image is always [img:1]; option images follow in order
+            const questionImageUrl = findImageUrl(imageUrls, q.code, "question");
+            const optionAImageUrl = findImageUrl(imageUrls, q.code, "option_a");
+            const optionBImageUrl = findImageUrl(imageUrls, q.code, "option_b");
+            const optionCImageUrl = findImageUrl(imageUrls, q.code, "option_c");
+            const optionDImageUrl = findImageUrl(imageUrls, q.code, "option_d");
+
+            // question_images holds URLs in [img:N] order: question first, then options
+            const questionImages: string[] = [];
+            if (questionImageUrl) questionImages.push(questionImageUrl);
+            if (optionAImageUrl) questionImages.push(optionAImageUrl);
+            if (optionBImageUrl) questionImages.push(optionBImageUrl);
+            if (optionCImageUrl) questionImages.push(optionCImageUrl);
+            if (optionDImageUrl) questionImages.push(optionDImageUrl);
+
             content = {
                 question: q.data.question,
-                question_image_url: findImageUrl(imageUrls, q.code, "question"),
+                question_image: questionImageUrl, // legacy: single question image
+                question_images: questionImages.length > 0 ? questionImages : undefined,
                 options,
             };
 

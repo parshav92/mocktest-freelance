@@ -1203,7 +1203,14 @@ function ImageUploadField({
         <>
             <div className="flex items-center gap-4 p-3 border rounded-lg">
                 <div className="flex-1 min-w-0">
-                    <Label className="text-sm">{requirement.label}</Label>
+                    <div className="flex items-center gap-2">
+                        <Label className="text-sm">{requirement.label}</Label>
+                        {requirement.number !== undefined && (
+                            <Badge variant="secondary" className="text-xs font-mono">
+                                [img:{requirement.number}]
+                            </Badge>
+                        )}
+                    </div>
                     <p className="text-xs text-muted-foreground font-mono truncate">
                         {uploadedImage
                             ? uploadedImage.uploadPath
