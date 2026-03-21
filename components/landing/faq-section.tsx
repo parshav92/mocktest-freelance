@@ -39,10 +39,7 @@ const FAQSection = () => {
         <section
             id="faq"
             className="w-full py-24 px-6"
-            style={{
-                background:
-                    "linear-gradient(180deg, #f8fafc 0%, #f0f9ff 50%, #e0f2fe 100%)",
-            }}
+            
         >
             <div className="max-w-4xl mx-auto">
                 {/* Section Header */}

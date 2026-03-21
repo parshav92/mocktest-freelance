@@ -17,7 +17,7 @@ export default function Home() {
             <WhyUsSection />
             <PricingSection />
             <FAQSection />
-            <GradientTransition />
+           
             <ContactSection />
             <Footer />
         </div>

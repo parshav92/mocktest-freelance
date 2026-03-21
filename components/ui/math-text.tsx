@@ -163,9 +163,14 @@ const MATH_TRIGGER = new RegExp(
         "\\d+\\s*/\\s*\\d+",         // fractions like 3/4
         "[a-zA-Z]\\s*/\\s*[a-zA-Z]", // variable fractions K/L
         "\\w\\^\\d",                 // exponents x^2
+        "(?:\\\\)?\\^\\s*(?:\\{[^}]+\\}|[A-Za-z0-9+-])", // standalone superscripts
+        "(?:\\\\)?_\\s*(?:\\{[^}]+\\}|[A-Za-z0-9+-])", // standalone subscripts
         "sqrt\\(",                   // sqrt(...)
+        "\\\\[a-zA-Z]+",            // explicit KaTeX commands like \alpha
     ].join("|"),
 );
+
+const KATEX_COMMAND_TRIGGER = /\\[a-zA-Z]+/;
 
 /**
  * Check if string has anything that needs math rendering.
@@ -173,6 +178,10 @@ const MATH_TRIGGER = new RegExp(
  */
 function hasMathContent(text: string): boolean {
     return MATH_TRIGGER.test(text);
+}
+
+function hasKatexCommand(text: string): boolean {
+    return KATEX_COMMAND_TRIGGER.test(text);
 }
 
 // ============================================
@@ -187,6 +196,13 @@ function hasMathContent(text: string): boolean {
  */
 function plainTextToKatex(text: string): string {
     let result = text;
+
+    // Normalize repeated slashes before commands so "\\alpha" and "\\\\alpha"
+    // are both interpreted as the same KaTeX command token.
+    result = result.replace(/\\{2,}(?=[a-zA-Z]+)/g, "\\");
+
+    // Normalize escaped script operators (e.g. "\\^{1}") into plain operators.
+    result = result.replace(/\\(?=[\^_])/g, "");
 
     // 1. Unicode symbol normalization
     for (const [pattern, replacement] of UNICODE_TO_KATEX) {
@@ -219,10 +235,54 @@ function plainTextToKatex(text: string): string {
         "$1^{$2}",
     );
 
-    // 6. sqrt(expr) → \sqrt{expr}
+    // 5b. Exponents with spaces: "x ^ 2" -> "x^{2}"
     result = result.replace(
-        /sqrt\(([^)]+)\)/gi,
+        /([a-zA-Z0-9]+)\s*\^\s*(\d+)/g,
+        "$1^{$2}",
+    );
+
+    // 5c. Standalone superscripts: "^{P}" or "^p" -> "{}^{P}" / "{}^{p}"
+    result = result.replace(
+        /(^|[^a-zA-Z0-9}\]])\^\s*\{([^}]+)\}/g,
+        "$1{}^{$2}",
+    );
+    result = result.replace(
+        /(^|[^a-zA-Z0-9}\]])\^\s*([A-Za-z0-9+-])/g,
+        "$1{}^{$2}",
+    );
+
+    // 5d. Standalone subscripts: "_{i}" or "_i" -> "{}_{i}"
+    result = result.replace(
+        /(^|[^a-zA-Z0-9}\]])_\s*\{([^}]+)\}/g,
+        "$1{}_{$2}",
+    );
+    result = result.replace(
+        /(^|[^a-zA-Z0-9}\]])_\s*([A-Za-z0-9+-])/g,
+        "$1{}_{$2}",
+    );
+
+    // 6a. \sqrt(expr) → \sqrt{expr}
+    result = result.replace(
+        /\\sqrt\(([^)]+)\)/gi,
         "\\sqrt{$1}",
+    );
+
+    // 6b. sqrt(expr) → \sqrt{expr}
+    result = result.replace(
+        /(?<!\\)sqrt\(([^)]+)\)/gi,
+        "\\sqrt{$1}",
+    );
+
+    // 6c. \sqrt9 or \sqrt x -> \sqrt{9} / \sqrt{x}
+    result = result.replace(
+        /\\sqrt(?!\s*(?:\{|\[|\())\s*([A-Za-z0-9])/g,
+        "\\sqrt{$1}",
+    );
+
+    // 6d. \sqrt[3]8 -> \sqrt[3]{8}
+    result = result.replace(
+        /\\sqrt\[([^\]]+)\](?!\s*\{)\s*([A-Za-z0-9])/g,
+        "\\sqrt[$1]{$2}",
     );
 
     return result;
@@ -239,6 +299,10 @@ interface Segment {
     value: string;
 }
 
+// Match likely inline math snippets after normalization.
+const INLINE_MATH_SNIPPET =
+    /\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^{}]*\}|[_^]\{[^}]*\}|[_^][A-Za-z0-9]))*|\{\}(?:\^\{[^}]+\}|\^[A-Za-z0-9+-]|_\{[^}]+\}|_[A-Za-z0-9+-])+|[A-Za-z0-9]+(?:\^\{[^}]+\}|\^[A-Za-z0-9+-]|_\{[^}]+\}|_[A-Za-z0-9+-])+/g;
+
 /**
  * Walk through the string and split it into segments.
  *
@@ -251,140 +315,51 @@ interface Segment {
  */
 function segmentize(raw: string): Segment[] {
     if (!raw) return [];
-    if (!hasMathContent(raw)) return [{ type: "text", value: raw }];
-
-    // Split on sentence-like boundaries but keep delimiters
-    // This ensures we don't break in the middle of "3/4" or "x^2"
-    const chunks = raw.split(/(?<=[.!?\n])\s+|(?=\s*\n)/);
-
-    // If splitting produced nothing useful, treat the whole thing as one chunk
-    if (chunks.length <= 1) {
-        return [{ type: "math", value: raw }];
+    if (!hasMathContent(raw) && !hasKatexCommand(raw)) {
+        return [{ type: "text", value: raw }];
     }
 
+    const normalized = plainTextToKatex(raw);
     const segments: Segment[] = [];
-    let currentType: "text" | "math" | null = null;
-    let currentValue = "";
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
 
-    for (const chunk of chunks) {
-        const chunkType = hasMathContent(chunk) ? "math" : "text";
-        if (chunkType === currentType) {
-            currentValue += chunk;
-        } else {
-            if (currentType !== null && currentValue) {
-                segments.push({ type: currentType, value: currentValue });
-            }
-            currentType = chunkType;
-            currentValue = chunk;
+    while ((match = INLINE_MATH_SNIPPET.exec(normalized)) !== null) {
+        if (match.index > lastIndex) {
+            segments.push({
+                type: "text",
+                value: normalized.slice(lastIndex, match.index),
+            });
         }
-    }
-    if (currentType !== null && currentValue) {
-        segments.push({ type: currentType, value: currentValue });
+        segments.push({ type: "math", value: match[0] });
+        lastIndex = match.index + match[0].length;
     }
 
-    return segments;
+    if (lastIndex < normalized.length) {
+        segments.push({ type: "text", value: normalized.slice(lastIndex) });
+    }
+
+    return segments.length > 0 ? segments : [{ type: "text", value: raw }];
 }
 
 // ============================================
 // KATEX RENDERER
 // ============================================
 
-/**
- * Render a math segment to HTML using KaTeX.
- * We convert the entire segment to a KaTeX expression
- * that interleaves \text{} with math.
- */
+/** Render one math snippet to HTML using KaTeX. */
 function renderMathSegment(raw: string): string {
-    // Convert plain-text patterns to KaTeX commands
-    const katexStr = plainTextToKatex(raw);
-
-    // If conversion didn't actually produce any LaTeX commands,
-    // return the original text (shouldn't happen given hasMathContent gate)
-    if (katexStr === raw && !MATH_TRIGGER.test(katexStr)) {
-        return raw;
-    }
-
-    // Wrap in a KaTeX-friendly form.
-    // We need to handle mixed text+math. KaTeX's \text{} allows nesting math
-    // via $...$ but that's fragile. Instead, we wrap the entire expression
-    // and let KaTeX handle it in math mode with \text for text runs.
-    //
-    // Strategy: identify "text" vs "math" tokens and build the expression.
-    const expression = buildMixedExpression(katexStr);
-
     try {
-        return katex.renderToString(expression, {
+        return katex.renderToString(raw, {
             throwOnError: false,
             displayMode: false,
             strict: false,
-            trust: true,
+            trust: false,
             output: "htmlAndMathml",
         });
     } catch {
-        // If KaTeX fails, return original text
+        // If KaTeX fails, return escaped text so rendering never crashes.
         return escapeHtml(raw);
     }
-}
-
-/**
- * Build a KaTeX expression that mixes \text{} for plain words
- * with raw math commands.
- *
- * Input: "What is \\frac{3}{4} + \\frac{1}{2}?"
- * Output: "\\text{What is }\\frac{3}{4}\\text{ + }\\frac{1}{2}\\text{?}"
- */
-function buildMixedExpression(input: string): string {
-    // Pattern that matches KaTeX commands and math tokens
-    const mathTokenPattern =
-        /\\(?:frac|sqrt|times|div|cdot|neq|leq|geq|pm|mp|approx|equiv|propto|bullet|angle|perp|parallel|infty|forall|exists|in|notin|subset|supset|cup|cap|emptyset|therefore|because|rightarrow|leftarrow|Rightarrow|Leftarrow|leftrightarrow|int|iint|iiint|sum|prod|alpha|beta|gamma|delta|epsilon|zeta|eta|theta|iota|kappa|lambda|mu|nu|xi|pi|rho|sigma|tau|upsilon|phi|chi|psi|omega|Gamma|Delta|Theta|Lambda|Xi|Pi|Sigma|Phi|Psi|Omega)\s*(?:\[[^\]]*\])?\{[^}]*\}(?:\{[^}]*\})?|\^{[^}]*}|_{[^}]*}|\\[a-zA-Z]+\s*/g;
-
-    const parts: string[] = [];
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-
-    while ((match = mathTokenPattern.exec(input)) !== null) {
-        // Text before this math token
-        if (match.index > lastIndex) {
-            const textBefore = input.slice(lastIndex, match.index);
-            if (textBefore.trim()) {
-                parts.push(`\\text{${escapeKatexText(textBefore)}}`);
-            } else if (textBefore) {
-                parts.push("\\;"); // preserve spacing
-            }
-        }
-
-        // The math token itself
-        parts.push(match[0]);
-        lastIndex = match.index + match[0].length;
-    }
-
-    // Remaining text after last math token
-    if (lastIndex < input.length) {
-        const remaining = input.slice(lastIndex);
-        if (remaining.trim()) {
-            parts.push(`\\text{${escapeKatexText(remaining)}}`);
-        }
-    }
-
-    // If we found no math tokens, just wrap the whole thing in \text{}
-    if (parts.length === 0) {
-        return `\\text{${escapeKatexText(input)}}`;
-    }
-
-    return parts.join("");
-}
-
-function escapeKatexText(text: string): string {
-    // Escape characters that are special in KaTeX \text{} mode
-    return text
-        .replace(/\\/g, "\\textbackslash ")
-        .replace(/[{}]/g, (m) => `\\${m}`)
-        .replace(/#/g, "\\#")
-        .replace(/%/g, "\\%")
-        .replace(/&/g, "\\&")
-        .replace(/\$/g, "\\$")
-        .replace(/_/g, "\\_")
-        .replace(/~/g, "\\textasciitilde ");
 }
 
 function escapeHtml(text: string): string {
@@ -431,7 +406,7 @@ export const MathText = React.memo(function MathText({
         if (!content) return null;
 
         // Fast path: no math content → render as plain text
-        if (!hasMathContent(content)) {
+        if (!hasMathContent(content) && !hasKatexCommand(content)) {
             return <>{content}</>;
         }
 

@@ -12,6 +12,8 @@ import {
     X,
     Users,
     CreditCard,
+    ClipboardList,
+    Library,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
@@ -60,12 +62,22 @@ export function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
         {
             href: "/dashboard/questions",
             icon: FileText,
-            label: "Manage Questions ",
+            label: "Manage Questions",
         },
         {
             href: "/dashboard/passage",
             icon: BookOpen,
-            label: "Manage Passages ",
+            label: "Manage Passages",
+        },
+        {
+            href: "/dashboard/custom-tests",
+            icon: ClipboardList,
+            label: "Custom Tests",
+        },
+        {
+            href: "/dashboard/subjects",
+            icon: Library,
+            label: "Manage Subjects",
         },
         {
             href: "/dashboard/subscriptions",

@@ -55,6 +55,7 @@ import {
     type ParseResult,
     type ImageRequirement,
 } from "@/lib/csv/parser";
+import { MathText } from "@/components/ui/math-text";
 
 // Upload types with descriptions
 const UPLOAD_TYPES = [
@@ -749,12 +750,17 @@ export default function AdminUploadPage() {
                                                     <Label className="text-xs text-muted-foreground">
                                                         Question
                                                     </Label>
-                                                    <p className="text-sm mt-1">
-                                                        {question.data
-                                                            .question ||
+                                                    <MathText
+                                                        block
+                                                        className="text-sm mt-1 whitespace-pre-wrap leading-relaxed"
+                                                        content={
                                                             question.data
-                                                                .prompt}
-                                                    </p>
+                                                                .question ||
+                                                            question.data
+                                                                .prompt ||
+                                                            ""
+                                                        }
+                                                    />
                                                 </div>
 
                                                 {/* Options for MCQ */}
@@ -771,13 +777,16 @@ export default function AdminUploadPage() {
                                                             <Label className="text-xs text-muted-foreground">
                                                                 A
                                                             </Label>
-                                                            <p className="text-sm">
-                                                                {
+                                                            <MathText
+                                                                block
+                                                                className="text-sm leading-relaxed"
+                                                                content={
                                                                     question
                                                                         .data
-                                                                        .option_a
+                                                                        .option_a ||
+                                                                    ""
                                                                 }
-                                                            </p>
+                                                            />
                                                         </div>
                                                         <div
                                                             className={
@@ -790,13 +799,16 @@ export default function AdminUploadPage() {
                                                             <Label className="text-xs text-muted-foreground">
                                                                 B
                                                             </Label>
-                                                            <p className="text-sm">
-                                                                {
+                                                            <MathText
+                                                                block
+                                                                className="text-sm leading-relaxed"
+                                                                content={
                                                                     question
                                                                         .data
-                                                                        .option_b
+                                                                        .option_b ||
+                                                                    ""
                                                                 }
-                                                            </p>
+                                                            />
                                                         </div>
                                                         <div
                                                             className={
@@ -809,13 +821,16 @@ export default function AdminUploadPage() {
                                                             <Label className="text-xs text-muted-foreground">
                                                                 C
                                                             </Label>
-                                                            <p className="text-sm">
-                                                                {
+                                                            <MathText
+                                                                block
+                                                                className="text-sm leading-relaxed"
+                                                                content={
                                                                     question
                                                                         .data
-                                                                        .option_c
+                                                                        .option_c ||
+                                                                    ""
                                                                 }
-                                                            </p>
+                                                            />
                                                         </div>
                                                         <div
                                                             className={
@@ -828,13 +843,16 @@ export default function AdminUploadPage() {
                                                             <Label className="text-xs text-muted-foreground">
                                                                 D
                                                             </Label>
-                                                            <p className="text-sm">
-                                                                {
+                                                            <MathText
+                                                                block
+                                                                className="text-sm leading-relaxed"
+                                                                content={
                                                                     question
                                                                         .data
-                                                                        .option_d
+                                                                        .option_d ||
+                                                                    ""
                                                                 }
-                                                            </p>
+                                                            />
                                                         </div>
                                                     </div>
                                                 )}
@@ -962,9 +980,14 @@ export default function AdminUploadPage() {
                                                     <Label className="text-xs text-muted-foreground">
                                                         Content
                                                     </Label>
-                                                    <p className="text-sm mt-1 whitespace-pre-wrap">
-                                                        {passage.data.content}
-                                                    </p>
+                                                    <MathText
+                                                        block
+                                                        className="text-sm mt-1 whitespace-pre-wrap leading-relaxed"
+                                                        content={
+                                                            passage.data
+                                                                .content || ""
+                                                        }
+                                                    />
                                                 </div>
 
                                                 {/* Image Upload Fields */}
