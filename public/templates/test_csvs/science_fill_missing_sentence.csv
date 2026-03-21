@@ -1,13 +1,13 @@
-code,difficulty,passage_with_gaps,sentences
-SCI_FMS_001,easy,"Study the diagram of the water cycle: [img:1]
+code,subject,difficulty,passage_with_gaps,sentences
+,science,easy,"Study the diagram of the water cycle: [img:1]
 
 Water from oceans and lakes heats up and turns into water vapour through evaporation. {GAP_1} High in the atmosphere, the vapour cools and forms clouds through condensation. {GAP_2} Eventually, water returns to the ground as rain, snow, or hail. {GAP_3}","This water vapour rises into the upper atmosphere.|These droplets join together and fall as precipitation.|This completes the continuous water cycle, replenishing rivers and lakes."
-SCI_FMS_002,medium,"The cell diagrams [img:1] and [img:2] show a plant cell and an animal cell respectively.
+,science,medium,"The cell diagrams [img:1] and [img:2] show a plant cell and an animal cell respectively.
 
 Both cells contain a nucleus, which controls all cell activities. {GAP_1} Only the plant cell has a cell wall, which provides rigid support. {GAP_2} The large central vacuole visible in [img:1] is absent from the animal cell. {GAP_3}","Both cells also contain mitochondria, which produce energy through respiration.|This explains why plant cells have a fixed rectangular shape while animal cells are irregular.|Instead, animal cells have many smaller vacuoles scattered throughout the cytoplasm."
-SCI_FMS_003,medium,"The graph in [img:1] shows the results of an experiment investigating the effect of light intensity on the rate of photosynthesis.
+,science,medium,"The graph in [img:1] shows the results of an experiment investigating the effect of light intensity on the rate of photosynthesis.
 
 As light intensity increases from 0 to point A on [img:1], the rate of photosynthesis rises steadily. {GAP_1} Between points A and B, the curve begins to level off. {GAP_2} Beyond point B, increasing light intensity has no further effect on the rate. {GAP_3}","This is because light is the limiting factor at low intensities — more photons means more reactions.|At this stage, another factor such as CO₂ concentration or temperature is becoming the limiting factor.|The process has reached its maximum rate and is now limited by the rate of the Calvin cycle."
-SCI_FMS_004,hard,"Examine the chromatography results in [img:1] alongside the reference values in [img:2].
+,science,hard,"Examine the chromatography results in [img:1] alongside the reference values in [img:2].
 
 Chromatography separates mixtures based on how strongly each component binds to the stationary phase. {GAP_1} The Rf value is calculated by dividing the distance travelled by the pigment by the distance travelled by the solvent. {GAP_2} Comparing the Rf values from [img:1] with the known values in [img:2] allows us to identify the unknown pigments. {GAP_3}","Components with a strong affinity for the stationary phase travel a shorter distance, giving a lower Rf value.|A consistent Rf value for a substance is reliable only when the same solvent and stationary phase are used.|In this sample, the yellow band matches β-carotene and the green band matches chlorophyll a."

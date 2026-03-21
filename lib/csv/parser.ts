@@ -24,6 +24,8 @@ export interface ParsedQuestion {
     code: string;
     data: Record<string, string>;
     imageRequirements: ImageRequirement[];
+    autoCode?: boolean; // true if code will be auto-generated at upload time
+    tempImageCode?: string; // Temp code used for image paths when autoCode=true
 }
 
 // Parsed passage with image flag
@@ -203,15 +205,10 @@ function parseMCQ(
             rowData[header] = row[idx] || "";
         });
 
-        const code = rowData.code;
-        if (!code) {
-            errors.push({
-                row: i + 1,
-                column: "code",
-                message: "Code is required",
-            });
-            continue;
-        }
+        const code = rowData.code || "";
+        const isAutoCode = !code;
+        // Use a temp code for image paths when auto-generating codes
+        const imageCode = isAutoCode ? `AUTO_${i + 1}` : code;
 
         // Get subject for storage path
         const subject =
@@ -238,7 +235,7 @@ function parseMCQ(
                 storagePath: getImageStoragePath(
                     "question",
                     subjectSlug,
-                    code,
+                    imageCode,
                     field,
                 ),
                 number: imageNumber++,
@@ -252,7 +249,7 @@ function parseMCQ(
                 storagePath: getImageStoragePath(
                     "question",
                     subjectSlug,
-                    code,
+                    imageCode,
                     "option_a",
                 ),
                 number: imageNumber++,
@@ -266,7 +263,7 @@ function parseMCQ(
                 storagePath: getImageStoragePath(
                     "question",
                     subjectSlug,
-                    code,
+                    imageCode,
                     "option_b",
                 ),
                 number: imageNumber++,
@@ -280,7 +277,7 @@ function parseMCQ(
                 storagePath: getImageStoragePath(
                     "question",
                     subjectSlug,
-                    code,
+                    imageCode,
                     "option_c",
                 ),
                 number: imageNumber++,
@@ -294,7 +291,7 @@ function parseMCQ(
                 storagePath: getImageStoragePath(
                     "question",
                     subjectSlug,
-                    code,
+                    imageCode,
                     "option_d",
                 ),
                 number: imageNumber++,
@@ -312,7 +309,7 @@ function parseMCQ(
                 storagePath: getImageStoragePath(
                     "question",
                     subjectSlug,
-                    code,
+                    imageCode,
                     field,
                 ),
                 number: imageNumber++,
@@ -378,6 +375,7 @@ function parseMCQ(
             code,
             data: rowData,
             imageRequirements,
+            ...(isAutoCode ? { autoCode: true, tempImageCode: imageCode } : {}),
         });
     }
 
@@ -411,15 +409,8 @@ function parseFillBlank(
             rowData[header] = row[idx] || "";
         });
 
-        const code = rowData.code;
-        if (!code) {
-            errors.push({
-                row: i + 1,
-                column: "code",
-                message: "Code is required",
-            });
-            continue;
-        }
+        const code = rowData.code || "";
+        const isAutoCode = !code;
 
         if (!rowData.passage_text) {
             errors.push({
@@ -461,6 +452,7 @@ function parseFillBlank(
             code,
             data: rowData,
             imageRequirements: [], // Fill blank doesn't have images
+            ...(isAutoCode ? { autoCode: true } : {}),
         });
     }
 
@@ -494,15 +486,8 @@ function parseFillMissingSentence(
             rowData[header] = row[idx] || "";
         });
 
-        const code = rowData.code;
-        if (!code) {
-            errors.push({
-                row: i + 1,
-                column: "code",
-                message: "Code is required",
-            });
-            continue;
-        }
+        const code = rowData.code || "";
+        const isAutoCode = !code;
 
         if (
             !["easy", "medium", "hard"].includes(
@@ -569,6 +554,7 @@ function parseFillMissingSentence(
             code,
             data: rowData,
             imageRequirements: [],
+            ...(isAutoCode ? { autoCode: true } : {}),
         });
     }
 
@@ -694,15 +680,8 @@ function parseEssay(
             rowData[header] = row[idx] || "";
         });
 
-        const code = rowData.code;
-        if (!code) {
-            errors.push({
-                row: i + 1,
-                column: "code",
-                message: "Code is required",
-            });
-            continue;
-        }
+        const code = rowData.code || "";
+        const isAutoCode = !code;
 
         if (!rowData.prompt) {
             errors.push({
@@ -736,6 +715,7 @@ function parseEssay(
             code,
             data: rowData,
             imageRequirements: [], // Essays don't have images
+            ...(isAutoCode ? { autoCode: true } : {}),
         });
     }
 
