@@ -267,6 +267,28 @@ async function insertPassages(
 }
 
 /**
+ * Map upload type to code abbreviation for auto-generated question codes
+ */
+function getQuestionTypeCode(uploadType: string): string {
+    switch (uploadType) {
+        case "mcq":
+            return "MCQ";
+        case "passage_mcq":
+            return "MCQ";
+        case "poem_mcq":
+            return "POEM_MCQ";
+        case "fill_blank":
+            return "FIB";
+        case "fill_missing_sentence":
+            return "FMS";
+        case "essay":
+            return "ESSAY";
+        default:
+            return "MCQ";
+    }
+}
+
+/**
  * Insert parsed questions into database
  */
 async function insertQuestions(
@@ -338,20 +360,6 @@ async function insertQuestions(
         }
     }
 
-    // Check for duplicate codes
-    const codes = questions.map((q) => q.code);
-    const { data: existing } = await supabase
-        .from("questions")
-        .select("code")
-        .in("code", codes);
-
-    const existingCodes = new Set((existing || []).map((e) => e.code));
-    const duplicates = codes.filter((c) => existingCodes.has(c));
-
-    if (duplicates.length > 0) {
-        throw new Error(`Duplicate question codes: ${duplicates.join(", ")}`);
-    }
-
     // Infer subject slug from various sources (using DB prefix map)
     function inferSubjectSlug(data: Record<string, string>): string {
         // 1. If subject is explicitly provided in CSV, use it
@@ -363,6 +371,119 @@ async function insertQuestions(
             return prefixToSlug.get(prefix)!;
         }
         return "";
+    }
+
+    // --- Auto-generate codes for questions without codes ---
+    const autoCodeQuestions = questions.filter((q) => q.autoCode);
+    if (autoCodeQuestions.length > 0) {
+        const typeCode = getQuestionTypeCode(uploadType);
+
+        // Group auto-code questions by subject
+        const subjectGroups = new Map<
+            string,
+            {
+                subjectId: string;
+                prefix: string;
+                questions: ParsedQuestion[];
+            }
+        >();
+
+        for (const q of autoCodeQuestions) {
+            const slug = inferSubjectSlug(q.data);
+            const subjectId = subjectMap.get(slug);
+            if (!subjectId) {
+                throw new Error(
+                    `Cannot determine subject for auto-code question at row ${q.rowIndex}. Subject "${q.data.subject || "unknown"}" not found.`,
+                );
+            }
+
+            const subject = subjects.find((s) => s.id === subjectId);
+            const prefix =
+                subject?.code_prefix?.toUpperCase() ||
+                slug.toUpperCase().slice(0, 2);
+
+            const key = `${subjectId}_${typeCode}`;
+            if (!subjectGroups.has(key)) {
+                subjectGroups.set(key, {
+                    subjectId,
+                    prefix,
+                    questions: [],
+                });
+            }
+            subjectGroups.get(key)!.questions.push(q);
+        }
+
+        // Reserve codes for each (subject, type) group
+        for (const [, group] of subjectGroups) {
+            const { data: startAt, error: rpcError } = await supabase.rpc(
+                "reserve_question_codes",
+                {
+                    p_subject_id: group.subjectId,
+                    p_question_type: typeCode,
+                    p_batch_size: group.questions.length,
+                },
+            );
+
+            if (rpcError) {
+                throw new Error(
+                    `Failed to reserve question codes: ${rpcError.message}`,
+                );
+            }
+
+            // Assign sequential codes: PREFIX_TYPE_NNNN
+            group.questions.forEach((q, idx) => {
+                const num = (startAt as number) + idx;
+                q.code = `${group.prefix}_${typeCode}_${String(num).padStart(4, "0")}`;
+                q.autoCode = false; // Mark as resolved
+            });
+        }
+
+        // Remap image URL keys from temp codes to real codes
+        // so findImageUrl can match images to questions by real code
+        for (const q of autoCodeQuestions) {
+            if (q.tempImageCode && q.code) {
+                const tempCode = q.tempImageCode;
+                const realCode = q.code;
+                const keysToRemap: string[] = [];
+                for (const [path] of imageUrls) {
+                    if (path.includes(tempCode)) {
+                        keysToRemap.push(path);
+                    }
+                }
+                for (const oldPath of keysToRemap) {
+                    const url = imageUrls.get(oldPath)!;
+                    const newPath = oldPath.replace(tempCode, realCode);
+                    imageUrls.set(newPath, url);
+                    imageUrls.delete(oldPath);
+                }
+            }
+        }
+    }
+
+    // Check for duplicate codes (only for manually-specified codes;
+    // auto-generated codes are guaranteed unique by the counter)
+    const manualCodes = questions
+        .filter((q) => q.code)
+        .map((q) => q.code);
+
+    if (manualCodes.length > 0) {
+        const { data: existing } = await supabase
+            .from("questions")
+            .select("code")
+            .in("code", manualCodes);
+
+        const existingCodes = new Set(
+            (existing || []).map((e) => e.code),
+        );
+        const duplicates = manualCodes.filter((c) =>
+            existingCodes.has(c),
+        );
+
+        if (duplicates.length > 0) {
+            throw new Error(
+                `Duplicate question codes: ${duplicates.join(", ")}`,
+            );
+        }
     }
 
     // Get first question's subject_id for the batch

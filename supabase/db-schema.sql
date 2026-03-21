@@ -247,3 +247,11 @@ CREATE TABLE public.tests (
   CONSTRAINT tests_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.subjects(id),
   CONSTRAINT tests_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.subject_templates(id)
 );
+CREATE TABLE public.question_code_counters (
+  subject_id uuid NOT NULL,
+  question_type text NOT NULL,
+  last_number integer NOT NULL DEFAULT 0,
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT question_code_counters_pkey PRIMARY KEY (subject_id, question_type),
+  CONSTRAINT question_code_counters_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.subjects(id)
+);
