@@ -28,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { RichTextViewer } from "@/components/ui/rich-text-editor";
 import { MathText } from "@/components/ui/math-text";
+import { ImageEnhancedText } from "@/components/ui/image-enhanced-text";
 
 interface ReviewQuestion {
     question_number: number;
@@ -997,7 +998,6 @@ function ReviewQuestionDisplay({
         case "passage_mcq":
         case "poem_mcq": {
             const questionText = content.question as string;
-            const questionImage = content.question_image as string | undefined;
             const options = content.options as Array<{
                 label: string;
                 text?: string;
@@ -1007,22 +1007,22 @@ function ReviewQuestionDisplay({
                 correctAnswer as { label: string }
             ).label.toUpperCase();
             const studentLabel = (studentAnswer as string)?.toUpperCase();
+            const questionImages: string[] | undefined =
+                (content.question_images as string[] | undefined) ??
+                (content.question_image
+                    ? [content.question_image as string]
+                    : content.question_image_url
+                      ? [content.question_image_url as string]
+                      : undefined);
 
             return (
                 <div className="grid grid-cols-2 gap-0 min-h-0">
                     {/* Left: Question stem + solution */}
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
-                        <p className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
-                            <MathText content={questionText} />
-                        </p>
-                        {questionImage && (
-                            <img
-                                src={questionImage}
-                                alt="Question"
-                                className="max-w-full rounded-lg border mt-4"
-                            />
-                        )}
+                        <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
+                            <ImageEnhancedText content={questionText} images={questionImages} />
+                        </div>
                         {!wasAttempted && (
                             <p className="text-xs text-slate-400 italic flex items-center gap-1.5 mt-4">
                                 <Minus className="h-3.5 w-3.5" />
@@ -1108,6 +1108,7 @@ function ReviewQuestionDisplay({
 
         case "fill_blank_dropdown": {
             const passageText = content.passage_text as string;
+            const passageImages = content.passage_images as string[] | undefined;
             const blanks = content.blanks as Array<{
                 correct: string;
                 options: string[];
@@ -1129,7 +1130,7 @@ function ReviewQuestionDisplay({
                         <div className="text-base leading-relaxed text-slate-800">
                             {parts.map((part, index) => (
                                 <span key={`fb-part-${index}`}>
-                                    <MathText content={part} />
+                                    <ImageEnhancedText content={part} images={passageImages} />
                                     {index < blanks.length &&
                                         (() => {
                                             const isCorrectBlank =
@@ -1218,6 +1219,7 @@ function ReviewQuestionDisplay({
 
         case "fill_missing_sentence": {
             const passageWithGaps = content.passage_with_gaps as string;
+            const passageImages = content.passage_images as string[] | undefined;
             const sentences = content.sentences as string[];
             const studentMapping =
                 (studentAnswer as Record<string, number>) || {};
@@ -1258,7 +1260,7 @@ function ReviewQuestionDisplay({
                                 if (part.type === "text") {
                                     return (
                                         <span key={`fms-text-${i}`}>
-                                            <MathText content={part.value} />
+                                            <ImageEnhancedText content={part.value} images={passageImages} />
                                         </span>
                                     );
                                 }
@@ -1336,6 +1338,7 @@ function ReviewQuestionDisplay({
 
         case "essay": {
             const prompt = content.prompt as string;
+            const promptImages = content.prompt_images as string[] | undefined;
             const essayText = studentAnswer as string;
             const wordLimit = content.word_limit as number | undefined;
             const rubric = content.rubric as Record<string, number> | undefined;
@@ -1345,9 +1348,9 @@ function ReviewQuestionDisplay({
                     {/* Left: Prompt + solution */}
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
-                        <p className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
-                            <MathText content={prompt} />
-                        </p>
+                        <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
+                            <ImageEnhancedText content={prompt} images={promptImages} />
+                        </div>
                         {wordLimit && (
                             <Badge variant="outline" className="text-xs mt-3">
                                 Word limit: {wordLimit}

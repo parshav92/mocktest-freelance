@@ -1,0 +1,10 @@
+code,difficulty,prompt,word_limit,time_mins,rubric
+SCI_ES_001,easy,"Study the diagram of the carbon cycle: [img:1]
+
+Using the diagram above, explain how carbon moves between living organisms and the atmosphere. In your answer, refer to at least two processes shown in [img:1].",200,20,content:10|structure:5|scientific_terms:5
+SCI_ES_002,medium,"The two ecosystems below are shown in [img:1] (rainforest) and [img:2] (desert).
+
+Compare and contrast the biodiversity and adaptations of organisms in these two ecosystems. Use evidence from both images to support your answer.",300,25,content:15|comparison:10|evidence:5|structure:5|grammar:5
+SCI_ES_003,hard,"Scientists obtained the data shown in [img:1] when investigating the effect of a new pesticide on an insect population over 10 years.
+
+Evaluate the effectiveness of the pesticide based on the graph. Consider both short-term and long-term effects, and suggest what the data implies about the development of pesticide resistance in the population.",350,30,analysis:15|evaluation:10|scientific_reasoning:10|structure:5|grammar:5|use_of_data:5

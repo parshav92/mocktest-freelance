@@ -193,7 +193,7 @@ export default function AdminUploadPage() {
                 text = new TextDecoder("windows-1252").decode(buffer);
             }
             // Strip BOM if present (Excel UTF-8 CSV includes BOM)
-            if (text.charCodeAt(0) === 0xFEFF) {
+            if (text.charCodeAt(0) === 0xfeff) {
                 text = text.slice(1);
             }
             setCsvText(text);
@@ -1187,6 +1187,7 @@ function ImageUploadField({
     const inputRef = useRef<HTMLInputElement>(null);
     const [isCompressing, setIsCompressing] = useState(false);
     const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
 
     const handleFileChange = async (file: File) => {
         setIsCompressing(true);
@@ -1201,9 +1202,47 @@ function ImageUploadField({
 
     return (
         <>
-            <div className="flex items-center gap-4 p-3 border rounded-lg">
+            <div
+                className={`flex items-center gap-4 p-3 border rounded-lg transition-colors ${
+                    isDragOver ? "border-primary bg-primary/5" : ""
+                }`}
+                onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragOver(true);
+                }}
+                onDragLeave={(e) => {
+                    e.preventDefault();
+                    setIsDragOver(false);
+                }}
+                onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragOver(false);
+                    const dropped = e.dataTransfer.files?.[0];
+                    if (dropped) handleFileChange(dropped);
+                }}
+            >
+                <input
+                    ref={inputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) handleFileChange(file);
+                    }}
+                />
                 <div className="flex-1 min-w-0">
-                    <Label className="text-sm">{requirement.label}</Label>
+                    <div className="flex items-center gap-2">
+                        <Label className="text-sm">{requirement.label}</Label>
+                        {requirement.number !== undefined && (
+                            <Badge
+                                variant="secondary"
+                                className="text-xs font-mono"
+                            >
+                                [img:{requirement.number}]
+                            </Badge>
+                        )}
+                    </div>
                     <p className="text-xs text-muted-foreground font-mono truncate">
                         {uploadedImage
                             ? uploadedImage.uploadPath
@@ -1244,16 +1283,6 @@ function ImageUploadField({
                     </div>
                 ) : (
                     <>
-                        <input
-                            ref={inputRef}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleFileChange(file);
-                            }}
-                        />
                         <Button
                             variant="outline"
                             size="sm"

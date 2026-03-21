@@ -201,7 +201,7 @@ async function insertPassages(
     const prefixToSubjectId = new Map(
         subjects
             .filter((s) => s.code_prefix)
-            .map((s) => [s.code_prefix.toUpperCase(), s.id])
+            .map((s) => [s.code_prefix.toUpperCase(), s.id]),
     );
 
     // Check for duplicate codes
@@ -295,7 +295,7 @@ async function insertQuestions(
     const prefixToSlug = new Map(
         subjects
             .filter((s) => s.code_prefix)
-            .map((s) => [s.code_prefix.toUpperCase(), s.slug])
+            .map((s) => [s.code_prefix.toUpperCase(), s.slug]),
     );
 
     // Get passage IDs if any questions reference passages
@@ -305,10 +305,10 @@ async function insertQuestions(
             questions
                 .filter((q) => q.data.passage_code)
                 .flatMap((q) =>
-                    q.data.passage_code!
-                        .split(",")
+                    q.data
+                        .passage_code!.split(",")
                         .map((c) => c.trim())
-                        .filter(Boolean)
+                        .filter(Boolean),
                 ),
         ),
     ];
@@ -412,6 +412,20 @@ async function insertQuestions(
             uploadType === "passage_mcq" ||
             uploadType === "poem_mcq"
         ) {
+            const questionImages: string[] = [];
+            const qImgCount = parseInt(q.data.question_images || "0", 10) || 0;
+            for (let qi = 1; qi <= qImgCount; qi++) {
+                const field = qi === 1 ? "question" : `question_${qi}`;
+                const url = findImageUrl(imageUrls, q.code, field);
+                if (url) questionImages.push(url);
+            }
+
+            // Backward compatibility for legacy question_image=yes uploads
+            if (questionImages.length === 0) {
+                const legacyUrl = findImageUrl(imageUrls, q.code, "question");
+                if (legacyUrl) questionImages.push(legacyUrl);
+            }
+
             // Build options with optional image URLs
             const options = [
                 {
@@ -438,7 +452,9 @@ async function insertQuestions(
 
             content = {
                 question: q.data.question,
-                question_image_url: findImageUrl(imageUrls, q.code, "question"),
+                question_image: questionImages[0] || null,
+                question_images:
+                    questionImages.length > 0 ? questionImages : undefined,
                 options,
             };
 
@@ -589,22 +605,25 @@ function findImageUrl(
     code: string,
     field: string,
 ): string | null {
-    // Dynamic suffix: solution_N -> _sN
+    // Dynamic suffix: question_N -> _qN, solution_N -> _sN
+    const questionMatch = field.match(/^question_(\d+)$/);
     const solutionMatch = field.match(/^solution_(\d+)$/);
     const fieldSuffix =
         field === "question"
             ? "_q"
-            : field === "option_a"
-              ? "_a"
-              : field === "option_b"
-                ? "_b"
-                : field === "option_c"
-                  ? "_c"
-                  : field === "option_d"
-                    ? "_d"
-                    : solutionMatch
-                      ? `_s${solutionMatch[1]}`
-                      : "";
+            : questionMatch
+              ? `_q${questionMatch[1]}`
+              : field === "option_a"
+                ? "_a"
+                : field === "option_b"
+                  ? "_b"
+                  : field === "option_c"
+                    ? "_c"
+                    : field === "option_d"
+                      ? "_d"
+                      : solutionMatch
+                        ? `_s${solutionMatch[1]}`
+                        : "";
 
     if (!fieldSuffix) return null;
 
