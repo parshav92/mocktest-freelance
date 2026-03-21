@@ -47,14 +47,48 @@ const MCQQuestionStem = memo(({ content }: { content: MCQContent }) => {
               ? [content.question_image_url]
               : undefined);
 
+    // Find which image indices are referenced via [img:N] syntax
+    const imagePattern = /\[img:(\d+)\]/g;
+    const referencedIndices = new Set<number>();
+    let match;
+    while ((match = imagePattern.exec(content.question)) !== null) {
+        const index = parseInt(match[1], 10) - 1; // Convert to 0-based
+        referencedIndices.add(index);
+    }
+
+    // Separate referenced vs unreferenced images
+    const unreferencedImages: string[] = [];
+    if (images) {
+        images.forEach((img, idx) => {
+            if (!referencedIndices.has(idx)) {
+                unreferencedImages.push(img);
+            }
+        });
+    }
+
     return (
         <div className="space-y-4">
             <div className="text-base leading-relaxed text-foreground whitespace-pre-line">
-                <ImageEnhancedText
-                    content={content.question}
-                    images={images}
-                />
+                <ImageEnhancedText content={content.question} images={images} />
             </div>
+            {unreferencedImages.length > 0 && (
+                <div
+                    className={`grid gap-3 ${
+                        unreferencedImages.length > 1
+                            ? "grid-cols-1 sm:grid-cols-2"
+                            : ""
+                    }`}
+                >
+                    {unreferencedImages.map((imgUrl, idx) => (
+                        <img
+                            key={`unreferenced-img-${idx}`}
+                            src={imgUrl}
+                            alt={`Question image ${idx + 1}`}
+                            className="max-w-full rounded-lg border border-gray-200"
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 });
@@ -285,7 +319,10 @@ export const FillBlankRenderer = memo(
                 <div className="text-base leading-relaxed text-foreground">
                     {parts.map((part, index) => (
                         <span key={`fb-part-${index}`}>
-                            <ImageEnhancedText content={part} images={content.passage_images} />
+                            <ImageEnhancedText
+                                content={part}
+                                images={content.passage_images}
+                            />
                             {index < content.blanks.length && (
                                 <Select
                                     value={
@@ -392,7 +429,10 @@ export const FillMissingSentenceRenderer = memo(
                         if (part.type === "text") {
                             return (
                                 <span key={`fms-text-${i}`}>
-                                    <ImageEnhancedText content={part.value} images={content.passage_images} />
+                                    <ImageEnhancedText
+                                        content={part.value}
+                                        images={content.passage_images}
+                                    />
                                 </span>
                             );
                         }
@@ -470,7 +510,9 @@ export const FillMissingSentenceRenderer = memo(
                                     >
                                         {String.fromCharCode(65 + idx)}
                                     </Badge>
-                                    <span className="flex-1"><MathText content={sentence} /></span>
+                                    <span className="flex-1">
+                                        <MathText content={sentence} />
+                                    </span>
                                 </div>
                             );
                         })}
@@ -524,7 +566,10 @@ export const EssayRenderer = memo(
         const promptSection = (
             <div className="space-y-4">
                 <div className="text-base leading-relaxed text-foreground whitespace-pre-line">
-                    <ImageEnhancedText content={content.prompt} images={content.prompt_images} />
+                    <ImageEnhancedText
+                        content={content.prompt}
+                        images={content.prompt_images}
+                    />
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
                     <Badge variant="outline" className="text-xs gap-1">

@@ -882,7 +882,7 @@ export default function TestEnvironmentPage() {
             <div className="flex-1 flex overflow-hidden">
                 {/* LEFT PANEL: Passage(s) (if applicable) */}
                 {hasPassage && (
-                    <div className="w-1/2 border-r bg-white flex flex-col overflow-y-auto">
+                    <div className="w-1/2 border-r bg-white flex flex-col overflow-y-auto h-full">
                         {passages.length === 1 ? (
                             /* Single passage - no tabs needed */
                             <>
@@ -981,7 +981,7 @@ export default function TestEnvironmentPage() {
 
                 {/* RIGHT PANEL (or full width): Question + Options */}
                 <div
-                    className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white`}
+                    className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white h-full`}
                 >
                     <ScrollArea className="flex-1  ">
                         <div

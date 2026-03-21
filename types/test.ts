@@ -99,9 +99,9 @@ export type QuestionContent =
 
 export interface MCQContent {
     question: string;
-    question_image?: string | null;     // new upload code uses this
+    question_image?: string | null; // new upload code uses this
     question_image_url?: string | null; // legacy: old upload code used this
-    question_images?: string[];         // new: supports [img:1], [img:2] etc in question text
+    question_images?: string[] | null; // new: supports [img:1], [img:2] etc in question text
     options: MCQOption[];
 }
 

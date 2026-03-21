@@ -167,8 +167,7 @@ export function CustomTestRunner({
     // ── Anti-cheat ─────────────────────────────────────
     const antiCheat = useAntiCheat({
         enabled: phase === "testing",
-        onAutoSubmit: () =>
-            handleAutoSubmit(),
+        onAutoSubmit: () => handleAutoSubmit(),
         onWarning: (message) => setWarningMessage(message),
     });
 
@@ -176,7 +175,9 @@ export function CustomTestRunner({
     useEffect(() => {
         (async () => {
             try {
-                const res = await fetch(`/api/custom-tests/${encodeURIComponent(slug)}`);
+                const res = await fetch(
+                    `/api/custom-tests/${encodeURIComponent(slug)}`,
+                );
                 const text = await res.text();
                 if (!text) {
                     throw new Error("Empty response from server");
@@ -306,9 +307,7 @@ export function CustomTestRunner({
             antiCheat.exitFullscreen();
             setPhase("result");
         } catch (err) {
-            setError(
-                err instanceof Error ? err.message : "Failed to submit",
-            );
+            setError(err instanceof Error ? err.message : "Failed to submit");
             setPhase("testing");
         }
     }, [slug, answers, antiCheat]);
@@ -334,10 +333,7 @@ export function CustomTestRunner({
         start: number;
         end: number;
     } | null => {
-        if (
-            passages.length === 0 ||
-            !currentQuestion?.passages?.length
-        )
+        if (passages.length === 0 || !currentQuestion?.passages?.length)
             return null;
         const primaryPassageId = currentQuestion.passages[0].id;
         let start = currentIndex;
@@ -474,8 +470,13 @@ export function CustomTestRunner({
 
     // ── RESULT ─────────────────────────────────────────
     if (phase === "result" && gradedResult) {
-        const { percentage, marks_obtained, total_marks, correct, total_questions } =
-            gradedResult;
+        const {
+            percentage,
+            marks_obtained,
+            total_marks,
+            correct,
+            total_questions,
+        } = gradedResult;
         const timeSpent =
             startedAt && endedAt
                 ? Math.round(
@@ -612,7 +613,8 @@ export function CustomTestRunner({
                             <p className="text-2xl font-bold text-slate-900 tabular-nums">
                                 {correct}
                                 <span className="text-base font-normal text-slate-400">
-                                    {" "}correct
+                                    {" "}
+                                    correct
                                 </span>
                                 <span className="text-sm font-normal text-slate-300 ml-1">
                                     / {incorrect} wrong
@@ -760,8 +762,15 @@ export function CustomTestRunner({
             return "Question";
         };
 
-        const openItem = reviewIndex !== null && reviewIndex >= 0 && reviewIndex < rQuestions.length ? rQuestions[reviewIndex] : null;
-        const openHasPassage = !!(openItem?.passages && openItem.passages.length > 0);
+        const openItem =
+            reviewIndex !== null &&
+            reviewIndex >= 0 &&
+            reviewIndex < rQuestions.length
+                ? rQuestions[reviewIndex]
+                : null;
+        const openHasPassage = !!(
+            openItem?.passages && openItem.passages.length > 0
+        );
 
         return (
             <div className="min-h-screen bg-slate-50">
@@ -808,27 +817,39 @@ export function CustomTestRunner({
                         {/* Stat row */}
                         <div className="mt-8 flex flex-wrap gap-8">
                             <div>
-                                <p className="text-xs text-slate-500 mb-0.5">Correct</p>
+                                <p className="text-xs text-slate-500 mb-0.5">
+                                    Correct
+                                </p>
                                 <p className="text-lg font-semibold text-slate-900 tabular-nums">
                                     {rCorrect}
-                                    <span className="text-slate-400 font-normal">/{rCount}</span>
+                                    <span className="text-slate-400 font-normal">
+                                        /{rCount}
+                                    </span>
                                 </p>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 mb-0.5">Marks</p>
+                                <p className="text-xs text-slate-500 mb-0.5">
+                                    Marks
+                                </p>
                                 <p className="text-lg font-semibold text-slate-900 tabular-nums">
                                     {rMarks}
-                                    <span className="text-slate-400 font-normal">/{rTotal}</span>
+                                    <span className="text-slate-400 font-normal">
+                                        /{rTotal}
+                                    </span>
                                 </p>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 mb-0.5">Time</p>
+                                <p className="text-xs text-slate-500 mb-0.5">
+                                    Time
+                                </p>
                                 <p className="text-lg font-semibold text-slate-900 tabular-nums">
                                     {formatTime(timeSpentR)}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-xs text-slate-500 mb-0.5">Unattempted</p>
+                                <p className="text-xs text-slate-500 mb-0.5">
+                                    Unattempted
+                                </p>
                                 <p className="text-lg font-semibold text-slate-900 tabular-nums">
                                     {unattempted}
                                 </p>
@@ -846,30 +867,39 @@ export function CustomTestRunner({
                         </h2>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                            {(["easy", "medium", "hard"] as const).map((level) => {
-                                const data = rBreakdown[level] || { total: 0, correct: 0, percentage: 0 };
-                                return (
-                                    <div key={level}>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-sm font-medium text-slate-700 capitalize">
-                                                {level}
-                                            </span>
-                                            <span className="text-sm text-slate-500 tabular-nums">
-                                                {data.correct}/{data.total}
-                                            </span>
+                            {(["easy", "medium", "hard"] as const).map(
+                                (level) => {
+                                    const data = rBreakdown[level] || {
+                                        total: 0,
+                                        correct: 0,
+                                        percentage: 0,
+                                    };
+                                    return (
+                                        <div key={level}>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-sm font-medium text-slate-700 capitalize">
+                                                    {level}
+                                                </span>
+                                                <span className="text-sm text-slate-500 tabular-nums">
+                                                    {data.correct}/{data.total}
+                                                </span>
+                                            </div>
+                                            <div className="w-full bg-slate-200 rounded-full h-1.5">
+                                                <div
+                                                    className={`h-1.5 rounded-full transition-all duration-500 ${barColor(data.percentage)}`}
+                                                    style={{
+                                                        width: `${data.total > 0 ? data.percentage : 0}%`,
+                                                    }}
+                                                />
+                                            </div>
+                                            <p className="text-xs text-slate-400 mt-1.5 tabular-nums">
+                                                {Math.round(data.percentage)}%
+                                                correct
+                                            </p>
                                         </div>
-                                        <div className="w-full bg-slate-200 rounded-full h-1.5">
-                                            <div
-                                                className={`h-1.5 rounded-full transition-all duration-500 ${barColor(data.percentage)}`}
-                                                style={{ width: `${data.total > 0 ? data.percentage : 0}%` }}
-                                            />
-                                        </div>
-                                        <p className="text-xs text-slate-400 mt-1.5 tabular-nums">
-                                            {Math.round(data.percentage)}% correct
-                                        </p>
-                                    </div>
-                                );
-                            })}
+                                    );
+                                },
+                            )}
                         </div>
                     </section>
 
@@ -881,7 +911,8 @@ export function CustomTestRunner({
                             Question Review
                         </h2>
                         <p className="text-sm text-slate-500 mb-6">
-                            Click any question to view it in the test environment.
+                            Click any question to view it in the test
+                            environment.
                         </p>
 
                         <div className="flex flex-wrap gap-2">
@@ -948,10 +979,18 @@ export function CustomTestRunner({
                         <div className="bg-white rounded-lg border border-slate-200 overflow-hidden">
                             {/* Table Header */}
                             <div className="grid grid-cols-[60px_80px_1fr_100px] bg-slate-50 border-b border-slate-200 px-4 py-3">
-                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">#</span>
-                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Type</span>
-                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Question</span>
-                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Result</span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                    #
+                                </span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                    Type
+                                </span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                    Question
+                                </span>
+                                <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">
+                                    Result
+                                </span>
                             </div>
 
                             {/* Table Body */}
@@ -1074,54 +1113,84 @@ export function CustomTestRunner({
                                         <>
                                             <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
                                                 <span className="text-sm font-medium text-[#1a2744]">
-                                                    {openItem.passages[0].passage_type === "poem"
+                                                    {openItem.passages[0]
+                                                        .passage_type === "poem"
                                                         ? "Poem"
-                                                        : openItem.passages[0].title || "Extract"}
+                                                        : openItem.passages[0]
+                                                              .title ||
+                                                          "Extract"}
                                                 </span>
                                             </div>
                                             <ScrollArea className="flex-1">
                                                 <div className="p-6 md:p-8">
-                                                    {openItem.passages[0].title && (
+                                                    {openItem.passages[0]
+                                                        .title && (
                                                         <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                            {openItem.passages[0].title}
+                                                            {
+                                                                openItem
+                                                                    .passages[0]
+                                                                    .title
+                                                            }
                                                         </h3>
                                                     )}
-                                                    {openItem.passages[0].image_url && (
+                                                    {openItem.passages[0]
+                                                        .image_url && (
                                                         <div className="mb-4">
                                                             <img
-                                                                src={openItem.passages[0].image_url}
-                                                                alt={openItem.passages[0].title || "Passage image"}
+                                                                src={
+                                                                    openItem
+                                                                        .passages[0]
+                                                                        .image_url
+                                                                }
+                                                                alt={
+                                                                    openItem
+                                                                        .passages[0]
+                                                                        .title ||
+                                                                    "Passage image"
+                                                                }
                                                                 className="max-w-full rounded-lg"
                                                             />
                                                         </div>
                                                     )}
                                                     <div
                                                         className={`leading-relaxed text-gray-800 ${
-                                                            openItem.passages[0].passage_type === "poem"
+                                                            openItem.passages[0]
+                                                                .passage_type ===
+                                                            "poem"
                                                                 ? "whitespace-pre-line italic"
                                                                 : ""
                                                         }`}
                                                     >
-                                                        {openItem.passages[0].content}
+                                                        {
+                                                            openItem.passages[0]
+                                                                .content
+                                                        }
                                                     </div>
                                                 </div>
                                             </ScrollArea>
                                         </>
                                     ) : (
-                                        <Tabs defaultValue="passage-0" className="flex flex-col h-full">
+                                        <Tabs
+                                            defaultValue="passage-0"
+                                            className="flex flex-col h-full"
+                                        >
                                             <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
                                                 <TabsList className="bg-transparent h-auto p-0 gap-0">
-                                                    {openItem.passages.map((p, idx) => (
-                                                        <TabsTrigger
-                                                            key={p.id}
-                                                            value={`passage-${idx}`}
-                                                            className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
-                                                        >
-                                                            {p.passage_type === "poem"
-                                                                ? `Poem ${idx + 1}`
-                                                                : p.title || `Extract ${idx + 1}`}
-                                                        </TabsTrigger>
-                                                    ))}
+                                                    {openItem.passages.map(
+                                                        (p, idx) => (
+                                                            <TabsTrigger
+                                                                key={p.id}
+                                                                value={`passage-${idx}`}
+                                                                className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
+                                                            >
+                                                                {p.passage_type ===
+                                                                "poem"
+                                                                    ? `Poem ${idx + 1}`
+                                                                    : p.title ||
+                                                                      `Extract ${idx + 1}`}
+                                                            </TabsTrigger>
+                                                        ),
+                                                    )}
                                                 </TabsList>
                                             </div>
                                             {openItem.passages.map((p, idx) => (
@@ -1140,15 +1209,21 @@ export function CustomTestRunner({
                                                             {p.image_url && (
                                                                 <div className="mb-4">
                                                                     <img
-                                                                        src={p.image_url}
-                                                                        alt={p.title || "Passage image"}
+                                                                        src={
+                                                                            p.image_url
+                                                                        }
+                                                                        alt={
+                                                                            p.title ||
+                                                                            "Passage image"
+                                                                        }
                                                                         className="max-w-full rounded-lg"
                                                                     />
                                                                 </div>
                                                             )}
                                                             <div
                                                                 className={`leading-relaxed text-gray-800 ${
-                                                                    p.passage_type === "poem"
+                                                                    p.passage_type ===
+                                                                    "poem"
                                                                         ? "whitespace-pre-line italic"
                                                                         : ""
                                                                 }`}
@@ -1165,13 +1240,17 @@ export function CustomTestRunner({
                             )}
 
                             {/* Right: question + answers */}
-                            <div className={`${openHasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white`}>
+                            <div
+                                className={`${openHasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white`}
+                            >
                                 <ScrollArea className="flex-1 overflow-y-auto">
                                     <ReviewQuestionDisplay
                                         question={openItem}
                                         questionNumber={reviewIndex + 1}
                                         showSolution={showSolution}
-                                        onToggleSolution={() => setShowSolution(!showSolution)}
+                                        onToggleSolution={() =>
+                                            setShowSolution(!showSolution)
+                                        }
                                     />
                                 </ScrollArea>
                             </div>
@@ -1182,7 +1261,9 @@ export function CustomTestRunner({
                             <Button
                                 variant="outline"
                                 onClick={() => {
-                                    setReviewIndex(Math.max(0, reviewIndex - 1));
+                                    setReviewIndex(
+                                        Math.max(0, reviewIndex - 1),
+                                    );
                                     setShowSolution(false);
                                 }}
                                 disabled={reviewIndex === 0}
@@ -1225,7 +1306,12 @@ export function CustomTestRunner({
 
                             <Button
                                 onClick={() => {
-                                    setReviewIndex(Math.min(rQuestions.length - 1, reviewIndex + 1));
+                                    setReviewIndex(
+                                        Math.min(
+                                            rQuestions.length - 1,
+                                            reviewIndex + 1,
+                                        ),
+                                    );
                                     setShowSolution(false);
                                 }}
                                 disabled={reviewIndex === rQuestions.length - 1}
@@ -1557,7 +1643,10 @@ function ReviewQuestionDisplay({
     onToggleSolution: () => void;
 }) {
     const content = question.content as Record<string, unknown>;
-    const correctAnswer = question.correct_answer as Record<string, unknown> | null;
+    const correctAnswer = question.correct_answer as Record<
+        string,
+        unknown
+    > | null;
     const wasAttempted = question.selected !== null;
 
     const questionBadge = (
@@ -1595,14 +1684,27 @@ function ReviewQuestionDisplay({
         case "passage_mcq":
         case "poem_mcq": {
             const questionText = content.question as string;
-            const questionImage = content.question_image as string | undefined;
+            const questionImagesRaw = content.question_images as
+                | string[]
+                | undefined;
+            const questionImages =
+                questionImagesRaw && questionImagesRaw.length > 0
+                    ? questionImagesRaw
+                    : content.question_image
+                      ? [content.question_image as string]
+                      : content.question_image_url
+                        ? [content.question_image_url as string]
+                        : [];
             const options = content.options as Array<{
                 label: string;
                 text?: string;
                 image_url?: string;
             }>;
-            const correctLabel = (correctAnswer as { label: string })?.label?.toUpperCase() ?? "";
-            const studentLabel = (question.selected as string)?.toUpperCase() ?? "";
+            const correctLabel =
+                (correctAnswer as { label: string })?.label?.toUpperCase() ??
+                "";
+            const studentLabel =
+                (question.selected as string)?.toUpperCase() ?? "";
 
             return (
                 <div className="grid grid-cols-2 gap-0 min-h-0">
@@ -1612,12 +1714,19 @@ function ReviewQuestionDisplay({
                         <p className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
                             {questionText}
                         </p>
-                        {questionImage && (
-                            <img
-                                src={questionImage}
-                                alt="Question"
-                                className="max-w-full rounded-lg border mt-4"
-                            />
+                        {questionImages.length > 0 && (
+                            <div
+                                className={`mt-4 grid gap-3 ${questionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
+                            >
+                                {questionImages.map((imgUrl, idx) => (
+                                    <img
+                                        key={`question-img-${idx}`}
+                                        src={imgUrl}
+                                        alt={`Question image ${idx + 1}`}
+                                        className="max-w-full rounded-lg border"
+                                    />
+                                ))}
+                            </div>
                         )}
                         {!wasAttempted && (
                             <p className="text-xs text-slate-400 italic flex items-center gap-1.5 mt-4">
