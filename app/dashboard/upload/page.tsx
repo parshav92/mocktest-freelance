@@ -143,63 +143,73 @@ export default function AdminUploadPage() {
     // File input ref
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Handle file selection
-    const handleFileSelect = useCallback(async (selectedFile: File) => {
-        const isCsv =
-            selectedFile.type === "text/csv" ||
-            selectedFile.name.endsWith(".csv");
-        const isExcel =
-            selectedFile.name.endsWith(".xlsx") ||
-            selectedFile.name.endsWith(".xls") ||
-            selectedFile.type ===
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-            selectedFile.type === "application/vnd.ms-excel";
-
-        if (!isCsv && !isExcel) {
-            setParseResult({
-                success: false,
-                type: "",
-                questions: [],
-                passages: [],
-                errors: [
-                    {
-                        row: 0,
-                        message:
-                            "Please upload a CSV or Excel file (.csv, .xlsx, .xls)",
-                    },
-                ],
-            });
-            return;
-        }
-
-        setFile(selectedFile);
-        setParseResult(null);
-
-        if (isExcel) {
-            // Convert Excel to CSV using SheetJS
-            const arrayBuffer = await selectedFile.arrayBuffer();
-            const workbook = XLSX.read(arrayBuffer, { type: "array" });
-            const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-            const csv = XLSX.utils.sheet_to_csv(firstSheet);
-            setCsvText(csv);
-        } else {
-            // Read CSV with explicit UTF-8 decoding.
-            // Fall back to Windows-1252 (common Excel CSV encoding on Windows)
-            // to prevent mangled math symbols like θ, π, √, ÷
-            const buffer = await selectedFile.arrayBuffer();
-            let text: string;
-            try {
-                text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
-            } catch {
-                text = new TextDecoder("windows-1252").decode(buffer);
-            }
-            // Strip BOM if present (Excel UTF-8 CSV includes BOM)
-            if (text.charCodeAt(0) === 0xfeff) {
-                text = text.slice(1);
-            }
-            setCsvText(text);
+    const resetMainFileInput = useCallback(() => {
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
         }
     }, []);
+
+    // Handle file selection
+    const handleFileSelect = useCallback(async (selectedFile: File) => {
+        try {
+            const isCsv =
+                selectedFile.type === "text/csv" ||
+                selectedFile.name.endsWith(".csv");
+            const isExcel =
+                selectedFile.name.endsWith(".xlsx") ||
+                selectedFile.name.endsWith(".xls") ||
+                selectedFile.type ===
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+                selectedFile.type === "application/vnd.ms-excel";
+
+            if (!isCsv && !isExcel) {
+                setParseResult({
+                    success: false,
+                    type: "",
+                    questions: [],
+                    passages: [],
+                    errors: [
+                        {
+                            row: 0,
+                            message:
+                                "Please upload a CSV or Excel file (.csv, .xlsx, .xls)",
+                        },
+                    ],
+                });
+                return;
+            }
+
+            setFile(selectedFile);
+            setParseResult(null);
+
+            if (isExcel) {
+                // Convert Excel to CSV using SheetJS
+                const arrayBuffer = await selectedFile.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: "array" });
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const csv = XLSX.utils.sheet_to_csv(firstSheet);
+                setCsvText(csv);
+            } else {
+                // Read CSV with explicit UTF-8 decoding.
+                // Fall back to Windows-1252 (common Excel CSV encoding on Windows)
+                // to prevent mangled math symbols like θ, π, √, ÷
+                const buffer = await selectedFile.arrayBuffer();
+                let text: string;
+                try {
+                    text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
+                } catch {
+                    text = new TextDecoder("windows-1252").decode(buffer);
+                }
+                // Strip BOM if present (Excel UTF-8 CSV includes BOM)
+                if (text.charCodeAt(0) === 0xfeff) {
+                    text = text.slice(1);
+                }
+                setCsvText(text);
+            }
+        } finally {
+            resetMainFileInput();
+        }
+    }, [resetMainFileInput]);
 
     // Drag and drop handlers
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -412,6 +422,7 @@ export default function AdminUploadPage() {
         setParseResult(null);
         setUploadedImages(new Map());
         setFinalResult(null);
+        resetMainFileInput();
     };
 
     const selectedTypeInfo = UPLOAD_TYPES.find((t) => t.value === selectedType);
@@ -539,6 +550,7 @@ export default function AdminUploadPage() {
                                         setFile(null);
                                         setCsvText("");
                                         setParseResult(null);
+                                        resetMainFileInput();
                                     }}
                                 >
                                     Remove
