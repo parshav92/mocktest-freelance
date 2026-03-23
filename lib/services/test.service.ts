@@ -202,18 +202,31 @@ export class TestService {
             throw new Error("Subject not found or inactive");
         }
 
-        // 2. Check for existing in-progress test for this subject
+        // 2. Check for existing test for this subject
         const { data: existingTest } = await this.supabase
             .from("tests")
-            .select("id, status")
+            .select("id, status, questions_order")
             .eq("student_id", studentId)
             .eq("subject_id", subjectId)
             .in("status", ["not_started", "in_progress"])
             .single();
 
         if (existingTest) {
+            // If a pre-generated test exists (not_started), return it directly
+            if (existingTest.status === "not_started") {
+                console.log(`[PreGen] Returning pre-generated test ${existingTest.id} for student ${studentId}`);
+                const questions = await this.getQuestionsForTest(existingTest.questions_order);
+                // Fetch the full test record
+                const { data: fullTest } = await this.supabase
+                    .from("tests")
+                    .select("*")
+                    .eq("id", existingTest.id)
+                    .single();
+                return { test: fullTest!, questions };
+            }
+            // in_progress test exists — don't allow creating a new one
             throw new Error(
-                `You have an existing ${existingTest.status === "in_progress" ? "in-progress" : "unstarted"} test for this subject. Please complete it first.`,
+                `You have an existing in-progress test for this subject. Please complete it first.`,
             );
         }
 
@@ -691,6 +704,81 @@ export class TestService {
         }
     }
 
+    /**
+     * Save multiple answers at once in a single DB write.
+     * Reduces N API calls + N DB reads/writes to 1 each.
+     */
+    async saveAnswersBatch(
+        testId: string,
+        studentId: string,
+        answersBatch: Array<{
+            question_id: string;
+            selected: TestAnswer["selected"];
+            time_spent_secs: number;
+        }>,
+    ): Promise<void> {
+        if (answersBatch.length === 0) return;
+
+        // Single access check for the whole batch
+        const { test, can_access, is_read_only, reason } = await this.getTest(
+            testId,
+            studentId,
+        );
+
+        if (!can_access) {
+            throw new Error(reason || "Cannot access this test");
+        }
+
+        if (is_read_only) {
+            throw new Error("This test is in read-only mode");
+        }
+
+        if (test.status !== "in_progress") {
+            throw new Error("Can only save answers for an in-progress test");
+        }
+
+        // Single read of current answers
+        const currentAnswers: TestAnswer[] = [...(test.answers || [])];
+
+        // Merge all answers from the batch
+        for (const item of answersBatch) {
+            // Verify question is part of this test
+            if (!test.questions_order.includes(item.question_id)) {
+                console.warn(`[BatchSave] Question ${item.question_id} not in test ${testId}, skipping`);
+                continue;
+            }
+
+            const answerEntry: TestAnswer = {
+                question_id: item.question_id,
+                selected: item.selected,
+                is_correct: null,
+                marks_earned: null,
+                time_spent_secs: item.time_spent_secs,
+            };
+
+            const existingIndex = currentAnswers.findIndex(
+                (a) => a.question_id === item.question_id,
+            );
+
+            if (existingIndex >= 0) {
+                currentAnswers[existingIndex] = answerEntry;
+            } else {
+                currentAnswers.push(answerEntry);
+            }
+        }
+
+        // Single DB write
+        const { error } = await this.supabase
+            .from("tests")
+            .update({ answers: currentAnswers })
+            .eq("id", testId);
+
+        if (error) {
+            console.error("Error batch-saving answers:", error);
+            throw new Error("Failed to save answers");
+        }
+    }
+
     // ============================================
     // TEST SUBMISSION
     // ============================================
@@ -789,6 +877,92 @@ export class TestService {
         );
 
         return { test: updatedTest, questions };
+    }
+
+    /**
+     * Pre-generate the next test for a student after they submit.
+     * Fire-and-forget — errors are logged but don't affect the user.
+     */
+    async preGenerateNextTest(
+        studentId: string,
+        subjectId: string,
+    ): Promise<void> {
+        try {
+            console.log(`[PreGen] Pre-generating next test for student ${studentId}, subject ${subjectId}`);
+
+            // Check if there's already a not_started test (avoid duplicates)
+            const { data: existing } = await this.supabase
+                .from("tests")
+                .select("id")
+                .eq("student_id", studentId)
+                .eq("subject_id", subjectId)
+                .eq("status", "not_started")
+                .single();
+
+            if (existing) {
+                console.log(`[PreGen] Test already pre-generated: ${existing.id}`);
+                return;
+            }
+
+            // Verify subject exists
+            const { data: subject } = await this.supabase
+                .from("subjects")
+                .select("id, duration_mins")
+                .eq("id", subjectId)
+                .eq("is_active", true)
+                .single();
+
+            if (!subject) return;
+
+            // Get adaptive distribution (uses updated stats from the just-submitted test)
+            const distribution = await this.getAdaptiveDistribution(studentId, subjectId);
+
+            // Select questions
+            const questionIds = await this.getTestQuestions(studentId, subjectId, distribution);
+            if (questionIds.length === 0) return;
+
+            // Get template
+            const { data: template } = await this.supabase
+                .from("subject_templates")
+                .select("id")
+                .eq("subject_id", subjectId)
+                .eq("is_default", true)
+                .single();
+
+            // Calculate total marks
+            const { data: questionsData } = await this.supabase
+                .from("questions")
+                .select("marks")
+                .in("id", questionIds);
+
+            const totalMarks = questionsData?.reduce((sum, q) => sum + q.marks, 0) || questionIds.length;
+
+            // Create the pre-generated test
+            const { data: test, error } = await this.supabase
+                .from("tests")
+                .insert({
+                    student_id: studentId,
+                    subject_id: subjectId,
+                    template_id: template?.id || null,
+                    status: "not_started" as TestStatus,
+                    duration_mins: subject.duration_mins,
+                    questions_order: questionIds,
+                    answers: [],
+                    total_marks: totalMarks,
+                })
+                .select("id")
+                .single();
+
+            if (error) {
+                console.error("[PreGen] Failed to pre-generate test:", error);
+                return;
+            }
+
+            console.log(`[PreGen] ✅ Pre-generated test ${test.id}`);
+        } catch (err) {
+            // Non-blocking — just log
+            console.error("[PreGen] Error pre-generating test:", err);
+        }
     }
 
     /**

@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "stress-test": "npx tsx scripts/stress-test.ts",
+    "stress-test:heavy": "npx tsx scripts/stress-test.ts --heavy",
+    "load-test": "npx tsx scripts/load-test-students.ts",
+    "load-test:heavy": "npx tsx scripts/load-test-students.ts --heavy"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -31,12 +35,15 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/autocannon": "^7.12.7",
     "@types/bcryptjs": "^2.4.6",
     "@types/katex": "^0.16.8",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@types/xlsx": "^0.0.35",
+    "autocannon": "^8.0.0",
+    "dotenv": "^17.3.1",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",

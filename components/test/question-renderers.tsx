@@ -210,74 +210,67 @@ export const MCQRenderer = memo(
     ({ content, selected, onSelect, layout }: MCQRendererProps) => {
         const [optionsCollapsed, setOptionsCollapsed] = useState(false);
 
-        if (layout === "split") {
-            return (
-                <div className="flex min-h-0 h-full relative">
-                    {/* Left column: Question stem */}
-                    <div
-                        className={cn(
-                            "transition-all duration-300 ease-in-out overflow-y-auto shrink-0",
-                            optionsCollapsed ? "w-full pr-4" : "w-1/2 pr-8",
-                        )}
-                    >
-                        <MCQQuestionStem content={content} />
-                    </div>
+      if (layout === "split") {
+    return (
+        <div className="flex overflow-hidden relative" style={{ maxHeight: "calc(100vh - 120px)" }}>
+            {/* Left column: Question stem — independent scroll */}
+            <div
+                className={cn(
+                    "transition-all duration-300 ease-in-out overflow-y-auto shrink-0",
+                    optionsCollapsed ? "w-full pr-4" : "w-1/2 pr-8",
+                )}
+                style={{ maxHeight: "calc(100vh - 120px)" }}
+            >
+                <MCQQuestionStem content={content} />
+            </div>
 
-                    {/* Divider with toggle button */}
-                    <div className="relative flex items-stretch shrink-0">
-                        {!optionsCollapsed && (
-                            <div className="w-px bg-gray-200" />
-                        )}
-                        <button
-                            onClick={() =>
-                                setOptionsCollapsed(!optionsCollapsed)
-                            }
-                            className={cn(
-                                "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-0",
-                                "w-6 h-12 flex items-center justify-center",
-                                "bg-white border border-gray-300 rounded-full shadow-sm",
-                                "hover:bg-gray-50 hover:border-gray-400 transition-colors",
-                                "z-5 cursor-pointer",
-                            )}
-                            title={
-                                optionsCollapsed
-                                    ? "Show options"
-                                    : "Hide options"
-                            }
-                        >
-                            {optionsCollapsed ? (
-                                <ChevronLeft className="h-4 w-4 text-gray-600" />
-                            ) : (
-                                <ChevronRight className="h-4 w-4 text-gray-600" />
-                            )}
-                        </button>
-                    </div>
+            {/* Divider with toggle button */}
+            <div className="relative flex items-stretch shrink-0">
+                {!optionsCollapsed && (
+                    <div className="w-px bg-gray-200" />
+                )}
+                <button
+                    onClick={() => setOptionsCollapsed(!optionsCollapsed)}
+                    className={cn(
+                        "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-0",
+                        "w-6 h-12 flex items-center justify-center",
+                        "bg-white border border-gray-300 rounded-full shadow-sm",
+                        "hover:bg-gray-50 hover:border-gray-400 transition-colors",
+                        "z-5 cursor-pointer",
+                    )}
+                    title={optionsCollapsed ? "Show options" : "Hide options"}
+                >
+                    {optionsCollapsed ? (
+                        <ChevronLeft className="h-4 w-4 text-gray-600" />
+                    ) : (
+                        <ChevronRight className="h-4 w-4 text-gray-600" />
+                    )}
+                </button>
+            </div>
 
-                    {/* Right column: Options (collapsible) */}
-                    <div
-                        className={cn(
-                            "transition-[width] duration-300 ease-in-out overflow-hidden pl-8",
-                            optionsCollapsed
-                                ? "w-0 pl-0"
-                                : "w-1/2 overflow-y-auto",
-                        )}
-                    >
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                            Choose your answer
-                        </p>
-                        <MCQOptionsList
-                            options={content.options}
-                            selected={selected}
-                            onSelect={onSelect}
-                        />
-                    </div>
-                </div>
-            );
-        }
-
+            {/* Right column: Options — independent scroll */}
+            <div
+                className={cn(
+                    "transition-[width] duration-300 ease-in-out overflow-hidden",
+                    optionsCollapsed ? "w-0 pl-0" : "w-1/2 overflow-y-auto pl-8",
+                )}
+                style={{ maxHeight: "calc(100vh - 240px)" }}
+            >
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                    Choose your answer
+                </p>
+                <MCQOptionsList
+                    options={content.options}
+                    selected={selected}
+                    onSelect={onSelect}
+                />
+            </div>
+        </div>
+    );
+}
         // Stacked layout (used when passage panel is already visible)
         return (
-            <div className="space-y-6">
+            <div className="space-y-6 h-screen overflow-y-auto" style={{ maxHeight: "calc(100vh - 120px)" }}>
                 <MCQQuestionStem content={content} />
                 <Separator />
                 <MCQOptionsList

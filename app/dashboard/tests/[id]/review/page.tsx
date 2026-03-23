@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -103,7 +103,9 @@ interface EssayEvaluation {
 export default function TestReviewPage() {
     const router = useRouter();
     const params = useParams();
+    const searchParams = useSearchParams();
     const testId = params.id as string;
+    const questionParam = searchParams.get("q");
 
     const [reviewData, setReviewData] = useState<ReviewData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -114,6 +116,17 @@ export default function TestReviewPage() {
         [],
     );
     const [essayPolling, setEssayPolling] = useState(false);
+
+    const openQuestionInNewTab = useCallback(
+        (questionNumber: number) => {
+            window.open(
+                `/dashboard/tests/${testId}/review?q=${questionNumber}`,
+                "_blank",
+                "noopener,noreferrer",
+            );
+        },
+        [testId],
+    );
 
     useEffect(() => {
         fetchReview();
@@ -146,6 +159,22 @@ export default function TestReviewPage() {
         const interval = setInterval(pollEssayStatus, 5000); // Poll every 5 seconds
         return () => clearInterval(interval);
     }, [essayPolling, pollEssayStatus]);
+
+    useEffect(() => {
+        if (!reviewData || !questionParam) return;
+
+        const parsedQuestionNumber = Number.parseInt(questionParam, 10);
+        if (Number.isNaN(parsedQuestionNumber)) return;
+
+        const index = reviewData.questions.findIndex(
+            (q) => q.question_number === parsedQuestionNumber,
+        );
+
+        if (index >= 0) {
+            setOpenIndex(index);
+            setShowSolution(false);
+        }
+    }, [reviewData, questionParam]);
 
     const fetchReview = async () => {
         try {
@@ -237,6 +266,26 @@ export default function TestReviewPage() {
     const openHasPassage = !!(
         openItem?.question.passages && openItem.question.passages.length > 0
     );
+    const isDetailMode = !!questionParam;
+
+    const setDetailQuestion = (index: number) => {
+        setOpenIndex(index);
+        setShowSolution(false);
+        router.replace(
+            `/dashboard/tests/${testId}/review?q=${questions[index].question_number}`,
+        );
+    };
+
+    const handleCloseDetailTab = () => {
+        window.close();
+
+        // Fallback when browser blocks closing (e.g., tab not script-opened).
+        window.setTimeout(() => {
+            if (!window.closed) {
+                router.push(`/dashboard/tests/${testId}/review`);
+            }
+        }, 100);
+    };
 
     const barColor = (pct: number) =>
         pct >= 75
@@ -244,6 +293,276 @@ export default function TestReviewPage() {
             : pct >= 50
               ? "bg-amber-400"
               : "bg-rose-400";
+
+    if (isDetailMode && openItem && openIndex !== null) {
+        return (
+            <div className="min-h-screen bg-[#e8eef3] flex flex-col">
+                <header className="bg-[#1a2744] text-white px-4 py-2.5 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-4">
+                        <h3 className="text-sm font-semibold hidden md:block">
+                            {test.subject.name} - Review
+                        </h3>
+                        <Badge
+                            variant="outline"
+                            className="border-white/30 text-white text-xs"
+                        >
+                            Q {openItem.question_number} / {questions.length}
+                        </Badge>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        {openItem.time_spent_secs > 0 && (
+                            <div className="flex items-center gap-1.5 text-white/70 text-xs">
+                                <Clock className="h-3.5 w-3.5" />
+                                {formatTime(openItem.time_spent_secs)}
+                            </div>
+                        )}
+                        <Badge
+                            className={cn(
+                                "text-xs font-medium",
+                                !openItem.was_attempted
+                                    ? "bg-slate-500/40 text-white"
+                                    : openItem.is_correct
+                                      ? "bg-emerald-500/90 text-white"
+                                      : "bg-rose-400/90 text-white",
+                            )}
+                        >
+                            {!openItem.was_attempted
+                                ? "Unattempted"
+                                : openItem.is_correct
+                                  ? "Correct"
+                                  : "Incorrect"}
+                        </Badge>
+                        <span className="text-xs text-white/60 tabular-nums">
+                            {openItem.marks_earned}/{openItem.question.marks} mk
+                        </span>
+                    </div>
+
+                    <button
+                        onClick={handleCloseDetailTab}
+                        className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
+                    >
+                        <XCircle className="h-4 w-4" />
+                        Close
+                    </button>
+                </header>
+
+                <div className="flex-1 flex overflow-hidden">
+                    {openHasPassage && openItem.question.passages && (
+                        <div className="w-1/2 border-r bg-white flex flex-col min-h-0">
+                            {openItem.question.passages.length === 1 ? (
+                                <>
+                                    <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
+                                        <span className="text-sm font-medium text-[#1a2744]">
+                                            {openItem.question.passages[0]
+                                                .passage_type === "poem"
+                                                ? "Poem"
+                                                : openItem.question.passages[0]
+                                                      .title || "Extract"}
+                                        </span>
+                                    </div>
+                                    <ScrollArea className="flex-1">
+                                        <div className="p-6 md:p-8">
+                                            {openItem.question.passages[0].title && (
+                                                <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                    {
+                                                        openItem.question
+                                                            .passages[0].title
+                                                    }
+                                                </h3>
+                                            )}
+                                            {openItem.question.passages[0]
+                                                .image_url && (
+                                                <div className="mb-4">
+                                                    <img
+                                                        src={
+                                                            openItem.question
+                                                                .passages[0]
+                                                                .image_url
+                                                        }
+                                                        alt={
+                                                            openItem.question
+                                                                .passages[0]
+                                                                .title ||
+                                                            "Passage image"
+                                                        }
+                                                        className="max-w-full rounded-lg"
+                                                    />
+                                                </div>
+                                            )}
+                                            <div
+                                                className={`leading-relaxed text-gray-800 ${
+                                                    openItem.question
+                                                        .passages[0]
+                                                        .passage_type === "poem"
+                                                        ? "whitespace-pre-line italic"
+                                                        : ""
+                                                }`}
+                                            >
+                                                <MathText
+                                                    content={
+                                                        openItem.question
+                                                            .passages[0].content
+                                                    }
+                                                    block
+                                                />
+                                            </div>
+                                        </div>
+                                    </ScrollArea>
+                                </>
+                            ) : (
+                                <Tabs
+                                    defaultValue="passage-0"
+                                    className="flex flex-col h-full"
+                                >
+                                    <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
+                                        <TabsList className="bg-transparent h-auto p-0 gap-0">
+                                            {openItem.question.passages.map(
+                                                (p, idx) => (
+                                                    <TabsTrigger
+                                                        key={p.id}
+                                                        value={`passage-${idx}`}
+                                                        className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
+                                                    >
+                                                        {p.passage_type ===
+                                                        "poem"
+                                                            ? `Poem ${idx + 1}`
+                                                            : p.title ||
+                                                              `Extract ${idx + 1}`}
+                                                    </TabsTrigger>
+                                                ),
+                                            )}
+                                        </TabsList>
+                                    </div>
+                                    {openItem.question.passages.map((p, idx) => (
+                                        <TabsContent
+                                            key={p.id}
+                                            value={`passage-${idx}`}
+                                            className="flex-1 m-0 data-[state=inactive]:hidden"
+                                        >
+                                            <ScrollArea className="h-full">
+                                                <div className="p-6 md:p-8">
+                                                    {p.title && (
+                                                        <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                            {p.title}
+                                                        </h3>
+                                                    )}
+                                                    {p.image_url && (
+                                                        <div className="mb-4">
+                                                            <img
+                                                                src={p.image_url}
+                                                                alt={
+                                                                    p.title ||
+                                                                    "Passage image"
+                                                                }
+                                                                className="max-w-full rounded-lg"
+                                                            />
+                                                        </div>
+                                                    )}
+                                                    <div
+                                                        className={`leading-relaxed text-gray-800 ${
+                                                            p.passage_type ===
+                                                            "poem"
+                                                                ? "whitespace-pre-line italic"
+                                                                : ""
+                                                        }`}
+                                                    >
+                                                        <MathText
+                                                            content={p.content}
+                                                            block
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </ScrollArea>
+                                        </TabsContent>
+                                    ))}
+                                </Tabs>
+                            )}
+                        </div>
+                    )}
+
+                    <div
+                        className={`${openHasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white min-h-0`}
+                    >
+                        <ScrollArea className="flex-1 overflow-y-auto">
+                            <ReviewQuestionDisplay
+                                question={openItem.question}
+                                questionNumber={openItem.question_number}
+                                studentAnswer={openItem.student_answer}
+                                wasAttempted={openItem.was_attempted}
+                                solutionText={openItem.question.solution_text}
+                                solutionImages={
+                                    openItem.question.solution_images || []
+                                }
+                                showSolution={showSolution}
+                                onToggleSolution={() =>
+                                    setShowSolution(!showSolution)
+                                }
+                                essayEvaluation={
+                                    essayEvaluations.find(
+                                        (e) => e.question_id === openItem.question.id,
+                                    ) || null
+                                }
+                            />
+                        </ScrollArea>
+                    </div>
+                </div>
+
+                <footer className="border-t bg-white px-4 py-3 flex items-center justify-between shrink-0">
+                    <Button
+                        variant="outline"
+                        onClick={() =>
+                            setDetailQuestion(Math.max(0, openIndex - 1))
+                        }
+                        disabled={openIndex === 0}
+                        className="gap-2"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back
+                    </Button>
+
+                    <div className="hidden md:flex flex-wrap px-10 items-center gap-1.5">
+                        {questions.map((item, idx) => (
+                            <button
+                                key={`nav-${item.question.id}`}
+                                onClick={() => setDetailQuestion(idx)}
+                                className={cn(
+                                    "w-7 h-7 rounded text-xs font-semibold transition-all flex items-center justify-center cursor-pointer",
+                                    openIndex === idx
+                                        ? "ring-2 ring-[#1a2744] ring-offset-1 scale-110"
+                                        : "hover:scale-105",
+                                    !item.was_attempted
+                                        ? "bg-slate-200 text-slate-500"
+                                        : item.is_correct
+                                          ? "bg-emerald-500 text-white"
+                                          : "bg-rose-400 text-white",
+                                )}
+                            >
+                                {item.question_number}
+                            </button>
+                        ))}
+                    </div>
+
+                    <span className="md:hidden text-xs text-slate-400 tabular-nums">
+                        {openIndex + 1} of {questions.length}
+                    </span>
+
+                    <Button
+                        onClick={() =>
+                            setDetailQuestion(
+                                Math.min(questions.length - 1, openIndex + 1),
+                            )
+                        }
+                        disabled={openIndex === questions.length - 1}
+                        className="gap-2 bg-[#1a2744] hover:bg-[#1a2744]/90"
+                    >
+                        Next
+                        <ArrowRight className="h-4 w-4" />
+                    </Button>
+                </footer>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -400,18 +719,17 @@ export default function TestReviewPage() {
                         Question Review
                     </h2>
                     <p className="text-sm text-slate-500 mb-6">
-                        Click any question to view it in the test environment.
+                        Click any question to open detailed review in a new tab.
                     </p>
 
                     {/* Question grid */}
                     <div className="flex flex-wrap gap-2 ">
-                        {questions.map((item, idx) => (
+                        {questions.map((item) => (
                             <button
                                 key={item.question.id}
-                                onClick={() => {
-                                    setOpenIndex(idx);
-                                    setShowSolution(false);
-                                }}
+                                onClick={() =>
+                                    openQuestionInNewTab(item.question_number)
+                                }
                                 className={cn(
                                     "w-10 h-10 rounded-lg text-sm font-semibold transition-all relative",
                                     "flex items-center justify-center cursor-pointer",
@@ -486,7 +804,7 @@ export default function TestReviewPage() {
 
                         {/* Table Body */}
                         <div className="divide-y divide-slate-100">
-                            {questions.map((item, idx) => {
+                            {questions.map((item) => {
                                 const questionType =
                                     item.question.question_type;
                                 const content = item.question.content as Record<
@@ -545,10 +863,11 @@ export default function TestReviewPage() {
                                 return (
                                     <button
                                         key={item.question.id}
-                                        onClick={() => {
-                                            setOpenIndex(idx);
-                                            setShowSolution(false);
-                                        }}
+                                        onClick={() =>
+                                            openQuestionInNewTab(
+                                                item.question_number,
+                                            )
+                                        }
                                         className="w-full grid grid-cols-[60px_80px_1fr_100px] px-4 py-3 hover:bg-slate-50 transition-colors text-left items-center"
                                     >
                                         <span className="text-sm font-medium text-sky-600">
@@ -606,7 +925,7 @@ export default function TestReviewPage() {
             {/* ============================================
                 FULLSCREEN REVIEW OVERLAY
             ============================================ */}
-            {openItem && openIndex !== null && (
+            {!questionParam && openItem && openIndex !== null && (
                 <div className="fixed inset-0 z-50 flex flex-col bg-[#e8eef3]">
                     {/* ── HEADER BAR (matches test env) ── */}
                     <header className="bg-[#1a2744] text-white px-4 py-2.5 flex items-center justify-between shrink-0">
@@ -656,7 +975,14 @@ export default function TestReviewPage() {
 
                         {/* Right: close */}
                         <button
-                            onClick={() => setOpenIndex(null)}
+                            onClick={() => {
+                                setOpenIndex(null);
+                                if (questionParam) {
+                                    router.replace(
+                                        `/dashboard/tests/${testId}/review`,
+                                    );
+                                }
+                            }}
                             className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white transition-colors"
                         >
                             <XCircle className="h-4 w-4" />

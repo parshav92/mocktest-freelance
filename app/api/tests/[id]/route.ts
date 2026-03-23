@@ -166,9 +166,31 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
                 });
             }
 
+            case "save_answers_batch": {
+                const { answers: batchAnswers } = body;
+
+                if (!Array.isArray(batchAnswers) || batchAnswers.length === 0) {
+                    return errorResponse(
+                        "answers array is required for save_answers_batch",
+                        400,
+                    );
+                }
+
+                await testService.saveAnswersBatch(
+                    testId,
+                    auth.session.student_id,
+                    batchAnswers,
+                );
+
+                return successResponse({
+                    message: `${batchAnswers.length} answers saved successfully`,
+                    saved_count: batchAnswers.length,
+                });
+            }
+
             default:
                 return errorResponse(
-                    `Invalid action: ${action}. Use "start", "end_early", or "save_answer"`,
+                    `Invalid action: ${action}. Use "start", "end_early", "save_answer", or "save_answers_batch"`,
                     400,
                 );
         }
