@@ -1,6 +1,7 @@
 // ============================================
 // CSV TEMPLATES FOR QUESTION UPLOAD
 // ============================================
+// NOTE: Keep `CSV_UPLOAD_SPEC.md` in sync whenever template columns/samples change.
 
 /**
  * CSV Templates - Designed for non-technical users
@@ -8,7 +9,7 @@
  * Key Design Decisions:
  * 1. Separate CSV for each question type (simpler)
  * 2. Flat structure (no JSON in columns for MCQ)
- * 3. Image columns are yes/no flags - actual images uploaded in preview step
+ * 3. `question_images` / `solution_images` accept numeric counts only (0-10)
  * 4. Blanks in fill-blank use [1], [2] markers
  */
 
@@ -16,7 +17,7 @@
 export const CSV_COLUMNS = {
     // Standard MCQ (Math, Thinking Skills)
     mcq: [
-        "code", // Unique identifier (e.g., MR_001)
+        "code", // (Optional) Unique identifier (e.g., MR_001). If empty/missing, auto-generated.
         "subject", // Subject slug (mathematical-reasoning, thinking-skills)
         "difficulty", // easy, medium, hard
         "question", // Question text
@@ -36,7 +37,8 @@ export const CSV_COLUMNS = {
 
     // Passage-based MCQ (Reading)
     passage_mcq: [
-        "code", // Question code (e.g., RD_MCQ_001)
+        "code", // (Optional) Question code (e.g., RD_MCQ_001). If empty/missing, auto-generated.
+        "subject", // Subject slug (required)
         "passage_code", // Reference to passage(s) - comma-separated for multiple (e.g., RD_P_001 or RD_P_001,RD_P_002)
         "difficulty", // easy, medium, hard
         "question", // Question text
@@ -56,7 +58,8 @@ export const CSV_COLUMNS = {
 
     // Poem-based MCQ (Reading)
     poem_mcq: [
-        "code", // Question code
+        "code", // (Optional) Question code. If empty/missing, auto-generated.
+        "subject", // Subject slug (required)
         "passage_code", // Reference to poem passage(s) - comma-separated for multiple
         "difficulty", // easy, medium, hard
         "question", // Question text
@@ -76,7 +79,8 @@ export const CSV_COLUMNS = {
 
     // Fill-in-the-blank with dropdowns (Reading)
     fill_blank: [
-        "code", // Question code
+        "code", // (Optional) Question code. If empty/missing, auto-generated.
+        "subject", // Subject slug (required)
         "passage_code", // (Optional) Reference to passage
         "difficulty", // easy, medium, hard
         "passage_text", // Text with [1], [2] etc for blanks
@@ -89,7 +93,8 @@ export const CSV_COLUMNS = {
 
     // Fill missing sentence (Reading) - drag and drop sentences into gaps
     fill_missing_sentence: [
-        "code", // Question code (e.g., RD_FMS_001)
+        "code", // (Optional) Question code (e.g., RD_FMS_001). If empty/missing, auto-generated.
+        "subject", // Subject slug (required)
         "difficulty", // easy, medium, hard
         "passage_with_gaps", // Text with {GAP_1}, {GAP_2} etc for gaps
         "sentences", // Available sentences separated by | (pipe)
@@ -106,7 +111,8 @@ export const CSV_COLUMNS = {
 
     // Essay prompts (Writing)
     essay: [
-        "code", // Question code
+        "code", // (Optional) Question code. If empty/missing, auto-generated.
+        "subject", // Subject slug (required)
         "difficulty", // easy, medium, hard
         "prompt", // Essay prompt/topic
         "word_limit", // Max words (e.g., 300)
@@ -122,29 +128,29 @@ MR_001,mathematical-reasoning,easy,What is 15 + 27?,32,42,52,62,B,Add tens then 
 MR_002,mathematical-reasoning,medium,Look at the shape and find its area:,12 sq cm,24 sq cm,36 sq cm,48 sq cm,B,Area = length × width,2,no,no,no,no,2
 TS_001,thinking-skills,easy,Which shape comes next?,Shape 1,Shape 2,Shape 3,Shape 4,C,The pattern alternates,1,yes,yes,yes,yes,0`,
 
-    passage_mcq: `code,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
-RD_MCQ_001,RD_P_001,easy,What is the main idea of the passage?,Friendship,Adventure,Nature,Science,A,The passage discusses friendship,0,no,no,no,no,0
-RD_MCQ_002,RD_P_001,medium,What does the author mean by 'stood tall'?,Was very tall,Was brave,Was proud,Was angry,B,Context shows bravery,1,no,no,no,no,0
-RD_MCQ_003,"RD_P_001,RD_P_002",medium,Compare the two extracts. What theme do they share?,Friendship,Loss,Growth,Conflict,C,Both passages explore growth,0,no,no,no,no,0`,
+    passage_mcq: `code,subject,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
+RD_MCQ_001,reading,RD_P_001,easy,What is the main idea of the passage?,Friendship,Adventure,Nature,Science,A,The passage discusses friendship,0,no,no,no,no,0
+RD_MCQ_002,reading,RD_P_001,medium,What does the author mean by 'stood tall'?,Was very tall,Was brave,Was proud,Was angry,B,Context shows bravery,1,no,no,no,no,0
+RD_MCQ_003,reading,"RD_P_001,RD_P_002",medium,Compare the two extracts. What theme do they share?,Friendship,Loss,Growth,Conflict,C,Both passages explore growth,0,no,no,no,no,0`,
 
-    poem_mcq: `code,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
-RD_POEM_001,RD_POEM_P_001,easy,What rhyme scheme does the poem follow?,ABAB,AABB,ABBA,Free verse,B,Lines 1-2 and 3-4 rhyme,0,no,no,no,no,0`,
+    poem_mcq: `code,subject,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
+RD_POEM_001,reading,RD_POEM_P_001,easy,What rhyme scheme does the poem follow?,ABAB,AABB,ABBA,Free verse,B,Lines 1-2 and 3-4 rhyme,0,no,no,no,no,0`,
 
-    fill_blank: `code,passage_code,difficulty,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
-RD_FB_001,,easy,"The cat [1] on the mat. It was [2] comfortable.",sat|sit|set,very|much|more,,,
-RD_FB_002,,medium,"Reading books [1] your vocabulary and [2] your imagination.",improves|reduces|stops,expands|shrinks|limits,,,`,
+    fill_blank: `code,subject,passage_code,difficulty,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
+RD_FB_001,reading,,easy,"The cat [1] on the mat. It was [2] comfortable.",sat|sit|set,very|much|more,,,
+RD_FB_002,reading,,medium,"Reading books [1] your vocabulary and [2] your imagination.",improves|reduces|stops,expands|shrinks|limits,,,`,
 
-    fill_missing_sentence: `code,difficulty,passage_with_gaps,sentences
-RD_FMS_001,easy,"The park was beautiful in spring. {GAP_1} Birds sang in the trees. {GAP_2} Children played on the swings.","Flowers bloomed everywhere.|Families enjoyed picnics on the grass."
-RD_FMS_002,medium,"The science experiment was exciting. First we gathered all the materials. {GAP_1} We observed carefully and took notes. {GAP_2} Our results matched our predictions.","Then we mixed the chemicals together.|Finally we discussed what we learned."`,
+    fill_missing_sentence: `code,subject,difficulty,passage_with_gaps,sentences
+RD_FMS_001,reading,easy,"The park was beautiful in spring. {GAP_1} Birds sang in the trees. {GAP_2} Children played on the swings.","Flowers bloomed everywhere.|Families enjoyed picnics on the grass."
+RD_FMS_002,reading,medium,"The science experiment was exciting. First we gathered all the materials. {GAP_1} We observed carefully and took notes. {GAP_2} Our results matched our predictions.","Then we mixed the chemicals together.|Finally we discussed what we learned."`,
 
     passage: `code,type,title,content,has_image
 RD_P_001,extract,The Loyal Friend,"Once upon a time, there lived two friends named Tom and Jerry...",no
 RD_POEM_P_001,poem,The Morning Sun,"The sun rises in the east so bright, Spreading warmth and golden light...",no`,
 
-    essay: `code,difficulty,prompt,word_limit,time_mins,rubric
-WR_001,easy,Write about your best friend and why they are special to you.,150,15,content:10|structure:5|grammar:5
-WR_002,medium,Describe a time when you faced a challenge and how you overcame it.,250,20,content:15|structure:10|grammar:5|creativity:5`,
+    essay: `code,subject,difficulty,prompt,word_limit,time_mins,rubric
+WR_001,writing,easy,Write about your best friend and why they are special to you.,150,15,content:10|structure:5|grammar:5
+WR_002,writing,medium,Describe a time when you faced a challenge and how you overcame it.,250,20,content:15|structure:10|grammar:5|creativity:5`,
 };
 
 // Get CSV header row for a question type

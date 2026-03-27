@@ -135,7 +135,7 @@ export function ImageEnhancedText({
               key={`img-placeholder-${idx}`}
               className="inline-block align-middle mx-1 px-2 py-1 bg-amber-50 border border-amber-200 rounded text-xs text-amber-700 font-medium"
             >
-              Fig. {imageNum}
+              [img:{imageNum}]
             </span>
           );
         }

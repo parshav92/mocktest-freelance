@@ -56,6 +56,7 @@ import {
     type ImageRequirement,
 } from "@/lib/csv/parser";
 import { MathText } from "@/components/ui/math-text";
+import { ImageEnhancedText } from "@/components/ui/image-enhanced-text";
 
 // Upload types with descriptions
 const UPLOAD_TYPES = [
@@ -713,15 +714,20 @@ export default function AdminUploadPage() {
                                                 <Badge variant="outline">
                                                     Q. {idx + 1}
                                                 </Badge>
-                                                {/* {question.autoCode ? (
+                                                {question.data.subject && (
+                                                    <Badge variant="secondary" className="text-xs">
+                                                        Subject: {question.data.subject}
+                                                    </Badge>
+                                                )}
+                                                {question.autoCode ? (
                                                     <Badge variant="secondary" className="font-mono text-xs">
                                                         Auto
                                                     </Badge>
-                                                ) : ( */}
+                                                ) : (
                                                 <span className="font-mono text-sm">
                                                     {question.code}
                                                 </span>
-                                                {/* // )} */}
+                                                )}
                                                 {question.imageRequirements
                                                     .length > 0 && (
                                                         <Badge
@@ -757,23 +763,155 @@ export default function AdminUploadPage() {
                                         </AccordionTrigger>
                                         <AccordionContent>
                                             <div className="space-y-4 pt-2">
+                                                {(() => {
+                                                    const questionImagePreviews = question.imageRequirements
+                                                        .filter(
+                                                            (req) =>
+                                                                req.field ===
+                                                                "question" ||
+                                                                /^question_\d+$/.test(
+                                                                    req.field,
+                                                                ),
+                                                        )
+                                                        .sort((a, b) => {
+                                                            const getIndex = (
+                                                                field: string,
+                                                            ) => {
+                                                                if (
+                                                                    field ===
+                                                                    "question"
+                                                                )
+                                                                    return 1;
+                                                                const match =
+                                                                    field.match(
+                                                                        /^question_(\d+)$/,
+                                                                    );
+                                                                return match
+                                                                    ? parseInt(
+                                                                        match[1],
+                                                                        10,
+                                                                    )
+                                                                    : 999;
+                                                            };
+                                                            return (
+                                                                getIndex(
+                                                                    a.field,
+                                                                ) -
+                                                                getIndex(
+                                                                    b.field,
+                                                                )
+                                                            );
+                                                        })
+                                                        .map(
+                                                            (req) =>
+                                                                uploadedImages.get(
+                                                                    req.storagePath,
+                                                                )?.preview ||
+                                                                "",
+                                                        )
+                                                        .filter(Boolean);
+
+                                                    const mainContent =
+                                                        question.data
+                                                            .question ||
+                                                        question.data
+                                                            .passage_text ||
+                                                        question.data
+                                                            .passage_with_gaps ||
+                                                        question.data
+                                                            .prompt ||
+                                                        "";
+
+                                                    return (
+                                                        <>
                                                 {/* Question text */}
                                                 <div>
                                                     <Label className="text-xs text-muted-foreground">
-                                                        Question
+                                                        {question.data.question
+                                                            ? "Question"
+                                                            : question.data.prompt
+                                                              ? "Prompt"
+                                                              : question.data
+                                                                    .passage_text
+                                                                ? "Passage Text"
+                                                                : question.data
+                                                                      .passage_with_gaps
+                                                                  ? "Passage With Gaps"
+                                                                  : "Question"}
                                                     </Label>
-                                                    <MathText
-                                                        block
-                                                        className="text-sm mt-1 whitespace-pre-wrap leading-relaxed"
-                                                        content={
-                                                            question.data
-                                                                .question ||
-                                                            question.data
-                                                                .prompt ||
-                                                            ""
-                                                        }
-                                                    />
+                                                    <div className="text-sm mt-1 whitespace-pre-wrap leading-relaxed">
+                                                        <ImageEnhancedText
+                                                            content={
+                                                                mainContent
+                                                            }
+                                                            images={
+                                                                questionImagePreviews
+                                                            }
+                                                            block
+                                                        />
+                                                    </div>
                                                 </div>
+                                                        </>
+                                                    );
+                                                })()}
+
+                                                {/* Fill blank options preview */}
+                                                {question.data.passage_text && (
+                                                    <div className="space-y-2">
+                                                        <Label className="text-xs text-muted-foreground">
+                                                            Blank Options
+                                                        </Label>
+                                                        <div className="grid gap-2">
+                                                            {Array.from({ length: 5 }).map(
+                                                                (_, blankIndex) => {
+                                                                    const position =
+                                                                        blankIndex +
+                                                                        1;
+                                                                    const options =
+                                                                        question.data[
+                                                                            `blank_${position}_options`
+                                                                        ];
+                                                                    if (
+                                                                        !options
+                                                                    )
+                                                                        return null;
+
+                                                                    return (
+                                                                        <div
+                                                                            key={`blank-${position}`}
+                                                                            className="p-2 rounded border text-sm"
+                                                                        >
+                                                                            <span className="font-medium mr-2">
+                                                                                [{position}]
+                                                                            </span>
+                                                                            <span>
+                                                                                {options}
+                                                                            </span>
+                                                                        </div>
+                                                                    );
+                                                                },
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                )}
+
+                                                {/* Fill missing sentence options preview */}
+                                                {question.data.passage_with_gaps &&
+                                                    question.data.sentences && (
+                                                        <div>
+                                                            <Label className="text-xs text-muted-foreground">
+                                                                Sentence Bank
+                                                            </Label>
+                                                            <MathText
+                                                                block
+                                                                className="text-sm mt-1 whitespace-pre-wrap leading-relaxed"
+                                                                content={
+                                                                    question.data
+                                                                        .sentences
+                                                                }
+                                                            />
+                                                        </div>
+                                                    )}
 
                                                 {/* Options for MCQ */}
                                                 {question.data.option_a && (

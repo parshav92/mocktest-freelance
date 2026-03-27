@@ -1,6 +1,7 @@
 // ============================================
 // CSV PARSER WITH IMAGE FLAG SUPPORT
 // ============================================
+// NOTE: Keep `CSV_UPLOAD_SPEC.md` in sync whenever parsing/validation behavior changes.
 
 import { CSV_COLUMNS } from "./templates";
 
@@ -104,6 +105,36 @@ function isYes(value: string | undefined): boolean {
     return value?.toLowerCase() === "yes";
 }
 
+function parseStrictImageCount(
+    value: string | undefined,
+): { valid: boolean; count: number } {
+    if (!value || value.trim() === "") return { valid: true, count: 0 };
+    const trimmed = value.trim();
+    if (!/^\d+$/.test(trimmed)) return { valid: false, count: 0 };
+    const count = parseInt(trimmed, 10);
+    if (count < 0 || count > 10) return { valid: false, count: 0 };
+    return { valid: true, count };
+}
+
+function getHeaderIndexMap(headers: string[]): Map<string, number> {
+    return new Map(headers.map((header, idx) => [header, idx]));
+}
+
+function buildRowData(
+    row: string[],
+    headerIndexMap: Map<string, number>,
+    allowedColumns: string[],
+): Record<string, string> {
+    const rowData: Record<string, string> = {};
+
+    for (const col of allowedColumns) {
+        const idx = headerIndexMap.get(col);
+        rowData[col] = idx !== undefined ? row[idx] || "" : "";
+    }
+
+    return rowData;
+}
+
 // Get storage path for an image
 function getImageStoragePath(
     type: "question" | "passage",
@@ -165,45 +196,61 @@ function parseMCQ(
 ): { questions: ParsedQuestion[]; errors: ParseError[] } {
     const questions: ParsedQuestion[] = [];
     const errors: ParseError[] = [];
-    const expectedColumns = CSV_COLUMNS[type as keyof typeof CSV_COLUMNS];
 
-    // Validate headers
-    const missingColumns = expectedColumns
-        .filter((col) => !col.includes("image") && col !== "solution") // Required non-optional
-        .filter((col) => !headers.includes(col));
+    const baseRequired = [
+        "difficulty",
+        "question",
+        "option_a",
+        "option_b",
+        "option_c",
+        "option_d",
+        "answer",
+        "question_images",
+        "solution_images",
+    ];
 
-    if (missingColumns.length > 0 && type === "mcq") {
-        // For MCQ, subject is required
-        const trulyRequired = [
-            "code",
-            "subject",
-            "difficulty",
-            "question",
-            "option_a",
-            "option_b",
-            "option_c",
-            "option_d",
-            "answer",
-        ];
-        const missing = trulyRequired.filter((col) => !headers.includes(col));
-        if (missing.length > 0) {
+    const typeSpecificRequired =
+        type === "mcq" ? [] : ["passage_code"];
+
+    // `code` is optional (auto-generated if omitted or empty), `subject` is mandatory for all question types
+    const requiredHeaders = ["subject", ...baseRequired, ...typeSpecificRequired];
+
+    const deprecatedHeaders: Array<{ old: string; replacement: string }> = [
+        { old: "question_image", replacement: "question_images" },
+        { old: "solution_image", replacement: "solution_images" },
+    ];
+
+    const deprecatedFound = deprecatedHeaders.filter((h) =>
+        headers.includes(h.old),
+    );
+
+    if (deprecatedFound.length > 0) {
+        for (const header of deprecatedFound) {
             errors.push({
                 row: 1,
-                message: `Missing required columns: ${missing.join(", ")}`,
+                column: header.old,
+                message: `Column '${header.old}' is not supported. Use '${header.replacement}' (numeric 0-10) instead.`,
             });
-            return { questions, errors };
         }
+        return { questions, errors };
+    }
+
+    const missing = requiredHeaders.filter((col) => !headers.includes(col));
+    if (missing.length > 0) {
+        errors.push({
+            row: 1,
+            message: `Missing required columns: ${missing.join(", ")}`,
+        });
+        return { questions, errors };
     }
 
     // Parse each row
+    const templateColumns = CSV_COLUMNS[type as keyof typeof CSV_COLUMNS] || [];
+    const headerIndexMap = getHeaderIndexMap(headers);
+
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
-        const rowData: Record<string, string> = {};
-
-        // Map row values to headers
-        headers.forEach((header, idx) => {
-            rowData[header] = row[idx] || "";
-        });
+        const rowData = buildRowData(row, headerIndexMap, templateColumns);
 
         const code = rowData.code || "";
         const isAutoCode = !code;
@@ -220,12 +267,21 @@ function parseMCQ(
         let imageNumber = 1; // Counter for [img:N] syntax
 
         // Question images: dynamic count from question_images column (default 0)
-        // Backward compatibility: legacy question_image=yes means 1 image
         const questionImageCount = (() => {
-            const count = parseInt(rowData.question_images || "0", 10);
-            if (Number.isFinite(count) && count > 0) return count;
-            return isYes(rowData.question_image) ? 1 : 0;
+            const parsed = parseStrictImageCount(rowData.question_images);
+            if (!parsed.valid) {
+                errors.push({
+                    row: i + 1,
+                    column: "question_images",
+                    message:
+                        "question_images must be a numeric value between 0 and 10",
+                });
+                return -1;
+            }
+            return parsed.count;
         })();
+
+        if (questionImageCount === -1) continue;
 
         for (let qi = 1; qi <= questionImageCount; qi++) {
             const field = qi === 1 ? "question" : `question_${qi}`;
@@ -299,8 +355,22 @@ function parseMCQ(
         }
 
         // Solution images (dynamic count from solution_images column, default 0)
-        const solutionImageCount =
-            parseInt(rowData.solution_images || "0", 10) || 0;
+        const solutionImageCount = (() => {
+            const parsed = parseStrictImageCount(rowData.solution_images);
+            if (!parsed.valid) {
+                errors.push({
+                    row: i + 1,
+                    column: "solution_images",
+                    message:
+                        "solution_images must be a numeric value between 0 and 10",
+                });
+                return -1;
+            }
+            return parsed.count;
+        })();
+
+        if (solutionImageCount === -1) continue;
+
         for (let si = 1; si <= solutionImageCount; si++) {
             const field = `solution_${si}`;
             imageRequirements.push({
@@ -317,11 +387,20 @@ function parseMCQ(
         }
 
         // Validate required fields
-        if (type === "mcq" && !rowData.subject) {
+        if (!rowData.subject) {
             errors.push({
                 row: i + 1,
                 column: "subject",
-                message: "Subject is required for MCQ",
+                message: "Subject is required",
+            });
+            continue;
+        }
+
+        if ((type === "passage_mcq" || type === "poem_mcq") && !rowData.passage_code) {
+            errors.push({
+                row: i + 1,
+                column: "passage_code",
+                message: "Passage code is required for passage/poem MCQ",
             });
             continue;
         }
@@ -391,7 +470,7 @@ function parseFillBlank(
     const errors: ParseError[] = [];
 
     // Validate required headers
-    const required = ["code", "difficulty", "passage_text", "blank_1_options"];
+    const required = ["subject", "difficulty", "passage_text", "blank_1_options"];
     const missing = required.filter((col) => !headers.includes(col));
     if (missing.length > 0) {
         errors.push({
@@ -401,16 +480,37 @@ function parseFillBlank(
         return { questions, errors };
     }
 
+    const templateColumns = CSV_COLUMNS.fill_blank;
+    const headerIndexMap = getHeaderIndexMap(headers);
+
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
-        const rowData: Record<string, string> = {};
-
-        headers.forEach((header, idx) => {
-            rowData[header] = row[idx] || "";
-        });
+        const rowData = buildRowData(row, headerIndexMap, templateColumns);
 
         const code = rowData.code || "";
         const isAutoCode = !code;
+
+        if (!rowData.subject) {
+            errors.push({
+                row: i + 1,
+                column: "subject",
+                message: "Subject is required",
+            });
+            continue;
+        }
+
+        if (
+            !["easy", "medium", "hard"].includes(
+                rowData.difficulty?.toLowerCase(),
+            )
+        ) {
+            errors.push({
+                row: i + 1,
+                column: "difficulty",
+                message: "Difficulty must be easy, medium, or hard",
+            });
+            continue;
+        }
 
         if (!rowData.passage_text) {
             errors.push({
@@ -468,7 +568,7 @@ function parseFillMissingSentence(
     const errors: ParseError[] = [];
 
     // Validate required headers
-    const required = ["code", "difficulty", "passage_with_gaps", "sentences"];
+    const required = ["subject", "difficulty", "passage_with_gaps", "sentences"];
     const missing = required.filter((col) => !headers.includes(col));
     if (missing.length > 0) {
         errors.push({
@@ -478,16 +578,24 @@ function parseFillMissingSentence(
         return { questions, errors };
     }
 
+    const templateColumns = CSV_COLUMNS.fill_missing_sentence;
+    const headerIndexMap = getHeaderIndexMap(headers);
+
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
-        const rowData: Record<string, string> = {};
-
-        headers.forEach((header, idx) => {
-            rowData[header] = row[idx] || "";
-        });
+        const rowData = buildRowData(row, headerIndexMap, templateColumns);
 
         const code = rowData.code || "";
         const isAutoCode = !code;
+
+        if (!rowData.subject) {
+            errors.push({
+                row: i + 1,
+                column: "subject",
+                message: "Subject is required",
+            });
+            continue;
+        }
 
         if (
             !["easy", "medium", "hard"].includes(
@@ -657,7 +765,7 @@ function parseEssay(
 
     // Validate required headers
     const required = [
-        "code",
+        "subject",
         "difficulty",
         "prompt",
         "word_limit",
@@ -672,16 +780,37 @@ function parseEssay(
         return { questions, errors };
     }
 
+    const templateColumns = CSV_COLUMNS.essay;
+    const headerIndexMap = getHeaderIndexMap(headers);
+
     for (let i = 1; i < rows.length; i++) {
         const row = rows[i];
-        const rowData: Record<string, string> = {};
-
-        headers.forEach((header, idx) => {
-            rowData[header] = row[idx] || "";
-        });
+        const rowData = buildRowData(row, headerIndexMap, templateColumns);
 
         const code = rowData.code || "";
         const isAutoCode = !code;
+
+        if (!rowData.subject) {
+            errors.push({
+                row: i + 1,
+                column: "subject",
+                message: "Subject is required",
+            });
+            continue;
+        }
+
+        if (
+            !["easy", "medium", "hard"].includes(
+                rowData.difficulty?.toLowerCase(),
+            )
+        ) {
+            errors.push({
+                row: i + 1,
+                column: "difficulty",
+                message: "Difficulty must be easy, medium, or hard",
+            });
+            continue;
+        }
 
         if (!rowData.prompt) {
             errors.push({

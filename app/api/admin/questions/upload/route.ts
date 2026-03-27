@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+// NOTE: Keep `CSV_UPLOAD_SPEC.md` in sync whenever upload transformation rules change.
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/auth/admin";
 import { getCSVTemplate } from "@/lib/csv/templates";
@@ -174,6 +175,16 @@ export async function POST(request: NextRequest) {
 function extractCodePrefix(code: string): string {
     const match = (code || "").toUpperCase().match(/^([A-Z]{2,5})_/);
     return match ? match[1] : "";
+}
+
+function parseImageCount(value: string | undefined): number {
+    if (!value || value.trim() === "") return 0;
+    const trimmed = value.trim();
+    if (!/^\d+$/.test(trimmed)) return 0;
+    const count = parseInt(trimmed, 10);
+    if (count < 0) return 0;
+    if (count > 10) return 10;
+    return count;
 }
 
 /**
@@ -365,7 +376,18 @@ async function insertQuestions(
         // 1. If subject is explicitly provided in CSV, use it
         if (data.subject)
             return data.subject.toLowerCase().replace(/\s+/g, "-");
-        // 2. Infer from question code prefix using DB mapping
+        // 2. Infer from referenced passage code prefix (passage_mcq/poem_mcq)
+        if (data.passage_code) {
+            const firstPassageCode = data.passage_code
+                .split(",")
+                .map((c) => c.trim())
+                .find(Boolean);
+            const passagePrefix = extractCodePrefix(firstPassageCode || "");
+            if (passagePrefix && prefixToSlug.has(passagePrefix)) {
+                return prefixToSlug.get(passagePrefix)!;
+            }
+        }
+        // 3. Infer from question code prefix using DB mapping
         const prefix = extractCodePrefix(data.code);
         if (prefix && prefixToSlug.has(prefix)) {
             return prefixToSlug.get(prefix)!;
@@ -534,17 +556,11 @@ async function insertQuestions(
             uploadType === "poem_mcq"
         ) {
             const questionImages: string[] = [];
-            const qImgCount = parseInt(q.data.question_images || "0", 10) || 0;
+            const qImgCount = parseImageCount(q.data.question_images);
             for (let qi = 1; qi <= qImgCount; qi++) {
                 const field = qi === 1 ? "question" : `question_${qi}`;
                 const url = findImageUrl(imageUrls, q.code, field);
                 if (url) questionImages.push(url);
-            }
-
-            // Backward compatibility for legacy question_image=yes uploads
-            if (questionImages.length === 0) {
-                const legacyUrl = findImageUrl(imageUrls, q.code, "question");
-                if (legacyUrl) questionImages.push(legacyUrl);
             }
 
             // Build options with optional image URLs
@@ -605,6 +621,19 @@ async function insertQuestions(
                     });
                 }
             }
+
+            content = {
+                passage_text: q.data.passage_text,
+                blanks,
+            };
+
+            correctAnswer = {
+                blanks: blanks.map((b) => ({
+                    position: b.position,
+                    correct_index: b.correct_index,
+                    correct: b.correct,
+                })),
+            };
         } else if (uploadType === "fill_missing_sentence") {
             // Parse sentences from pipe-separated string
             const sentences = q.data.sentences
@@ -662,7 +691,7 @@ async function insertQuestions(
 
         // Build solution_images array from uploaded solution images (dynamic count)
         const solutionImages: string[] = [];
-        const solImgCount = parseInt(q.data.solution_images || "0", 10) || 0;
+        const solImgCount = parseImageCount(q.data.solution_images);
         for (let si = 1; si <= solImgCount; si++) {
             const url = findImageUrl(imageUrls, q.code, `solution_${si}`);
             if (url) solutionImages.push(url);
