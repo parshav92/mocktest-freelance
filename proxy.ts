@@ -1,16 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
+import { createRequestTimer } from "@/lib/performance-logger";
 
 export default async function proxy(request: NextRequest) {
+  const timer = createRequestTimer(request.method, request.nextUrl.pathname);
+
   let response = await updateSession(request);
   const { pathname } = request.nextUrl;
 
   if (pathname.startsWith("/admin-login")) {
+    timer.stop(response.status);
     return response;
   }
 
   if (!pathname.startsWith("/admin")) {
+    timer.stop(response.status);
     return response;
   }
 
@@ -42,6 +47,7 @@ export default async function proxy(request: NextRequest) {
   if (!user) {
     const url = new URL("/admin-login", request.url);
     url.searchParams.set("reason", "auth");
+    timer.stop(307);
     return NextResponse.redirect(url);
   }
 
@@ -54,6 +60,7 @@ export default async function proxy(request: NextRequest) {
   if (profile?.role !== "admin") {
     const url = new URL("/admin-login", request.url);
     url.searchParams.set("reason", "forbidden");
+    timer.stop(307);
     return NextResponse.redirect(url);
   }
 
@@ -70,9 +77,11 @@ export default async function proxy(request: NextRequest) {
   if (!expiresAt || expiresAt <= new Date()) {
     const url = new URL("/admin-login", request.url);
     url.searchParams.set("reason", "mfa");
+    timer.stop(307);
     return NextResponse.redirect(url);
   }
 
+  timer.stop(response.status);
   return response;
 }
 

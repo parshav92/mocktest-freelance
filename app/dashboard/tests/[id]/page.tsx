@@ -124,9 +124,11 @@ export default function TestEnvironmentPage() {
     const [warningMessage, setWarningMessage] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Refs for auto-save debouncing
-    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    // Refs for batch answer saving
+    const pendingAnswersRef = useRef<Set<string>>(new Set());
     const lastSavedRef = useRef<Record<string, unknown>>({});
+    const flushIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const isFlushing = useRef(false);
 
     // ============================================
     // CURRENT QUESTION
@@ -206,27 +208,27 @@ export default function TestEnvironmentPage() {
             setSubject(
                 testData.subject
                     ? {
-                          name: testData.subject.name,
-                          instructions: (() => {
-                              const raw = testData.subject
-                                  .instructions as unknown;
-                              if (!raw) return null;
-                              // DB stores { pages: [...] } JSONB
-                              if (
-                                  typeof raw === "object" &&
-                                  raw !== null &&
-                                  "pages" in raw
-                              ) {
-                                  return (raw as { pages: InstructionPage[] })
-                                      .pages;
-                              }
-                              // Already an array
-                              if (Array.isArray(raw))
-                                  return raw as InstructionPage[];
-                              return null;
-                          })(),
-                          duration_mins: testData.subject.duration_mins,
-                      }
+                        name: testData.subject.name,
+                        instructions: (() => {
+                            const raw = testData.subject
+                                .instructions as unknown;
+                            if (!raw) return null;
+                            // DB stores { pages: [...] } JSONB
+                            if (
+                                typeof raw === "object" &&
+                                raw !== null &&
+                                "pages" in raw
+                            ) {
+                                return (raw as { pages: InstructionPage[] })
+                                    .pages;
+                            }
+                            // Already an array
+                            if (Array.isArray(raw))
+                                return raw as InstructionPage[];
+                            return null;
+                        })(),
+                        duration_mins: testData.subject.duration_mins,
+                    }
                     : null,
             );
 
@@ -295,11 +297,11 @@ export default function TestEnvironmentPage() {
         loadTest();
     }, [loadTest]);
 
-    // Cleanup debounce timeout on unmount
+    // Cleanup flush interval on unmount
     useEffect(() => {
         return () => {
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
+            if (flushIntervalRef.current) {
+                clearInterval(flushIntervalRef.current);
             }
         };
     }, []);
@@ -318,14 +320,76 @@ export default function TestEnvironmentPage() {
     }, [currentIndex, currentQuestion, phase]);
 
     // ============================================
-    // AUTO-SAVE ANSWER
+    // BATCH ANSWER SAVING
     // ============================================
+
+    /**
+     * Flush all pending (dirty) answers to the server in a single batch API call.
+     * Returns true if flush was successful or nothing to flush.
+     */
+    const flushPendingAnswers = useCallback(
+        async (): Promise<boolean> => {
+            if (isFlushing.current) return true;
+
+            const pendingIds = Array.from(pendingAnswersRef.current);
+            if (pendingIds.length === 0) return true;
+
+            isFlushing.current = true;
+
+            // Build batch from current answers state
+            // We need to read the latest answers, which we capture via closure
+            const batch = pendingIds
+                .map((qId) => {
+                    // Read from the answers state via a ref-like approach
+                    // We'll use answers directly since this is called within component scope
+                    return {
+                        question_id: qId,
+                        selected: answers[qId],
+                        time_spent_secs: 0,
+                    };
+                })
+                .filter((item) => item.selected !== undefined);
+
+            if (batch.length === 0) {
+                isFlushing.current = false;
+                return true;
+            }
+
+            try {
+                const res = await fetch(`/api/tests/${testId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        action: "save_answers_batch",
+                        answers: batch,
+                    }),
+                });
+
+                if (res.ok) {
+                    // Mark as saved
+                    for (const item of batch) {
+                        lastSavedRef.current[item.question_id] = item.selected;
+                        pendingAnswersRef.current.delete(item.question_id);
+                    }
+                }
+                isFlushing.current = false;
+                return res.ok;
+            } catch {
+                isFlushing.current = false;
+                return false;
+            }
+        },
+        [testId, answers],
+    );
+
+    /**
+     * Legacy single-answer save (kept for backward compat, e.g. during submit).
+     */
     const saveAnswer = useCallback(
         async (
             questionId: string,
             selected: string | number[] | Record<string, number>,
         ) => {
-            // Skip if same as last saved
             if (
                 JSON.stringify(lastSavedRef.current[questionId]) ===
                 JSON.stringify(selected)
@@ -346,24 +410,30 @@ export default function TestEnvironmentPage() {
                 });
                 lastSavedRef.current[questionId] = selected;
             } catch {
-                // Silent fail for auto-save — answer is preserved in state
+                // Silent fail for auto-save
             }
         },
         [testId],
     );
 
-    const debouncedSave = useCallback(
-        (
-            questionId: string,
-            selected: string | number[] | Record<string, number>,
-        ) => {
-            if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
-            saveTimeoutRef.current = setTimeout(() => {
-                saveAnswer(questionId, selected);
-            }, TEST_CONFIG.navigation.autoSaveDebounceMs);
-        },
-        [saveAnswer],
-    );
+    // Auto-flush pending answers every 5 seconds during testing
+    useEffect(() => {
+        if (phase === "testing") {
+            flushIntervalRef.current = setInterval(() => {
+                flushPendingAnswers();
+            }, 5000);
+        } else {
+            if (flushIntervalRef.current) {
+                clearInterval(flushIntervalRef.current);
+                flushIntervalRef.current = null;
+            }
+        }
+        return () => {
+            if (flushIntervalRef.current) {
+                clearInterval(flushIntervalRef.current);
+            }
+        };
+    }, [phase, flushPendingAnswers]);
 
     // ============================================
     // HELPERS
@@ -387,37 +457,42 @@ export default function TestEnvironmentPage() {
             setAnswers((prev) => ({ ...prev, [currentQuestion.id]: value }));
 
             // Essays: save to localStorage only (no API call)
-            // Other types: auto-save via API as before
+            // Other types: mark as pending for next batch flush
             if (currentQuestion.question_type === "essay") {
                 saveLocalEssayDraft(
                     testId,
                     currentQuestion.id,
                     value as string,
                 );
-            } else if (TEST_CONFIG.navigation.autoSaveOnNavigate) {
-                debouncedSave(currentQuestion.id, value);
+                // Also mark essay as pending so it gets flushed to DB periodically
+                if (
+                    JSON.stringify(lastSavedRef.current[currentQuestion.id]) !==
+                    JSON.stringify(value)
+                ) {
+                    pendingAnswersRef.current.add(currentQuestion.id);
+                }
+            } else {
+                // Mark as dirty for batch flush
+                if (
+                    JSON.stringify(lastSavedRef.current[currentQuestion.id]) !==
+                    JSON.stringify(value)
+                ) {
+                    pendingAnswersRef.current.add(currentQuestion.id);
+                }
             }
         },
-        [currentQuestion, debouncedSave, testId],
+        [currentQuestion, testId],
     );
 
     const handleNavigate = useCallback(
         (direction: "prev" | "next") => {
-            // Save current answer before navigating (skip essays — they use localStorage)
-            if (
-                currentQuestion &&
-                answers[currentQuestion.id] !== undefined &&
-                !isEssayQuestion(currentQuestion.id)
-            ) {
-                saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
-            }
-
             if (direction === "next") {
                 if (currentIndex < questions.length - 1) {
                     setCurrentIndex((i) => i + 1);
                 } else {
-                    // Last question — go to pre-submit
+                    // Last question — flush pending answers then go to pre-submit
                     if (TEST_CONFIG.submit.showPreSubmitSummary) {
+                        flushPendingAnswers();
                         setPhase("pre-submit");
                     }
                 }
@@ -431,30 +506,19 @@ export default function TestEnvironmentPage() {
             }
         },
         [
-            currentQuestion,
-            answers,
-            saveAnswer,
-            isEssayQuestion,
             currentIndex,
             questions.length,
+            flushPendingAnswers,
         ],
     );
 
     const handleJumpTo = useCallback(
         (index: number) => {
             if (TEST_CONFIG.navigation.allowQuestionJump) {
-                // Save current answer before jumping (skip essays — they use localStorage)
-                if (
-                    currentQuestion &&
-                    answers[currentQuestion.id] !== undefined &&
-                    !isEssayQuestion(currentQuestion.id)
-                ) {
-                    saveAnswer(currentQuestion.id, answers[currentQuestion.id]);
-                }
                 setCurrentIndex(index);
             }
         },
-        [currentQuestion, answers, saveAnswer, isEssayQuestion],
+        [],
     );
 
     const handleToggleFlag = useCallback(() => {
@@ -539,14 +603,39 @@ export default function TestEnvironmentPage() {
         setPhase("submitting");
 
         try {
-            // Save all answers to DB sequentially before submitting.
-            // Sequential to avoid race conditions — each saveAnswer reads
-            // the full answers array from DB, merges one answer, and writes
-            // back. Parallel writes would clobber each other.
-            // Note: lastSavedRef is seeded with DB answers on load, so only
-            // truly changed answers (e.g. essays from localStorage) hit the API.
+            // Flush all pending answers in a single batch call
+            await flushPendingAnswers();
+
+            // Save any remaining unsaved answers (e.g. essays from localStorage)
+            // that weren't in pending set, in a single batch
+            const unsavedBatch: Array<{
+                question_id: string;
+                selected: string | number[] | Record<string, number>;
+                time_spent_secs: number;
+            }> = [];
+
             for (const [questionId, selected] of Object.entries(answers)) {
-                await saveAnswer(questionId, selected);
+                if (
+                    JSON.stringify(lastSavedRef.current[questionId]) !==
+                    JSON.stringify(selected)
+                ) {
+                    unsavedBatch.push({
+                        question_id: questionId,
+                        selected,
+                        time_spent_secs: 0,
+                    });
+                }
+            }
+
+            if (unsavedBatch.length > 0) {
+                await fetch(`/api/tests/${testId}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        action: "save_answers_batch",
+                        answers: unsavedBatch,
+                    }),
+                });
             }
 
             const res = await fetch(`/api/tests/${testId}/submit`, {
@@ -693,7 +782,7 @@ export default function TestEnvironmentPage() {
                 <InstructionPages
                     subjectName={subject.name}
                     subjectInstructions={subject.instructions}
-                    onComplete={() => {}}
+                    onComplete={() => { }}
                 />
                 <StartConfirmation
                     open={true}
@@ -784,8 +873,7 @@ export default function TestEnvironmentPage() {
     // Determine layout: 2-column split for standalone MCQ/essay, stacked for passage-based or inline types
     const questionLayout: "split" | "stacked" =
         !hasPassage &&
-        (currentQuestion.question_type === "mcq" ||
-            currentQuestion.question_type === "essay")
+            (currentQuestion.question_type === "mcq")
             ? "split"
             : "stacked";
 
@@ -836,13 +924,12 @@ export default function TestEnvironmentPage() {
                     </button>
                     {!timer.isHidden && (
                         <div
-                            className={`flex items-center gap-1.5 font-mono text-lg font-bold ${
-                                timer.isCritical
-                                    ? "text-red-400 animate-pulse"
-                                    : timer.isWarning
-                                      ? "text-amber-400"
-                                      : "text-white"
-                            }`}
+                            className={`flex items-center gap-1.5 font-mono text-lg font-bold ${timer.isCritical
+                                ? "text-red-400 animate-pulse"
+                                : timer.isWarning
+                                    ? "text-amber-400"
+                                    : "text-white"
+                                }`}
                         >
                             <Clock className="h-4 w-4" />
                             {timer.formatted}
@@ -910,11 +997,10 @@ export default function TestEnvironmentPage() {
                                             </div>
                                         )}
                                         <div
-                                            className={`leading-relaxed text-gray-800 ${
-                                                passages[0].passage_type === "poem"
-                                                    ? "whitespace-pre-line italic"
-                                                    : ""
-                                            }`}
+                                            className={`leading-relaxed text-gray-800 ${passages[0].passage_type === "poem"
+                                                ? "whitespace-pre-line italic"
+                                                : ""
+                                                }`}
                                         >
                                             <MathText content={passages[0].content} block />
                                         </div>
@@ -962,11 +1048,10 @@ export default function TestEnvironmentPage() {
                                                     </div>
                                                 )}
                                                 <div
-                                                    className={`leading-relaxed text-gray-800 ${
-                                                        p.passage_type === "poem"
-                                                            ? "whitespace-pre-line italic"
-                                                            : ""
-                                                    }`}
+                                                    className={`leading-relaxed text-gray-800 ${p.passage_type === "poem"
+                                                        ? "whitespace-pre-line italic"
+                                                        : ""
+                                                        }`}
                                                 >
                                                     <MathText content={p.content} block />
                                                 </div>
@@ -983,16 +1068,16 @@ export default function TestEnvironmentPage() {
                 <div
                     className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white h-full`}
                 >
-                    <ScrollArea className="flex-1  ">
+                    <div className="flex-1  ">
                         <div
                             className={cn(
                                 "p-6 md:p-8",
                                 questionLayout === "stacked" &&
-                                    "max-w-3xl mx-auto",
+                                "max-w-3xl mx-auto",
                             )}
                         >
                             {/* Question number */}
-                            <div className="flex items-center justify-between mb-6 overflow">
+                            <div className="flex items-center justify-between mb-6 ">
                                 <div className="flex items-center gap-3">
                                     <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
                                         Q{currentIndex + 1}
@@ -1008,7 +1093,7 @@ export default function TestEnvironmentPage() {
                                 layout={questionLayout}
                             />
                         </div>
-                    </ScrollArea>
+                    </div>
                 </div>
             </div>
 
@@ -1036,11 +1121,10 @@ export default function TestEnvironmentPage() {
                         <Button
                             variant={isFlagged ? "default" : "outline"}
                             onClick={handleToggleFlag}
-                            className={`gap-2 ${
-                                isFlagged
-                                    ? "bg-amber-500 hover:bg-amber-600 text-white"
-                                    : ""
-                            }`}
+                            className={`gap-2 ${isFlagged
+                                ? "bg-amber-500 hover:bg-amber-600 text-white"
+                                : ""
+                                }`}
                         >
                             <Flag
                                 className={`h-4 w-4 ${isFlagged ? "fill-current" : ""}`}
@@ -1057,7 +1141,7 @@ export default function TestEnvironmentPage() {
                                     if (
                                         currentQuestion &&
                                         answers[currentQuestion.id] !==
-                                            undefined &&
+                                        undefined &&
                                         !isEssayQuestion(currentQuestion.id)
                                     ) {
                                         saveAnswer(

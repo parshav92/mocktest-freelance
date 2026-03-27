@@ -58,6 +58,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
             `[Submit] Test ${testId} submitted successfully — essay eval should have been processed`,
         );
 
+        // Pre-generate next test in background (non-blocking)
+        void testService.preGenerateNextTest(
+            auth.session.student_id,
+            test.subject_id,
+        ).then(
+            () => console.log(`[Submit] Pre-generation triggered for subject ${test.subject_id}`),
+            (err) => console.error(`[Submit] Pre-generation failed:`, err),
+        );
+
         // Build response with questions and student answers
         const questionsWithAnswers = questions.map((question) => {
             const studentAnswer = test.answers.find(
