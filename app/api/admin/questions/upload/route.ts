@@ -581,27 +581,30 @@ async function insertQuestions(
 
             correctAnswer = { label: q.data.answer?.toUpperCase() };
         } else if (uploadType === "fill_blank") {
-            // Parse blanks
-            const blanks: Array<{ options: string[]; correct: string }> = [];
+
+            // Parse blanks. CSV convention: first option is the correct one.
+            const blanks: Array<{
+                position: number;
+                options: string[];
+                correct_index: number;
+                correct: string;
+            }> = [];
             for (let i = 1; i <= 5; i++) {
                 const optionsStr = q.data[`blank_${i}_options`];
                 if (optionsStr) {
                     const opts = optionsStr
                         .split("|")
                         .map((o: string) => o.trim());
+                    const correctIndex = 0;
                     blanks.push({
+                        position: i,
                         options: opts,
-                        correct: opts[0], // First option is correct
+                        correct_index: correctIndex,
+                        // Keep text for compatibility with older review screens.
+                        correct: opts[correctIndex] || "",
                     });
                 }
             }
-
-            content = {
-                passage_text: q.data.passage_text,
-                blanks,
-            };
-
-            correctAnswer = { blanks: blanks.map((b) => b.correct) };
         } else if (uploadType === "fill_missing_sentence") {
             // Parse sentences from pipe-separated string
             const sentences = q.data.sentences
@@ -650,11 +653,11 @@ async function insertQuestions(
         // Build passage_ids array from comma-separated passage codes
         const passageIds: string[] = q.data.passage_code
             ? q.data.passage_code
-                  .split(",")
-                  .map((c) => c.trim())
-                  .filter(Boolean)
-                  .map((code) => passageMap.get(code)!)
-                  .filter(Boolean)
+                .split(",")
+                .map((c) => c.trim())
+                .filter(Boolean)
+                .map((code) => passageMap.get(code)!)
+                .filter(Boolean)
             : [];
 
         // Build solution_images array from uploaded solution images (dynamic count)
@@ -733,18 +736,18 @@ function findImageUrl(
         field === "question"
             ? "_q"
             : questionMatch
-              ? `_q${questionMatch[1]}`
-              : field === "option_a"
-                ? "_a"
-                : field === "option_b"
-                  ? "_b"
-                  : field === "option_c"
-                    ? "_c"
-                    : field === "option_d"
-                      ? "_d"
-                      : solutionMatch
-                        ? `_s${solutionMatch[1]}`
-                        : "";
+                ? `_q${questionMatch[1]}`
+                : field === "option_a"
+                    ? "_a"
+                    : field === "option_b"
+                        ? "_b"
+                        : field === "option_c"
+                            ? "_c"
+                            : field === "option_d"
+                                ? "_d"
+                                : solutionMatch
+                                    ? `_s${solutionMatch[1]}`
+                                    : "";
 
     if (!fieldSuffix) return null;
 

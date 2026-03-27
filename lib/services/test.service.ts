@@ -31,7 +31,7 @@ interface GradableQuestion {
  * Encapsulates business logic and database interactions
  */
 export class TestService {
-    constructor(private supabase: SupabaseClient) {}
+    constructor(private supabase: SupabaseClient) { }
 
     // ============================================
     // TEST CREATION
@@ -1204,9 +1204,18 @@ export class TestService {
                 if (!Array.isArray(selected)) return false;
 
                 // Validate structure
-                if (!correct.answers || !Array.isArray(correct.answers)) {
+                const legacyBlanks = (
+                    correctAnswer as unknown as Record<string, unknown>
+                )["blanks"];
+                const correctAnswers = Array.isArray(correct.answers)
+                    ? correct.answers
+                    : Array.isArray(legacyBlanks)
+                        ? legacyBlanks.map(() => 0)
+                        : null;
+
+                if (!correctAnswers) {
                     console.error(
-                        `Invalid fill_blank_dropdown correct_answer structure. Expected {answers: array}, got:`,
+                        `Invalid fill_blank_dropdown correct_answer structure. Expected {answers: number[]} (or legacy {blanks: string[]}), got:`,
                         correct,
                     );
                     return false;

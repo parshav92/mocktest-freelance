@@ -208,27 +208,27 @@ export default function TestEnvironmentPage() {
             setSubject(
                 testData.subject
                     ? {
-                          name: testData.subject.name,
-                          instructions: (() => {
-                              const raw = testData.subject
-                                  .instructions as unknown;
-                              if (!raw) return null;
-                              // DB stores { pages: [...] } JSONB
-                              if (
-                                  typeof raw === "object" &&
-                                  raw !== null &&
-                                  "pages" in raw
-                              ) {
-                                  return (raw as { pages: InstructionPage[] })
-                                      .pages;
-                              }
-                              // Already an array
-                              if (Array.isArray(raw))
-                                  return raw as InstructionPage[];
-                              return null;
-                          })(),
-                          duration_mins: testData.subject.duration_mins,
-                      }
+                        name: testData.subject.name,
+                        instructions: (() => {
+                            const raw = testData.subject
+                                .instructions as unknown;
+                            if (!raw) return null;
+                            // DB stores { pages: [...] } JSONB
+                            if (
+                                typeof raw === "object" &&
+                                raw !== null &&
+                                "pages" in raw
+                            ) {
+                                return (raw as { pages: InstructionPage[] })
+                                    .pages;
+                            }
+                            // Already an array
+                            if (Array.isArray(raw))
+                                return raw as InstructionPage[];
+                            return null;
+                        })(),
+                        duration_mins: testData.subject.duration_mins,
+                    }
                     : null,
             );
 
@@ -782,7 +782,7 @@ export default function TestEnvironmentPage() {
                 <InstructionPages
                     subjectName={subject.name}
                     subjectInstructions={subject.instructions}
-                    onComplete={() => {}}
+                    onComplete={() => { }}
                 />
                 <StartConfirmation
                     open={true}
@@ -873,8 +873,7 @@ export default function TestEnvironmentPage() {
     // Determine layout: 2-column split for standalone MCQ/essay, stacked for passage-based or inline types
     const questionLayout: "split" | "stacked" =
         !hasPassage &&
-        (currentQuestion.question_type === "mcq" ||
-            currentQuestion.question_type === "essay")
+            (currentQuestion.question_type === "mcq")
             ? "split"
             : "stacked";
 
@@ -925,13 +924,12 @@ export default function TestEnvironmentPage() {
                     </button>
                     {!timer.isHidden && (
                         <div
-                            className={`flex items-center gap-1.5 font-mono text-lg font-bold ${
-                                timer.isCritical
-                                    ? "text-red-400 animate-pulse"
-                                    : timer.isWarning
-                                      ? "text-amber-400"
-                                      : "text-white"
-                            }`}
+                            className={`flex items-center gap-1.5 font-mono text-lg font-bold ${timer.isCritical
+                                ? "text-red-400 animate-pulse"
+                                : timer.isWarning
+                                    ? "text-amber-400"
+                                    : "text-white"
+                                }`}
                         >
                             <Clock className="h-4 w-4" />
                             {timer.formatted}
@@ -999,11 +997,10 @@ export default function TestEnvironmentPage() {
                                             </div>
                                         )}
                                         <div
-                                            className={`leading-relaxed text-gray-800 ${
-                                                passages[0].passage_type === "poem"
-                                                    ? "whitespace-pre-line italic"
-                                                    : ""
-                                            }`}
+                                            className={`leading-relaxed text-gray-800 ${passages[0].passage_type === "poem"
+                                                ? "whitespace-pre-line italic"
+                                                : ""
+                                                }`}
                                         >
                                             <MathText content={passages[0].content} block />
                                         </div>
@@ -1051,11 +1048,10 @@ export default function TestEnvironmentPage() {
                                                     </div>
                                                 )}
                                                 <div
-                                                    className={`leading-relaxed text-gray-800 ${
-                                                        p.passage_type === "poem"
-                                                            ? "whitespace-pre-line italic"
-                                                            : ""
-                                                    }`}
+                                                    className={`leading-relaxed text-gray-800 ${p.passage_type === "poem"
+                                                        ? "whitespace-pre-line italic"
+                                                        : ""
+                                                        }`}
                                                 >
                                                     <MathText content={p.content} block />
                                                 </div>
@@ -1072,16 +1068,16 @@ export default function TestEnvironmentPage() {
                 <div
                     className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white h-full`}
                 >
-                    <ScrollArea className="flex-1  ">
+                    <div className="flex-1  ">
                         <div
                             className={cn(
                                 "p-6 md:p-8",
                                 questionLayout === "stacked" &&
-                                    "max-w-3xl mx-auto",
+                                "max-w-3xl mx-auto",
                             )}
                         >
                             {/* Question number */}
-                            <div className="flex items-center justify-between mb-6 overflow">
+                            <div className="flex items-center justify-between mb-6 ">
                                 <div className="flex items-center gap-3">
                                     <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
                                         Q{currentIndex + 1}
@@ -1097,7 +1093,7 @@ export default function TestEnvironmentPage() {
                                 layout={questionLayout}
                             />
                         </div>
-                    </ScrollArea>
+                    </div>
                 </div>
             </div>
 
@@ -1125,11 +1121,10 @@ export default function TestEnvironmentPage() {
                         <Button
                             variant={isFlagged ? "default" : "outline"}
                             onClick={handleToggleFlag}
-                            className={`gap-2 ${
-                                isFlagged
-                                    ? "bg-amber-500 hover:bg-amber-600 text-white"
-                                    : ""
-                            }`}
+                            className={`gap-2 ${isFlagged
+                                ? "bg-amber-500 hover:bg-amber-600 text-white"
+                                : ""
+                                }`}
                         >
                             <Flag
                                 className={`h-4 w-4 ${isFlagged ? "fill-current" : ""}`}
@@ -1146,7 +1141,7 @@ export default function TestEnvironmentPage() {
                                     if (
                                         currentQuestion &&
                                         answers[currentQuestion.id] !==
-                                            undefined &&
+                                        undefined &&
                                         !isEssayQuestion(currentQuestion.id)
                                     ) {
                                         saveAnswer(

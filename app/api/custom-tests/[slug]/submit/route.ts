@@ -245,9 +245,15 @@ function gradeAnswer(
             return { isCorrect, marksEarned: isCorrect ? marks : 0 };
         }
         case "fill_blank_dropdown": {
-            const correctArr = correctAnswer.answers as number[];
+            const correctArr = Array.isArray(correctAnswer.answers)
+                ? (correctAnswer.answers as number[])
+                : Array.isArray(correctAnswer.blanks)
+                    ? (correctAnswer.blanks as unknown[]).map(() => 0)
+                    : null;
             const selectedArr = selected as number[];
             if (!Array.isArray(selectedArr))
+                return { isCorrect: false, marksEarned: 0 };
+            if (!correctArr)
                 return { isCorrect: false, marksEarned: 0 };
             const isCorrect =
                 selectedArr.length === correctArr.length &&

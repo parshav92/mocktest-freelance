@@ -44,8 +44,8 @@ const MCQQuestionStem = memo(({ content }: { content: MCQContent }) => {
         (content.question_image
             ? [content.question_image]
             : content.question_image_url
-              ? [content.question_image_url]
-              : undefined);
+                ? [content.question_image_url]
+                : undefined);
 
     // Find which image indices are referenced via [img:N] syntax
     const imagePattern = /\[img:(\d+)\]/g;
@@ -73,11 +73,10 @@ const MCQQuestionStem = memo(({ content }: { content: MCQContent }) => {
             </div>
             {unreferencedImages.length > 0 && (
                 <div
-                    className={`grid gap-3 ${
-                        unreferencedImages.length > 1
-                            ? "grid-cols-1 sm:grid-cols-2"
-                            : ""
-                    }`}
+                    className={`grid gap-3 ${unreferencedImages.length > 1
+                        ? "grid-cols-1 sm:grid-cols-2"
+                        : ""
+                        }`}
                 >
                     {unreferencedImages.map((imgUrl, idx) => (
                         <img
@@ -210,67 +209,67 @@ export const MCQRenderer = memo(
     ({ content, selected, onSelect, layout }: MCQRendererProps) => {
         const [optionsCollapsed, setOptionsCollapsed] = useState(false);
 
-      if (layout === "split") {
-    return (
-        <div className="flex overflow-hidden relative" style={{ maxHeight: "calc(100vh - 120px)" }}>
-            {/* Left column: Question stem — independent scroll */}
-            <div
-                className={cn(
-                    "transition-all duration-300 ease-in-out overflow-y-auto shrink-0",
-                    optionsCollapsed ? "w-full pr-4" : "w-1/2 pr-8",
-                )}
-                style={{ maxHeight: "calc(100vh - 120px)" }}
-            >
-                <MCQQuestionStem content={content} />
-            </div>
+        if (layout === "split") {
+            return (
+                <div id="split" className="flex overflow-hidden relative" style={{ maxHeight: "calc(100vh - 210px)" }}>
+                    {/* Left column: Question stem — independent scroll */}
+                    <div
+                        className={cn(
+                            "transition-all duration-300 ease-in-out overflow-y-auto shrink-0",
+                            optionsCollapsed ? "w-full pr-4" : "w-1/2 pr-8",
+                        )}
 
-            {/* Divider with toggle button */}
-            <div className="relative flex items-stretch shrink-0">
-                {!optionsCollapsed && (
-                    <div className="w-px bg-gray-200" />
-                )}
-                <button
-                    onClick={() => setOptionsCollapsed(!optionsCollapsed)}
-                    className={cn(
-                        "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-0",
-                        "w-6 h-12 flex items-center justify-center",
-                        "bg-white border border-gray-300 rounded-full shadow-sm",
-                        "hover:bg-gray-50 hover:border-gray-400 transition-colors",
-                        "z-5 cursor-pointer",
-                    )}
-                    title={optionsCollapsed ? "Show options" : "Hide options"}
-                >
-                    {optionsCollapsed ? (
-                        <ChevronLeft className="h-4 w-4 text-gray-600" />
-                    ) : (
-                        <ChevronRight className="h-4 w-4 text-gray-600" />
-                    )}
-                </button>
-            </div>
+                    >
+                        <MCQQuestionStem content={content} />
+                    </div>
 
-            {/* Right column: Options — independent scroll */}
-            <div
-                className={cn(
-                    "transition-[width] duration-300 ease-in-out overflow-hidden",
-                    optionsCollapsed ? "w-0 pl-0" : "w-1/2 overflow-y-auto pl-8",
-                )}
-                style={{ maxHeight: "calc(100vh - 240px)" }}
-            >
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-                    Choose your answer
-                </p>
-                <MCQOptionsList
-                    options={content.options}
-                    selected={selected}
-                    onSelect={onSelect}
-                />
-            </div>
-        </div>
-    );
-}
+                    {/* Divider with toggle button */}
+                    <div className="relative flex items-stretch shrink-0">
+                        {!optionsCollapsed && (
+                            <div className="w-px bg-gray-200" />
+                        )}
+                        <button
+                            onClick={() => setOptionsCollapsed(!optionsCollapsed)}
+                            className={cn(
+                                "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-0",
+                                "w-6 h-12 flex items-center justify-center",
+                                "bg-white border border-gray-300 rounded-full shadow-sm",
+                                "hover:bg-gray-50 hover:border-gray-400 transition-colors",
+                                "z-5 cursor-pointer",
+                            )}
+                            title={optionsCollapsed ? "Show options" : "Hide options"}
+                        >
+                            {optionsCollapsed ? (
+                                <ChevronLeft className="h-4 w-4 text-gray-600" />
+                            ) : (
+                                <ChevronRight className="h-4 w-4 text-gray-600" />
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Right column: Options — independent scroll */}
+                    <div
+                        className={cn(
+                            "transition-[width] duration-300 ease-in-out overflow-y-auto",
+                            optionsCollapsed ? "w-0 pl-0" : "w-1/2  pl-8",
+                        )}
+
+                    >
+                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
+                            Choose your answer
+                        </p>
+                        <MCQOptionsList
+                            options={content.options}
+                            selected={selected}
+                            onSelect={onSelect}
+                        />
+                    </div>
+                </div>
+            );
+        }
         // Stacked layout (used when passage panel is already visible)
         return (
-            <div className="space-y-6 h-screen overflow-y-auto" style={{ maxHeight: "calc(100vh - 120px)" }}>
+            <div id="stacked" className="space-y-6 h-screen overflow-y-auto" style={{ maxHeight: "calc(100vh - 240px)" }}>
                 <MCQQuestionStem content={content} />
                 <Separator />
                 <MCQOptionsList
@@ -320,7 +319,7 @@ export const FillBlankRenderer = memo(
                                 <Select
                                     value={
                                         answers[index] !== undefined &&
-                                        answers[index] !== -1
+                                            answers[index] !== -1
                                             ? String(answers[index])
                                             : ""
                                     }
@@ -332,8 +331,8 @@ export const FillBlankRenderer = memo(
                                         className={cn(
                                             "mx-1 inline-flex h-8 w-auto min-w-32 text-sm",
                                             answers[index] !== undefined &&
-                                                answers[index] !== -1 &&
-                                                "border-[#2563eb]/60 bg-blue-50/50",
+                                            answers[index] !== -1 &&
+                                            "border-[#2563eb]/60 bg-blue-50/50",
                                         )}
                                     >
                                         <SelectValue placeholder="Select..." />
@@ -448,7 +447,7 @@ export const FillMissingSentenceRenderer = memo(
                                     className={cn(
                                         "mx-1 inline-flex h-8 w-auto min-w-48 max-w-72 text-sm",
                                         hasSelection &&
-                                            "border-[#2563eb]/60 bg-blue-50/50",
+                                        "border-[#2563eb]/60 bg-blue-50/50",
                                     )}
                                 >
                                     <SelectValue placeholder="Select a sentence..." />
@@ -602,8 +601,8 @@ export const EssayRenderer = memo(
                             isOverLimit
                                 ? "text-red-600 font-bold"
                                 : isApproachingLimit
-                                  ? "text-amber-600"
-                                  : "text-muted-foreground",
+                                    ? "text-amber-600"
+                                    : "text-muted-foreground",
                         )}
                     >
                         {wordCount} / {content.word_limit} words
