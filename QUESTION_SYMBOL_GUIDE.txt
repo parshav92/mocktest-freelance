@@ -1,0 +1,57 @@
+Question Developer Math Symbol Guide
+===================================
+
+Use these formulas in question text. The system converts them to proper symbols automatically.
+
+| Formula / Input | Actual Symbol |
+|-----------------|---------------|
+| \\alpha          | α             |
+| \\beta           | β             |
+| \\gamma          | γ             |
+| \\theta          | θ             |
+| \\pi             | π             |
+| \\Delta          | Δ             |
+| \\Sigma          | Σ             |
+| \\Omega          | Ω             |
+| \\times          | ×             |
+| \\div            | ÷             |
+| \\pm             | ±             |
+| \\neq            | ≠             |
+| \\leq            | ≤             |
+| \\geq            | ≥             |
+| \\approx         | ≈             |
+| \\propto         | ∝             |
+| \\sqrt{x}        | √x            |
+| \\sqrt[3]{x}     | ∛x            |
+| x^2             | x²            |
+| x_{1}           | x₁            |
+| 3/4             | ¾ (or fraction) |
+| 2 3/4           | 2¾ (mixed fraction) |
+| \\frac{a}{b}     | a/b (fraction) |
+| \\degree or 45°  | 45°           |
+| \\angle          | ∠             |
+| \\perp           | ⊥             |
+| \\parallel       | ∥             |
+| \\infty          | ∞             |
+| \\forall         | ∀             |
+| \\exists         | ∃             |
+| \\in             | ∈             |
+| \\notin          | ∉             |
+| \\subset         | ⊂             |
+| \\supset         | ⊃             |
+| \\cup            | ∪             |
+| \\cap            | ∩             |
+| \\emptyset       | ∅             |
+| \\therefore      | ∴             |
+| \\because        | ∵             |
+| \\rightarrow     | →             |
+| \\leftarrow      | ←             |
+| \\Rightarrow     | ⇒             |
+| \\leftrightarrow | ↔             |
+| \\int            | ∫             |
+| \\sum            | ∑             |
+| \\prod           | ∏             |
+
+Notes:
+- You can type either Unicode symbols directly (example: θ, π, √, ≤) or KaTeX-style formulas (example: \theta, \pi, \sqrt{x}, \leq).
+- For best results with powers and subscripts, use braces when needed: x^{10}, a_{n+1}.
