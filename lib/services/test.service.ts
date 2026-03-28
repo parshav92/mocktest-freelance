@@ -1222,8 +1222,8 @@ export class TestService {
                 }
 
                 return (
-                    selected.length === correct.answers.length &&
-                    selected.every((val, idx) => val === correct.answers[idx])
+                    selected.length === correctAnswers.length &&
+                    selected.every((val, idx) => val === correctAnswers[idx])
                 );
             }
 

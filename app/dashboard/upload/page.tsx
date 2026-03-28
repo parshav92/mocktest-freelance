@@ -724,9 +724,9 @@ export default function AdminUploadPage() {
                                                         Auto
                                                     </Badge>
                                                 ) : (
-                                                <span className="font-mono text-sm">
-                                                    {question.code}
-                                                </span>
+                                                    <span className="font-mono text-sm">
+                                                        {question.code}
+                                                    </span>
                                                 )}
                                                 {question.imageRequirements
                                                     .length > 0 && (
@@ -824,33 +824,33 @@ export default function AdminUploadPage() {
 
                                                     return (
                                                         <>
-                                                {/* Question text */}
-                                                <div>
-                                                    <Label className="text-xs text-muted-foreground">
-                                                        {question.data.question
-                                                            ? "Question"
-                                                            : question.data.prompt
-                                                              ? "Prompt"
-                                                              : question.data
-                                                                    .passage_text
-                                                                ? "Passage Text"
-                                                                : question.data
-                                                                      .passage_with_gaps
-                                                                  ? "Passage With Gaps"
-                                                                  : "Question"}
-                                                    </Label>
-                                                    <div className="text-sm mt-1 whitespace-pre-wrap leading-relaxed">
-                                                        <ImageEnhancedText
-                                                            content={
-                                                                mainContent
-                                                            }
-                                                            images={
-                                                                questionImagePreviews
-                                                            }
-                                                            block
-                                                        />
-                                                    </div>
-                                                </div>
+                                                            {/* Question text */}
+                                                            <div>
+                                                                <Label className="text-xs text-muted-foreground">
+                                                                    {question.data.question
+                                                                        ? "Question"
+                                                                        : question.data.prompt
+                                                                            ? "Prompt"
+                                                                            : question.data
+                                                                                .passage_text
+                                                                                ? "Passage Text"
+                                                                                : question.data
+                                                                                    .passage_with_gaps
+                                                                                    ? "Passage With Gaps"
+                                                                                    : "Question"}
+                                                                </Label>
+                                                                <div className="text-sm mt-1 whitespace-pre-wrap leading-relaxed">
+                                                                    <ImageEnhancedText
+                                                                        content={
+                                                                            mainContent
+                                                                        }
+                                                                        images={
+                                                                            questionImagePreviews
+                                                                        }
+                                                                        block
+                                                                    />
+                                                                </div>
+                                                            </div>
                                                         </>
                                                     );
                                                 })()}
@@ -869,7 +869,7 @@ export default function AdminUploadPage() {
                                                                         1;
                                                                     const options =
                                                                         question.data[
-                                                                            `blank_${position}_options`
+                                                                        `blank_${position}_options`
                                                                         ];
                                                                     if (
                                                                         !options
@@ -1492,7 +1492,9 @@ function ImageUploadField({
 
 /**
  * Compress an image File to WebP with a target max size.
- * Uses a quality sweep first; if that's not enough, scales the canvas down.
+ * First fits the image into a 16:9 container (object-fit: contain) with white
+ * background so every uploaded image has a consistent aspect ratio.
+ * Then uses a quality sweep; if that's not enough, scales the canvas down.
  */
 async function compressToWebP(
     file: File,
@@ -1506,14 +1508,41 @@ async function compressToWebP(
             URL.revokeObjectURL(objectUrl);
 
             const maxBytes = maxSizeKB * 1024;
+
+            // --- Step 0: Fit image into a 16:9 container ---
+            const ASPECT = 16 / 9;
+            // Use at least 960px wide, or the image's own width if larger
+            const baseW = Math.max(240, img.naturalWidth);
+            const baseH = Math.round(baseW / ASPECT);
+
+            // Calculate centered "object-fit: contain" placement
+            const fitScale = Math.min(
+                baseW / img.naturalWidth,
+                baseH / img.naturalHeight,
+            );
+            const drawW = Math.round(img.naturalWidth * fitScale);
+            const drawH = Math.round(img.naturalHeight * fitScale);
+            const offsetX = Math.round((baseW - drawW) / 2);
+            const offsetY = Math.round((baseH - drawH) / 2);
+
+            // Pre-render the 16:9 standardised canvas once
+            const srcCanvas = document.createElement("canvas");
+            srcCanvas.width = baseW;
+            srcCanvas.height = baseH;
+            const srcCtx = srcCanvas.getContext("2d")!;
+            srcCtx.fillStyle = "#FFFFFF";
+            srcCtx.fillRect(0, 0, baseW, baseH);
+            srcCtx.drawImage(img, offsetX, offsetY, drawW, drawH);
+
+            // --- Compression pass (operates on the 16:9 canvas) ---
             const canvas = document.createElement("canvas");
             const ctx = canvas.getContext("2d")!;
 
             const encode = (quality: number, scale: number): Promise<Blob> =>
                 new Promise((res) => {
-                    canvas.width = Math.round(img.naturalWidth * scale);
-                    canvas.height = Math.round(img.naturalHeight * scale);
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    canvas.width = Math.round(baseW * scale);
+                    canvas.height = Math.round(baseH * scale);
+                    ctx.drawImage(srcCanvas, 0, 0, canvas.width, canvas.height);
                     canvas.toBlob(
                         (b) => res(b ?? new Blob()),
                         "image/webp",

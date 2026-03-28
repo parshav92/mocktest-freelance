@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { cn, countWords } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -25,6 +25,35 @@ import type {
 } from "@/types/test";
 import { MathText } from "@/components/ui/math-text";
 import { ImageEnhancedText } from "@/components/ui/image-enhanced-text";
+
+// ============================================
+// SEEDED SHUFFLE UTILITY
+// ============================================
+
+/** Simple numeric hash from a string (djb2). */
+function hashString(str: string): number {
+    let hash = 5381;
+    for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+    }
+    return Math.abs(hash);
+}
+
+/**
+ * Return a shuffled copy of `indices` using a deterministic seed.
+ * Same seed always produces the same permutation.
+ */
+function seededShuffle(indices: number[], seed: number): number[] {
+    const arr = [...indices];
+    let s = seed;
+    for (let i = arr.length - 1; i > 0; i--) {
+        // Simple LCG-style PRNG
+        s = (s * 1664525 + 1013904223) | 0;
+        const j = Math.abs(s) % (i + 1);
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
 
 // ============================================
 // LAYOUT TYPE
@@ -297,6 +326,17 @@ export const FillBlankRenderer = memo(
     ({ content, selected, onSelect }: FillBlankRendererProps) => {
         const answers = selected || new Array(content.blanks.length).fill(-1);
 
+        // Stable shuffled index maps per blank (deterministic per option set)
+        const shuffledMaps = useMemo(() => {
+            return content.blanks.map((blank, blankIdx) => {
+                const seed = hashString(
+                    `fb-${blankIdx}-${blank.options.join("|")}`,
+                );
+                const indices = blank.options.map((_, i) => i);
+                return seededShuffle(indices, seed);
+            });
+        }, [content.blanks]);
+
         const handleSelect = (blankIndex: number, optionIndex: number) => {
             const newAnswers = [...answers];
             newAnswers[blankIndex] = optionIndex;
@@ -338,13 +378,13 @@ export const FillBlankRenderer = memo(
                                         <SelectValue placeholder="Select..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {content.blanks[index]?.options.map(
-                                            (opt, optIdx) => (
+                                        {(shuffledMaps[index] ?? content.blanks[index]?.options.map((_, i) => i) ?? []).map(
+                                            (origIdx) => (
                                                 <SelectItem
-                                                    key={`fb-${index}-opt-${optIdx}`}
-                                                    value={String(optIdx)}
+                                                    key={`fb-${index}-opt-${origIdx}`}
+                                                    value={String(origIdx)}
                                                 >
-                                                    <MathText content={opt} />
+                                                    <MathText content={content.blanks[index].options[origIdx]} />
                                                 </SelectItem>
                                             ),
                                         )}
@@ -373,6 +413,15 @@ interface FillMissingSentenceRendererProps {
 export const FillMissingSentenceRenderer = memo(
     ({ content, selected, onSelect }: FillMissingSentenceRendererProps) => {
         const mapping = selected || {};
+
+        // Stable shuffled sentence order (deterministic per sentence set)
+        const shuffledSentenceIndices = useMemo(() => {
+            const seed = hashString(
+                `fms-${content.sentences.join("|")}`,
+            );
+            const indices = content.sentences.map((_, i) => i);
+            return seededShuffle(indices, seed);
+        }, [content.sentences]);
 
         // Find gap markers in passage
         const gapPattern = /\{(GAP_\d+)\}/g;
@@ -453,16 +502,16 @@ export const FillMissingSentenceRenderer = memo(
                                     <SelectValue placeholder="Select a sentence..." />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {content.sentences.map((sentence, idx) => (
+                                    {shuffledSentenceIndices.map((origIdx) => (
                                         <SelectItem
-                                            key={`fms-sentence-${idx}`}
-                                            value={String(idx)}
+                                            key={`fms-sentence-${origIdx}`}
+                                            value={String(origIdx)}
                                             disabled={
-                                                usedIndices.has(idx) &&
-                                                mapping[part.value] !== idx
+                                                usedIndices.has(origIdx) &&
+                                                mapping[part.value] !== origIdx
                                             }
                                         >
-                                            <MathText content={sentence} />
+                                            <MathText content={content.sentences[origIdx]} />
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -479,11 +528,11 @@ export const FillMissingSentenceRenderer = memo(
                         Available Sentences
                     </h4>
                     <div className="space-y-2">
-                        {content.sentences.map((sentence, idx) => {
-                            const isUsed = usedIndices.has(idx);
+                        {shuffledSentenceIndices.map((origIdx, displayIdx) => {
+                            const isUsed = usedIndices.has(origIdx);
                             return (
                                 <div
-                                    key={`fms-ref-${idx}`}
+                                    key={`fms-ref-${origIdx}`}
                                     className={cn(
                                         "text-sm px-3 py-2.5 rounded-lg flex items-start gap-2.5 transition-all",
                                         isUsed
@@ -500,10 +549,10 @@ export const FillMissingSentenceRenderer = memo(
                                                 : "text-gray-500",
                                         )}
                                     >
-                                        {String.fromCharCode(65 + idx)}
+                                        {String.fromCharCode(65 + displayIdx)}
                                     </Badge>
                                     <span className="flex-1">
-                                        <MathText content={sentence} />
+                                        <MathText content={content.sentences[origIdx]} />
                                     </span>
                                 </div>
                             );
