@@ -51,6 +51,8 @@ export async function GET(
                     code,
                     question_type,
                     difficulty,
+                    topic,
+                    subtopic,
                     content,
                     correct_answer,
                     marks,

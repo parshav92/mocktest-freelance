@@ -432,7 +432,7 @@ export class TestService {
     ): Promise<QuestionForTest[]> {
         // Build select query
         const baseSelect =
-            "id, code, question_type, difficulty, content, marks, passage_ids";
+            "id, code, question_type, difficulty, topic, subtopic, content, marks, passage_ids";
 
         let query;
         if (includeAnswers) {

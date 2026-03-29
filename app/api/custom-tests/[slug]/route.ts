@@ -102,6 +102,8 @@ export async function GET(
                 code,
                 question_type,
                 difficulty,
+                topic,
+                subtopic,
                 content,
                 marks,
                 passage_ids
@@ -138,6 +140,8 @@ export async function GET(
             code: string;
             question_type: string;
             difficulty: string;
+            topic: string | null;
+            subtopic: string | null;
             content: Record<string, unknown>;
             marks: number;
             passage_ids: unknown;
@@ -153,6 +157,8 @@ export async function GET(
             code: q.code,
             question_type: q.question_type,
             difficulty: q.difficulty,
+            topic: q.topic,
+            subtopic: q.subtopic,
             content: q.content,
             marks: q.marks,
             passage_ids: pids,
@@ -191,6 +197,8 @@ export async function GET(
         code: q.code,
         question_type: q.question_type,
         difficulty: q.difficulty,
+        topic: q.topic,
+        subtopic: q.subtopic,
         content: q.content,
         marks: q.marks,
         passages: q.passage_ids

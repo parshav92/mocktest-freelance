@@ -35,13 +35,21 @@ For all question types (`mcq`, `passage_mcq`, `poem_mcq`, `fill_blank`, `fill_mi
 
 - `subject` column is mandatory.
 
-### 2.2 Code behavior
+### 2.2 Optional categorization fields
+
+For all question types (`mcq`, `passage_mcq`, `poem_mcq`, `fill_blank`, `fill_missing_sentence`, `essay`):
+
+- `topic` is optional.
+- `subtopic` is optional.
+- If blank, both are stored as `null` in DB.
+
+### 2.3 Code behavior
 
 - For question types, `code` column is optional.
 - If `code` is missing/empty, code is auto-generated at upload time.
 - For `passage` type, `code` is mandatory.
 
-### 2.3 Difficulty values
+### 2.4 Difficulty values
 
 Where difficulty is used, accepted values are:
 
@@ -51,7 +59,7 @@ Where difficulty is used, accepted values are:
 
 Values are case-insensitive in CSV input.
 
-### 2.4 Image count fields (strict numeric)
+### 2.5 Image count fields (strict numeric)
 
 For MCQ-family types:
 
@@ -74,7 +82,7 @@ Option image flags remain yes/no style:
 #### 3.1.1 Header
 
 ```csv
-code,subject,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
+code,subject,difficulty,topic,subtopic,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
 ```
 
 #### 3.1.2 Required columns (validation)
@@ -103,7 +111,7 @@ code,subject,difficulty,question,option_a,option_b,option_c,option_d,answer,solu
 #### 3.2.1 Header
 
 ```csv
-code,subject,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
+code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
 ```
 
 #### 3.2.2 Required columns (validation)
@@ -132,7 +140,7 @@ code,subject,passage_code,difficulty,question,option_a,option_b,option_c,option_
 #### 3.3.1 Header
 
 ```csv
-code,subject,passage_code,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
+code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
 ```
 
 #### 3.3.2 Required columns (validation)
@@ -160,7 +168,7 @@ code,subject,passage_code,difficulty,question,option_a,option_b,option_c,option_
 #### 3.4.1 Header
 
 ```csv
-code,subject,passage_code,difficulty,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
+code,subject,passage_code,difficulty,topic,subtopic,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
 ```
 
 #### 3.4.2 Required columns (validation)
@@ -184,7 +192,7 @@ code,subject,passage_code,difficulty,passage_text,blank_1_options,blank_2_option
 #### 3.5.1 Header
 
 ```csv
-code,subject,difficulty,passage_with_gaps,sentences
+code,subject,difficulty,topic,subtopic,passage_with_gaps,sentences
 ```
 
 #### 3.5.2 Required columns (validation)
@@ -208,7 +216,7 @@ code,subject,difficulty,passage_with_gaps,sentences
 #### 3.6.1 Header
 
 ```csv
-code,subject,difficulty,prompt,word_limit,time_mins,rubric
+code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins,rubric
 ```
 
 #### 3.6.2 Required columns (validation)

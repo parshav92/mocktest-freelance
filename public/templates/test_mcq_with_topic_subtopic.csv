@@ -1,0 +1,7 @@
+code,subject,difficulty,topic,subtopic,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
+,mathematical-reasoning,easy,Arithmetic,Addition,What is 25 + 15?,30,40,50,60,B,Simply add: 25 + 15 = 40,0,no,no,no,no,0
+,mathematical-reasoning,medium,Algebra,Linear Equations,Solve: 2x + 5 = 13,2,3,4,5,C,2x = 8 so x = 4,0,no,no,no,no,0
+,mathematical-reasoning,hard,Geometry,Triangles,What is the area of a triangle with base 10 and height 6?,15,30,45,60,B,Area = (base × height) / 2 = (10 × 6) / 2 = 30,0,no,no,no,no,0
+,mathematical-reasoning,easy,,, Which is the highest number?,100,200,300,400,D,400 is the highest,0,no,no,no,no,0
+,mathematical-reasoning,medium,,, What is 50% of 100?,25,50,75,100,B,50% = 1/2 so half of 100 is 50,0,no,no,no,no,0
+,thinking-skills,easy,Pattern Recognition,Visual Sequences,Which comes next in the sequence?,Option A,Option B,Option C,Option D,A,The pattern repeats every 3 items,0,no,no,no,no,0

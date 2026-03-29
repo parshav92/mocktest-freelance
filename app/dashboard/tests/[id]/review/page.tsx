@@ -37,6 +37,8 @@ interface ReviewQuestion {
         code: string;
         question_type: string;
         difficulty: string;
+        topic: string | null;
+        subtopic: string | null;
         content: Record<string, unknown>;
         marks: number;
         correct_answer: Record<string, unknown>;
@@ -1272,13 +1274,22 @@ function ReviewQuestionDisplay({
     const correctAnswer = question.correct_answer;
 
     const questionBadge = (
-        <div className="flex items-center gap-3 mb-6">
+        <div className="mb-6">
+            <div className="flex items-center gap-3">
             <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
                 Q{questionNumber}
             </span>
             <Badge variant="outline" className="text-xs">
                 {question.marks === 1 ? "1 mark" : `${question.marks} marks`}
             </Badge>
+            </div>
+            {(question.topic || question.subtopic) && (
+                <p className="mt-2 text-xs text-slate-500">
+                    {question.topic && question.subtopic
+                        ? `${question.topic} / ${question.subtopic}`
+                        : question.topic || question.subtopic}
+                </p>
+            )}
         </div>
     );
 

@@ -87,6 +87,14 @@ CREATE TABLE public.profiles (
   CONSTRAINT profiles_pkey PRIMARY KEY (id),
   CONSTRAINT profiles_id_fkey FOREIGN KEY (id) REFERENCES auth.users(id)
 );
+CREATE TABLE public.question_code_counters (
+  subject_id uuid NOT NULL,
+  question_type text NOT NULL,
+  last_number integer NOT NULL DEFAULT 0,
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT question_code_counters_pkey PRIMARY KEY (subject_id, question_type),
+  CONSTRAINT question_code_counters_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.subjects(id)
+);
 CREATE TABLE public.question_upload_batches (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   uploaded_by uuid NOT NULL,
@@ -111,7 +119,6 @@ CREATE TABLE public.questions (
   content jsonb NOT NULL,
   correct_answer jsonb NOT NULL,
   solution_text text,
-  solution_images jsonb NOT NULL DEFAULT '[]'::jsonb,
   marks integer NOT NULL DEFAULT 1,
   is_active boolean NOT NULL DEFAULT true,
   times_shown integer NOT NULL DEFAULT 0,
@@ -119,6 +126,9 @@ CREATE TABLE public.questions (
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   passage_ids jsonb DEFAULT '[]'::jsonb,
+  solution_images jsonb NOT NULL DEFAULT '[]'::jsonb,
+  topic text,
+  subtopic text,
   CONSTRAINT questions_pkey PRIMARY KEY (id),
   CONSTRAINT questions_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.subjects(id)
 );
@@ -246,12 +256,4 @@ CREATE TABLE public.tests (
   CONSTRAINT tests_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.students(id),
   CONSTRAINT tests_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.subjects(id),
   CONSTRAINT tests_template_id_fkey FOREIGN KEY (template_id) REFERENCES public.subject_templates(id)
-);
-CREATE TABLE public.question_code_counters (
-  subject_id uuid NOT NULL,
-  question_type text NOT NULL,
-  last_number integer NOT NULL DEFAULT 0,
-  updated_at timestamp with time zone NOT NULL DEFAULT now(),
-  CONSTRAINT question_code_counters_pkey PRIMARY KEY (subject_id, question_type),
-  CONSTRAINT question_code_counters_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.subjects(id)
 );

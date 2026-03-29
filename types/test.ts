@@ -73,6 +73,8 @@ export interface Question {
     code: string;
     question_type: QuestionType;
     difficulty: DifficultyLevel;
+    topic: string | null;
+    subtopic: string | null;
     content: QuestionContent;
     correct_answer: CorrectAnswer;
     solution_text: string | null;
@@ -305,6 +307,8 @@ export interface QuestionForTest {
     code: string;
     question_type: QuestionType;
     difficulty: DifficultyLevel;
+    topic?: string | null;
+    subtopic?: string | null;
     content: QuestionContent;
     marks: number;
     // Note: correct_answer is NOT included

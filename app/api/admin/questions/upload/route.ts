@@ -187,6 +187,12 @@ function parseImageCount(value: string | undefined): number {
     return count;
 }
 
+function toNullableText(value: string | undefined): string | null {
+    if (!value) return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
 /**
  * Insert parsed passages into database
  */
@@ -703,6 +709,8 @@ async function insertQuestions(
             code: q.code,
             question_type: getQuestionType(uploadType),
             difficulty: q.data.difficulty?.toLowerCase() || "medium",
+            topic: toNullableText(q.data.topic),
+            subtopic: toNullableText(q.data.subtopic),
             content,
             correct_answer: correctAnswer,
             solution_text: q.data.solution || null,

@@ -43,7 +43,7 @@ function AccordionTrigger({
                 {...props}
             >
                 {children}
-                <span className="relative flex items-center justify-center w-6 h-6 transition-transform duration-200 group-hover:translate-x-1">
+                <span className="relative flex items-center justify-center w-6 h-6 transition-transform duration-200 ">
                     <span className="italic font-serif text-xl text-slate-500 group-hover:text-sky-600 transition-colors [.group[data-state=open]_&]:hidden">
                         +
                     </span>

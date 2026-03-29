@@ -710,24 +710,35 @@ export default function AdminUploadPage() {
                                         value={question.code || `auto-${idx}`}
                                     >
                                         <AccordionTrigger className="hover:no-underline">
-                                            <div className="flex items-center gap-3">
+                                            <div className="flex items-center gap-3 w-full">
                                                 <Badge variant="outline">
                                                     Q. {idx + 1}
                                                 </Badge>
-                                                {question.data.subject && (
-                                                    <Badge variant="secondary" className="text-xs">
-                                                        Subject: {question.data.subject}
-                                                    </Badge>
-                                                )}
-                                                {question.autoCode ? (
-                                                    <Badge variant="secondary" className="font-mono text-xs">
-                                                        Auto
-                                                    </Badge>
-                                                ) : (
-                                                    <span className="font-mono text-sm">
-                                                        {question.code}
-                                                    </span>
-                                                )}
+                                                <div className="flex flex-col gap-1 flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        {question.data.subject && (
+                                                            <Badge variant="secondary" className="text-xs">
+                                                                Subject: {question.data.subject}
+                                                            </Badge>
+                                                        )}
+                                                        {question.autoCode ? (
+                                                            <Badge variant="secondary" className="font-mono text-xs">
+                                                                Auto
+                                                            </Badge>
+                                                        ) : (
+                                                            <span className="font-mono text-xs text-muted-foreground">
+                                                                {question.code}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    {(question.data.topic || question.data.subtopic) && (
+                                                        <div className="text-xs text-muted-foreground">
+                                                            {question.data.topic && question.data.subtopic
+                                                                ? `${question.data.topic} / ${question.data.subtopic}`
+                                                                : question.data.topic || question.data.subtopic}
+                                                        </div>
+                                                    )}
+                                                </div>
                                                 {question.imageRequirements
                                                     .length > 0 && (
                                                         <Badge

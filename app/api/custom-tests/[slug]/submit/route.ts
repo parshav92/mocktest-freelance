@@ -75,6 +75,8 @@ export async function POST(
                 code,
                 question_type,
                 difficulty,
+                topic,
+                subtopic,
                 content,
                 correct_answer,
                 solution_text,
@@ -112,6 +114,8 @@ export async function POST(
             code: string;
             question_type: string;
             difficulty: string;
+            topic: string | null;
+            subtopic: string | null;
             content: Record<string, unknown>;
             correct_answer: Record<string, unknown> | null;
             solution_text: string | null;
@@ -142,6 +146,8 @@ export async function POST(
         code: string;
         question_type: string;
         difficulty: string;
+        topic: string | null;
+        subtopic: string | null;
         content: Record<string, unknown>;
         correct_answer: Record<string, unknown> | null;
         solution_text: string | null;
@@ -174,6 +180,8 @@ export async function POST(
             code: q.code,
             question_type: q.question_type,
             difficulty: q.difficulty,
+            topic: q.topic,
+            subtopic: q.subtopic,
             content: q.content,
             correct_answer: q.correct_answer,
             solution_text: q.solution_text,

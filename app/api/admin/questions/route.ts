@@ -53,6 +53,8 @@ export async function GET(request: NextRequest) {
                 code,
                 question_type,
                 difficulty,
+                topic,
+                subtopic,
                 content,
                 correct_answer,
                 solution_text,
