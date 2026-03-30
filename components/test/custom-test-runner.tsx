@@ -29,6 +29,7 @@ import {
     ClipboardList,
 } from "lucide-react";
 import { TEST_CONFIG } from "@/lib/config/test-rules";
+import { MathText } from "@/components/ui/math-text";
 import { InstructionPages } from "@/components/test/instruction-pages";
 import { QuestionRenderer } from "@/components/test/question-renderers";
 import {
@@ -94,6 +95,7 @@ interface GradedQuestion {
     content: Record<string, unknown>;
     correct_answer: Record<string, unknown> | null;
     solution_text: string | null;
+    solution_images: string[];
     marks: number;
     passages: Passage[];
     selected: string | number[] | Record<string, number> | null;
@@ -1673,7 +1675,9 @@ function ReviewQuestionDisplay({
         </div>
     );
 
-    const solutionBlock = question.solution_text ? (
+    const hasSolution = question.solution_text || (question.solution_images && question.solution_images.length > 0);
+
+    const solutionBlock = hasSolution ? (
         <div className="mt-6 pt-6 border-t border-gray-100">
             <button
                 onClick={onToggleSolution}
@@ -1683,10 +1687,31 @@ function ReviewQuestionDisplay({
                 {showSolution ? "Hide Solution" : "Show Solution"}
             </button>
             {showSolution && (
-                <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-                    <p className="text-sm text-slate-700 leading-relaxed">
-                        {question.solution_text}
-                    </p>
+                <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
+                    {question.solution_text && (
+                        <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                            <MathText content={question.solution_text} block />
+                        </div>
+                    )}
+                    {question.solution_images && question.solution_images.length > 0 && (
+                        <div>
+                            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-2">
+                                Solution {question.solution_text ? "Diagram" : ""}
+                            </p>
+                            <div
+                                className={`grid gap-3 ${question.solution_images.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
+                            >
+                                {question.solution_images.map((imgUrl, idx) => (
+                                    <img
+                                        key={`solution-img-${idx}`}
+                                        src={imgUrl}
+                                        alt={`Solution image ${idx + 1}`}
+                                        className="max-w-full rounded-lg border border-amber-300"
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
