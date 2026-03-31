@@ -129,7 +129,8 @@ export const CSV_COLUMNS = {
         "prompt", // Essay prompt/topic
         "word_limit", // Max words (e.g., 300)
         "time_mins", // Time limit in minutes
-        "rubric", // Scoring rubric: category:points|category:points
+        // NOTE: rubric is fixed (Set A 15 marks + Set B 10 marks = 25 total)
+        // and is applied automatically — do NOT add a rubric column here.
     ],
 };
 
@@ -160,9 +161,9 @@ RD_FMS_002,reading,medium,Process writing,Logical flow,"The science experiment w
 RD_P_001,extract,The Loyal Friend,"Once upon a time, there lived two friends named Tom and Jerry...",no
 RD_POEM_P_001,poem,The Morning Sun,"The sun rises in the east so bright, Spreading warmth and golden light...",no`,
 
-    essay: `code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins,rubric
-WR_001,writing,easy,Personal writing,Relationships,Write about your best friend and why they are special to you.,150,15,content:10|structure:5|grammar:5
-WR_002,writing,medium,Narrative writing,Challenge response,Describe a time when you faced a challenge and how you overcame it.,250,20,content:15|structure:10|grammar:5|creativity:5`,
+    essay: `code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins
+WR_001,writing,easy,Personal writing,Relationships,Write about your best friend and why they are special to you.,150,15
+WR_002,writing,medium,Narrative writing,Challenge response,Describe a time when you faced a challenge and how you overcame it.,250,20`,
 };
 
 // Get CSV header row for a question type

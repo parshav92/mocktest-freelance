@@ -52,16 +52,27 @@ export const ESSAY_CONFIG = {
     // RUBRIC SETTINGS
     // ============================================
     rubric: {
-        /** Default rubric if none provided (ensures some scoring criteria) */
+        /**
+         * Standard essay rubric (fixed — never changes per question).
+         * Set A (15 marks): Content, Structure, Organization, Style, Vocabulary
+         * Set B (10 marks): Sentence Structure, Punctuation, Spelling
+         * Total: 25 marks
+         */
         default: {
-            "Content & Ideas": 10,
-            Organization: 5,
-            "Language & Style": 5,
+            // Set A — 15 marks
+            "Content":      5,
+            "Structure":    3,
+            "Organization": 3,
+            "Style":        2,
+            "Vocabulary":   2,
+            // Set B — 10 marks
+            "Sentence Structure": 5,
+            "Punctuation":        3,
+            "Spelling":           2,
         } as Record<string, number>,
-        /** Minimum total rubric score */
-        minTotalScore: 5,
-        /** Maximum total rubric score */
-        maxTotalScore: 100,
+        /** Total rubric score is always 25 */
+        minTotalScore: 25,
+        maxTotalScore: 25,
     },
 
     // ============================================
