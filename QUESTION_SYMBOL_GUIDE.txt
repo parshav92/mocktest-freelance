@@ -54,4 +54,4 @@ Use these formulas in question text. The system converts them to proper symbols 
 
 Notes:
 - You can type either Unicode symbols directly (example: θ, π, √, ≤) or KaTeX-style formulas (example: \theta, \pi, \sqrt{x}, \leq).
-- For best results with powers and subscripts, use braces when needed: x^{10}, a_{n+1}.
+- For best results with powers and subscripts, use braces when needed: x^{10}, a_{n+1}..
