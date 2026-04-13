@@ -1305,24 +1305,29 @@ function ReviewQuestionDisplay({
                 {showSolution ? "Hide Solution" : "Show Solution"}
             </button>
             {showSolution && (
-                <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="mt-3 p-4 bg-amber-50 border border-amber-200 rounded-lg space-y-3">
                     {solutionText && (
-                        <p className="text-sm text-slate-700 leading-relaxed">
-                            {solutionText}
-                        </p>
+                        <div className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
+                            <MathText content={solutionText} block />
+                        </div>
                     )}
                     {solutionImages.length > 0 && (
-                        <div
-                            className={`grid gap-3 ${solutionText ? "mt-3" : ""} ${solutionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
-                        >
-                            {solutionImages.map((imgUrl, idx) => (
-                                <img
-                                    key={`solution-img-${idx}`}
-                                    src={imgUrl}
-                                    alt={`Solution image ${idx + 1}`}
-                                    className="max-w-full rounded-lg border border-amber-300"
-                                />
-                            ))}
+                        <div>
+                            <p className="text-xs font-semibold text-amber-700 uppercase tracking-wider mb-2">
+                                Solution {solutionText ? "Diagram" : ""}
+                            </p>
+                            <div
+                                className={`grid gap-3 ${solutionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
+                            >
+                                {solutionImages.map((imgUrl, idx) => (
+                                    <img
+                                        key={`solution-img-${idx}`}
+                                        src={imgUrl}
+                                        alt={`Solution image ${idx + 1}`}
+                                        className="max-w-full rounded-lg border border-amber-300"
+                                    />
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -1352,6 +1357,23 @@ function ReviewQuestionDisplay({
                       ? [content.question_image_url as string]
                       : undefined);
 
+            // Find which image indices are referenced via [img:N] syntax
+            const imagePattern = /\[img:(\d+)\]/g;
+            const referencedIndices = new Set<number>();
+            let imgMatch;
+            while ((imgMatch = imagePattern.exec(questionText)) !== null) {
+                referencedIndices.add(parseInt(imgMatch[1], 10) - 1);
+            }
+            // Collect unreferenced images to show as block-level below text
+            const unreferencedImages: string[] = [];
+            if (questionImages) {
+                questionImages.forEach((img, idx) => {
+                    if (!referencedIndices.has(idx)) {
+                        unreferencedImages.push(img);
+                    }
+                });
+            }
+
             return (
                 <div className="grid grid-cols-2 gap-0 min-h-0">
                     {/* Left: Question stem + solution */}
@@ -1360,6 +1382,20 @@ function ReviewQuestionDisplay({
                         <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
                             <ImageEnhancedText content={questionText} images={questionImages} />
                         </div>
+                        {unreferencedImages.length > 0 && (
+                            <div
+                                className={`grid gap-3 mt-4 ${unreferencedImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
+                            >
+                                {unreferencedImages.map((imgUrl, idx) => (
+                                    <img
+                                        key={`unreferenced-img-${idx}`}
+                                        src={imgUrl}
+                                        alt={`Question image ${idx + 1}`}
+                                        className="max-w-full rounded-lg border border-gray-200"
+                                    />
+                                ))}
+                            </div>
+                        )}
                         {!wasAttempted && (
                             <p className="text-xs text-slate-400 italic flex items-center gap-1.5 mt-4">
                                 <Minus className="h-3.5 w-3.5" />

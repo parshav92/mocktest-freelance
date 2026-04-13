@@ -873,7 +873,7 @@ export default function TestEnvironmentPage() {
     // Determine layout: 2-column split for standalone MCQ/essay, stacked for passage-based or inline types
     const questionLayout: "split" | "stacked" =
         !hasPassage &&
-            (currentQuestion.question_type === "mcq")
+            (currentQuestion.question_type === "mcq" || currentQuestion.question_type === "essay")
             ? "split"
             : "stacked";
 

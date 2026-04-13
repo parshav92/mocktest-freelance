@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/auth/admin";
 import { getCSVTemplate } from "@/lib/csv/templates";
 import type { ParsedQuestion, ParsedPassage } from "@/lib/csv/parser";
+import { ESSAY_CONFIG } from "@/lib/config/essay-config";
 
 // GET - Download template
 export async function GET(request: NextRequest) {
@@ -664,17 +665,11 @@ async function insertQuestions(
 
             correctAnswer = { mapping: correctMapping };
         } else if (uploadType === "essay") {
-            // Parse rubric
-            const rubric: Record<string, number> = {};
-            if (q.data.rubric) {
-                const rubricParts = q.data.rubric.split("|");
-                for (const part of rubricParts) {
-                    const [category, points] = part.split(":");
-                    if (category && points) {
-                        rubric[category.trim()] = parseInt(points.trim(), 10);
-                    }
-                }
-            }
+            // Rubric is always the standard scheme from config
+            // (Set A: Content/Structure/Organization/Style/Vocabulary = 15 marks)
+            // (Set B: Sentence Structure/Punctuation/Spelling = 10 marks)
+            // Total: 25 marks — never parsed from CSV.
+            const rubric = { ...ESSAY_CONFIG.rubric.default };
 
             content = {
                 prompt: q.data.prompt,
@@ -715,7 +710,7 @@ async function insertQuestions(
             correct_answer: correctAnswer,
             solution_text: q.data.solution || null,
             solution_images: solutionImages,
-            marks: 1,
+            marks: uploadType === "essay" ? 25 : 1,
             is_active: true,
         };
     });

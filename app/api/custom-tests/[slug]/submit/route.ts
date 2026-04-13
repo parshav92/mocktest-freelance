@@ -80,6 +80,7 @@ export async function POST(
                 content,
                 correct_answer,
                 solution_text,
+                solution_images,
                 marks,
                 passage_ids
             )
@@ -119,6 +120,7 @@ export async function POST(
             content: Record<string, unknown>;
             correct_answer: Record<string, unknown> | null;
             solution_text: string | null;
+            solution_images: string[] | null;
             marks: number;
             passage_ids: unknown;
         };
@@ -151,6 +153,7 @@ export async function POST(
         content: Record<string, unknown>;
         correct_answer: Record<string, unknown> | null;
         solution_text: string | null;
+        solution_images: string[] | null;
         marks: number;
         passages: unknown[];
         selected: string | number[] | Record<string, number> | null;
@@ -185,6 +188,7 @@ export async function POST(
             content: q.content,
             correct_answer: q.correct_answer,
             solution_text: q.solution_text,
+            solution_images: q.solution_images || [],
             marks: q.marks,
             passages: q.passage_ids
                 .map((pid: string) => passagesMap[pid])

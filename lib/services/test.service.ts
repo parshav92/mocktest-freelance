@@ -57,30 +57,50 @@ export class TestService {
     }
 
     /**
-     * Get adaptive difficulty distribution for a student
+     * Get adaptive difficulty distribution for a student.
+     * @param totalQuestions - comes from subjects.total_questions in the DB
      */
     async getAdaptiveDistribution(
         studentId: string,
         subjectId: string,
+        totalQuestions: number,
     ): Promise<{ easy: number; medium: number; hard: number }> {
         const { data, error } = await this.supabase.rpc(
             "get_adaptive_distribution",
             {
                 p_student_id: studentId,
                 p_subject_id: subjectId,
-                p_total_questions: 40,
+                p_total_questions: totalQuestions,
             },
         );
 
         if (error || !data?.[0]) {
-            // Default distribution for first tests
-            return { easy: 25, medium: 10, hard: 5 };
+            // Default distribution for first tests — proportional to totalQuestions
+            // Ratio: ~62.5% easy, ~25% medium, ~12.5% hard
+            const easy = Math.round(totalQuestions * 0.625);
+            const hard = Math.round(totalQuestions * 0.125);
+            const medium = totalQuestions - easy - hard;
+            return { easy, medium, hard };
+        }
+
+        const dbEasy = data[0].easy_count;
+        const dbMedium = data[0].medium_count;
+        const dbHard = data[0].hard_count;
+
+        // Safety: if DB returned a distribution larger than totalQuestions,
+        // fall back to proportional calculation (e.g. Writing has total_questions=1
+        // but old DB function returned 25+10+5=40)
+        if (dbEasy + dbMedium + dbHard > totalQuestions) {
+            const easy = Math.round(totalQuestions * 0.625);
+            const hard = Math.round(totalQuestions * 0.125);
+            const medium = totalQuestions - easy - hard;
+            return { easy, medium, hard };
         }
 
         return {
-            easy: data[0].easy_count,
-            medium: data[0].medium_count,
-            hard: data[0].hard_count,
+            easy: dbEasy,
+            medium: dbMedium,
+            hard: dbHard,
         };
     }
 
@@ -230,10 +250,11 @@ export class TestService {
             );
         }
 
-        // 3. Get adaptive distribution
+        // 3. Get adaptive distribution — use total_questions from the subject row
         const distribution = await this.getAdaptiveDistribution(
             studentId,
             subjectId,
+            subject.total_questions,
         );
 
         // 4. Select questions using adaptive algorithm
@@ -907,15 +928,15 @@ export class TestService {
             // Verify subject exists
             const { data: subject } = await this.supabase
                 .from("subjects")
-                .select("id, duration_mins")
+                .select("id, duration_mins, total_questions")
                 .eq("id", subjectId)
                 .eq("is_active", true)
                 .single();
 
             if (!subject) return;
 
-            // Get adaptive distribution (uses updated stats from the just-submitted test)
-            const distribution = await this.getAdaptiveDistribution(studentId, subjectId);
+            // Get adaptive distribution — use total_questions from the subject row
+            const distribution = await this.getAdaptiveDistribution(studentId, subjectId, subject.total_questions);
 
             // Select questions
             const questionIds = await this.getTestQuestions(studentId, subjectId, distribution);
