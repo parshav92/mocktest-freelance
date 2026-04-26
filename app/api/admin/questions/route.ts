@@ -105,3 +105,106 @@ export async function GET(request: NextRequest) {
         return errorResponse("Internal server error", 500);
     }
 }
+
+/**
+ * PATCH /api/admin/questions
+ *
+ * Partial update for a question. Supports:
+ *   - content        (question content object)
+ *   - solution_text  (solution string)
+ *   - difficulty     (easy | medium | hard)
+ *   - marks          (number)
+ *   - is_active      (boolean)
+ *
+ * Body: { id: string, ...fields }
+ */
+export async function PATCH(request: NextRequest) {
+    const auth = await requireAdmin();
+    if (!auth.isAdmin) {
+        return errorResponse(auth.error, auth.status);
+    }
+
+    try {
+        const body = await request.json();
+        const { id, ...updates } = body as {
+            id: string;
+            content?: Record<string, unknown>;
+            solution_text?: string | null;
+            difficulty?: string;
+            marks?: number;
+            is_active?: boolean;
+        };
+
+        if (!id) {
+            return errorResponse("Question id is required", 400);
+        }
+
+        // Only allow safe fields – never allow correct_answer or question_type to be changed here
+        const allowed: Record<string, unknown> = {};
+        if ("content" in updates) allowed.content = updates.content;
+        if ("solution_text" in updates) allowed.solution_text = updates.solution_text;
+        if ("difficulty" in updates) allowed.difficulty = updates.difficulty;
+        if ("marks" in updates) allowed.marks = updates.marks;
+        if ("is_active" in updates) allowed.is_active = updates.is_active;
+
+        if (Object.keys(allowed).length === 0) {
+            return errorResponse("No valid fields to update", 400);
+        }
+
+        const supabase = await createClient();
+        const { data, error } = await supabase
+            .from("questions")
+            .update({ ...allowed, updated_at: new Date().toISOString() })
+            .eq("id", id)
+            .select()
+            .single();
+
+        if (error) {
+            console.error("Failed to update question:", error);
+            return errorResponse("Failed to update question", 500);
+        }
+
+        return successResponse({ question: data });
+    } catch (err) {
+        console.error("Internal server error:", err);
+        return errorResponse("Internal server error", 500);
+    }
+}
+
+/**
+ * DELETE /api/admin/questions
+ *
+ * Permanently deletes a question by id.
+ * Body: { id: string }
+ */
+export async function DELETE(request: NextRequest) {
+    const auth = await requireAdmin();
+    if (!auth.isAdmin) {
+        return errorResponse(auth.error, auth.status);
+    }
+
+    try {
+        const body = await request.json();
+        const { id } = body as { id: string };
+
+        if (!id) {
+            return errorResponse("Question id is required", 400);
+        }
+
+        const supabase = await createClient();
+        const { error } = await supabase
+            .from("questions")
+            .delete()
+            .eq("id", id);
+
+        if (error) {
+            console.error("Failed to delete question:", error);
+            return errorResponse("Failed to delete question", 500);
+        }
+
+        return successResponse({ deleted: true });
+    } catch (err) {
+        console.error("Internal server error:", err);
+        return errorResponse("Internal server error", 500);
+    }
+}

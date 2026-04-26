@@ -13,14 +13,28 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    DialogDescription,
+} from "@/components/ui/dialog";
+import {
     ArrowLeft,
     Loader2,
     Search,
     ChevronLeft,
     ChevronRight,
+    ChevronDown,
     FileQuestion,
     Filter,
     X,
+    Pencil,
+    Trash2,
+    ToggleLeft,
+    ToggleRight,
+    AlertTriangle,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -124,7 +138,6 @@ function getCorrectAnswerDisplay(
 ): string {
     if (!correctAnswer) return "—";
 
-    // MCQ types
     if (
         questionType === "mcq" ||
         questionType === "passage_mcq" ||
@@ -140,7 +153,6 @@ function getCorrectAnswerDisplay(
         return label?.toUpperCase() ?? "—";
     }
 
-    // Fill blank
     if (questionType === "fill_blank_dropdown") {
         const answers = (correctAnswer as { answers?: number[] }).answers;
         if (answers && Array.isArray(content.blanks)) {
@@ -152,7 +164,6 @@ function getCorrectAnswerDisplay(
         return JSON.stringify(answers);
     }
 
-    // Fill missing sentence
     if (questionType === "fill_missing_sentence") {
         const mapping = (correctAnswer as { mapping?: Record<string, number> }).mapping;
         if (mapping) {
@@ -162,10 +173,22 @@ function getCorrectAnswerDisplay(
         }
     }
 
-    // Essay
     if (questionType === "essay") return "Evaluated by AI";
 
     return "—";
+}
+
+/** Returns the editable text key inside content for a given question type */
+function getContentTextField(questionType: string): string {
+    if (questionType === "essay") return "prompt";
+    if (
+        questionType === "fill_blank_dropdown" ||
+        questionType === "fill_missing_sentence"
+    )
+        return "passage_with_gaps";
+    if (questionType === "passage_mcq" || questionType === "poem_mcq")
+        return "passage_text";
+    return "question";
 }
 
 // ─── Component ──────────────────────────────────────────────────────────
@@ -189,7 +212,156 @@ export default function AdminQuestionsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    // ─── Fetch subjects for the filter dropdown ─────────────────────────
+    // Solution visibility
+    const [expandedSolutions, setExpandedSolutions] = useState<Set<string>>(new Set());
+    const toggleSolution = (id: string) =>
+        setExpandedSolutions((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+
+    // ── Edit modal state ─────────────────────────────────────────────
+    const [editQuestion, setEditQuestion] = useState<Question | null>(null);
+    const [editText, setEditText] = useState("");
+    const [editSolution, setEditSolution] = useState("");
+    const [editDifficulty, setEditDifficulty] = useState("");
+    const [editMarks, setEditMarks] = useState<number>(1);
+    const [editSaving, setEditSaving] = useState(false);
+    const [editError, setEditError] = useState<string | null>(null);
+
+    const openEdit = (q: Question) => {
+        const textKey = getContentTextField(q.question_type);
+        setEditQuestion(q);
+        setEditText(
+            typeof q.content[textKey] === "string"
+                ? (q.content[textKey] as string)
+                : ""
+        );
+        setEditSolution(q.solution_text ?? "");
+        setEditDifficulty(q.difficulty);
+        setEditMarks(q.marks);
+        setEditError(null);
+    };
+
+    const closeEdit = () => {
+        setEditQuestion(null);
+        setEditError(null);
+    };
+
+    const saveEdit = async () => {
+        if (!editQuestion) return;
+        setEditSaving(true);
+        setEditError(null);
+
+        const textKey = getContentTextField(editQuestion.question_type);
+        const updatedContent = { ...editQuestion.content, [textKey]: editText };
+
+        try {
+            const res = await fetch("/api/admin/questions", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: editQuestion.id,
+                    content: updatedContent,
+                    solution_text: editSolution || null,
+                    difficulty: editDifficulty,
+                    marks: editMarks,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to save");
+
+            setQuestions((prev) =>
+                prev.map((q) =>
+                    q.id === editQuestion.id
+                        ? {
+                              ...q,
+                              content: updatedContent,
+                              solution_text: editSolution || null,
+                              difficulty: editDifficulty,
+                              marks: editMarks,
+                          }
+                        : q
+                )
+            );
+            closeEdit();
+        } catch (err) {
+            setEditError(
+                err instanceof Error ? err.message : "Failed to save changes"
+            );
+        } finally {
+            setEditSaving(false);
+        }
+    };
+
+    // ── Delete confirmation state ────────────────────────────────────
+    const [deleteTarget, setDeleteTarget] = useState<Question | null>(null);
+    const [deleteLoading, setDeleteLoading] = useState(false);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
+        setDeleteLoading(true);
+        setDeleteError(null);
+        try {
+            const res = await fetch("/api/admin/questions", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: deleteTarget.id }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to delete");
+
+            setQuestions((prev) => prev.filter((q) => q.id !== deleteTarget.id));
+            setTotal((t) => t - 1);
+            setDeleteTarget(null);
+        } catch (err) {
+            setDeleteError(
+                err instanceof Error ? err.message : "Failed to delete question"
+            );
+        } finally {
+            setDeleteLoading(false);
+        }
+    };
+
+    // ── Active / Inactive toggle ─────────────────────────────────────
+    const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
+
+    const toggleActive = async (q: Question) => {
+        setTogglingIds((prev) => {
+            const next = new Set(prev);
+            next.add(q.id);
+            return next;
+        });
+        try {
+            const res = await fetch("/api/admin/questions", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: q.id, is_active: !q.is_active }),
+            });
+            if (!res.ok) throw new Error("Failed to update status");
+            setQuestions((prev) =>
+                prev.map((item) =>
+                    item.id === q.id ? { ...item, is_active: !item.is_active } : item
+                )
+            );
+        } catch {
+            // Silently ignore – user can retry
+        } finally {
+            setTogglingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(q.id);
+                return next;
+            });
+        }
+    };
+
+    // ─── Fetch subjects ──────────────────────────────────────────────
     useEffect(() => {
         (async () => {
             try {
@@ -208,12 +380,12 @@ export default function AdminQuestionsPage() {
                     );
                 }
             } catch {
-                // Non-critical – filter will just be empty
+                // Non-critical
             }
         })();
     }, []);
 
-    // ─── Fetch questions ────────────────────────────────────────────────
+    // ─── Fetch questions ────────────────────────────────────────────
     const fetchQuestions = useCallback(async () => {
         setIsLoading(true);
         setError(null);
@@ -252,7 +424,7 @@ export default function AdminQuestionsPage() {
         fetchQuestions();
     }, [fetchQuestions]);
 
-    // ─── Derived ────────────────────────────────────────────────────────
+    // ─── Derived ────────────────────────────────────────────────────
     const totalPages = Math.ceil(total / PAGE_SIZE);
     const hasFilters = !!(subjectId || questionType || difficulty || search);
 
@@ -270,9 +442,223 @@ export default function AdminQuestionsPage() {
         setPage(0);
     };
 
-    // ─── Render ─────────────────────────────────────────────────────────
+    // ─── Render ─────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-zinc-50">
+            {/* ── Edit Modal ──────────────────────────────────────── */}
+            <Dialog open={!!editQuestion} onOpenChange={(open) => !open && closeEdit()}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-base font-semibold">
+                            Edit Question
+                            {editQuestion && (
+                                <span className="ml-2 text-xs font-mono text-zinc-400">
+                                    {editQuestion.code}
+                                </span>
+                            )}
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-zinc-500">
+                            You can edit the question text, solution, difficulty and marks.
+                            Correct answers cannot be changed here.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {editQuestion && (
+                        <div className="space-y-5 py-2">
+                            {/* Question text */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-zinc-600">
+                                    Question Text
+                                </label>
+                                <textarea
+                                    value={editText}
+                                    onChange={(e) => setEditText(e.target.value)}
+                                    rows={6}
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-y font-mono"
+                                />
+                            </div>
+
+                            {/* Options preview (read-only) */}
+                            {getOptions(editQuestion.content) && (
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-zinc-400">
+                                        Options (read-only — correct answer locked)
+                                    </label>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                        {getOptions(editQuestion.content)!.map((opt) => {
+                                            const isCorrect =
+                                                editQuestion.correct_answer &&
+                                                (editQuestion.correct_answer as { label?: string }).label?.toUpperCase() ===
+                                                    opt.label.toUpperCase();
+                                            return (
+                                                <div
+                                                    key={opt.label}
+                                                    className={`flex items-start gap-2 rounded-lg px-3 py-1.5 text-xs ${
+                                                        isCorrect
+                                                            ? "bg-emerald-50 text-emerald-800 font-medium border border-emerald-200"
+                                                            : "bg-zinc-50 text-zinc-500 border border-zinc-100"
+                                                    }`}
+                                                >
+                                                    <span className="font-semibold shrink-0">
+                                                        {opt.label.toUpperCase()})
+                                                    </span>
+                                                    <span>{opt.text ?? "—"}</span>
+                                                    {isCorrect && (
+                                                        <span className="ml-auto text-emerald-600 text-[10px] font-bold shrink-0">
+                                                            ✓ Correct
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Solution */}
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-zinc-600">
+                                    Solution / Explanation
+                                    <span className="ml-1 text-zinc-400 font-normal">(optional)</span>
+                                </label>
+                                <textarea
+                                    value={editSolution}
+                                    onChange={(e) => setEditSolution(e.target.value)}
+                                    rows={4}
+                                    placeholder="Leave blank if no solution text…"
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-y"
+                                />
+                            </div>
+
+                            {/* Difficulty + Marks row */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-zinc-600">
+                                        Difficulty
+                                    </label>
+                                    <Select
+                                        value={editDifficulty}
+                                        onValueChange={setEditDifficulty}
+                                    >
+                                        <SelectTrigger className="w-full">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {DIFFICULTY_LEVELS.map((d) => (
+                                                <SelectItem key={d.value} value={d.value}>
+                                                    {d.label}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-medium text-zinc-600">
+                                        Marks
+                                    </label>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        max={20}
+                                        value={editMarks}
+                                        onChange={(e) => setEditMarks(Number(e.target.value))}
+                                    />
+                                </div>
+                            </div>
+
+                            {editError && (
+                                <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">
+                                    {editError}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={closeEdit} disabled={editSaving}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={saveEdit}
+                            disabled={editSaving}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                            {editSaving ? (
+                                <>
+                                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                                    Saving…
+                                </>
+                            ) : (
+                                "Save Changes"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* ── Delete Confirmation Modal ────────────────────────── */}
+            <Dialog
+                open={!!deleteTarget}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setDeleteTarget(null);
+                        setDeleteError(null);
+                    }
+                }}
+            >
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-base font-semibold text-red-600">
+                            <AlertTriangle className="h-5 w-5" />
+                            Delete Question
+                        </DialogTitle>
+                        <DialogDescription className="text-sm text-zinc-500 pt-1">
+                            This action is <strong>permanent</strong> and cannot be undone.
+                            The question and all its data will be removed.
+                            {deleteTarget && (
+                                <span className="block mt-2 font-mono text-xs text-zinc-400">
+                                    {deleteTarget.code}
+                                </span>
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {deleteError && (
+                        <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">
+                            {deleteError}
+                        </p>
+                    )}
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setDeleteTarget(null);
+                                setDeleteError(null);
+                            }}
+                            disabled={deleteLoading}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="destructive"
+                            onClick={confirmDelete}
+                            disabled={deleteLoading}
+                        >
+                            {deleteLoading ? (
+                                <>
+                                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                                    Deleting…
+                                </>
+                            ) : (
+                                "Delete Permanently"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Header */}
             <div className="bg-white border-b">
                 <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -307,9 +693,7 @@ export default function AdminQuestionsPage() {
                 <div className="rounded-2xl border border-slate-200/80 bg-white shadow-sm p-5">
                     <div className="flex items-center gap-2 mb-4">
                         <Filter className="h-4 w-4 text-zinc-500" />
-                        <span className="text-sm font-medium text-zinc-700">
-                            Filters
-                        </span>
+                        <span className="text-sm font-medium text-zinc-700">Filters</span>
                         {hasFilters && (
                             <button
                                 onClick={clearFilters}
@@ -334,9 +718,7 @@ export default function AdminQuestionsPage() {
                                 <SelectValue placeholder="All Subjects" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">
-                                    All Subjects
-                                </SelectItem>
+                                <SelectItem value="all">All Subjects</SelectItem>
                                 {subjects.map((s) => (
                                     <SelectItem key={s.id} value={s.id}>
                                         {s.name}
@@ -378,9 +760,7 @@ export default function AdminQuestionsPage() {
                                 <SelectValue placeholder="All Difficulties" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">
-                                    All Difficulties
-                                </SelectItem>
+                                <SelectItem value="all">All Difficulties</SelectItem>
                                 {DIFFICULTY_LEVELS.map((d) => (
                                     <SelectItem key={d.value} value={d.value}>
                                         {d.label}
@@ -469,11 +849,16 @@ export default function AdminQuestionsPage() {
                                 q.correct_answer,
                                 q.content
                             );
+                            const isToggling = togglingIds.has(q.id);
 
                             return (
                                 <div
                                     key={q.id}
-                                    className="rounded-2xl border border-slate-200/70 bg-white hover:shadow-sm transition-shadow"
+                                    className={`rounded-2xl border bg-white transition-shadow hover:shadow-sm ${
+                                        q.is_active
+                                            ? "border-slate-200/70"
+                                            : "border-zinc-200 opacity-60"
+                                    }`}
                                 >
                                     {/* Meta bar */}
                                     <div className="flex flex-wrap items-center gap-2 px-5 pt-4 pb-2">
@@ -485,10 +870,7 @@ export default function AdminQuestionsPage() {
                                             {q.subjects?.name ?? "—"}
                                         </span>
                                         <span className="text-zinc-300">·</span>
-                                        <Badge
-                                            variant="secondary"
-                                            className="text-[11px]"
-                                        >
+                                        <Badge variant="secondary" className="text-[11px]">
                                             {typeLabel(q.question_type)}
                                         </Badge>
                                         <span
@@ -496,9 +878,62 @@ export default function AdminQuestionsPage() {
                                         >
                                             {q.difficulty}
                                         </span>
-                                        <span className="text-xs text-zinc-400 ml-auto">
-                                            {q.marks} mark{q.marks !== 1 ? "s" : ""} · {formatDate(q.created_at)}
+
+                                        {/* Active badge */}
+                                        <span
+                                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                                q.is_active
+                                                    ? "bg-emerald-100 text-emerald-700"
+                                                    : "bg-zinc-100 text-zinc-500"
+                                            }`}
+                                        >
+                                            {q.is_active ? "Active" : "Inactive"}
                                         </span>
+
+                                        <span className="text-xs text-zinc-400 ml-auto">
+                                            {q.marks} mark{q.marks !== 1 ? "s" : ""} ·{" "}
+                                            {formatDate(q.created_at)}
+                                        </span>
+
+                                        {/* Action buttons */}
+                                        <div className="flex items-center gap-1 ml-2">
+                                            {/* Toggle active */}
+                                            <button
+                                                title={q.is_active ? "Set Inactive" : "Set Active"}
+                                                disabled={isToggling}
+                                                onClick={() => toggleActive(q)}
+                                                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors disabled:opacity-50"
+                                            >
+                                                {isToggling ? (
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                ) : q.is_active ? (
+                                                    <ToggleRight className="h-4 w-4 text-emerald-500" />
+                                                ) : (
+                                                    <ToggleLeft className="h-4 w-4" />
+                                                )}
+                                            </button>
+
+                                            {/* Edit */}
+                                            <button
+                                                title="Edit question"
+                                                onClick={() => openEdit(q)}
+                                                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </button>
+
+                                            {/* Delete */}
+                                            <button
+                                                title="Delete question"
+                                                onClick={() => {
+                                                    setDeleteError(null);
+                                                    setDeleteTarget(q);
+                                                }}
+                                                className="p-1.5 rounded-lg text-zinc-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
                                     </div>
 
                                     {/* Question text */}
@@ -515,7 +950,11 @@ export default function AdminQuestionsPage() {
                                                 {options.map((opt) => {
                                                     const isCorrect =
                                                         q.correct_answer &&
-                                                        (q.correct_answer as { label?: string }).label?.toUpperCase() ===
+                                                        (
+                                                            q.correct_answer as {
+                                                                label?: string;
+                                                            }
+                                                        ).label?.toUpperCase() ===
                                                             opt.label.toUpperCase();
                                                     return (
                                                         <div
@@ -551,6 +990,34 @@ export default function AdminQuestionsPage() {
                                             </div>
                                         </div>
                                     )}
+
+                                    {/* Solution toggle */}
+                                    {q.solution_text && (
+                                        <div className="border-t border-slate-100">
+                                            <button
+                                                onClick={() => toggleSolution(q.id)}
+                                                className="flex items-center gap-1.5 w-full px-5 py-2.5 text-xs font-medium text-zinc-500 hover:text-zinc-700 hover:bg-zinc-50 transition-colors text-left"
+                                            >
+                                                <ChevronDown
+                                                    className={`h-3.5 w-3.5 transition-transform duration-200 ${
+                                                        expandedSolutions.has(q.id)
+                                                            ? "rotate-180"
+                                                            : ""
+                                                    }`}
+                                                />
+                                                {expandedSolutions.has(q.id)
+                                                    ? "Hide Solution"
+                                                    : "Show Solution"}
+                                            </button>
+                                            {expandedSolutions.has(q.id) && (
+                                                <div className="px-5 pb-4">
+                                                    <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-zinc-700 whitespace-pre-line">
+                                                        {q.solution_text}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })}
@@ -570,7 +1037,6 @@ export default function AdminQuestionsPage() {
                             Previous
                         </Button>
 
-                        {/* page numbers (show up to 5) */}
                         {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                             let pageNum: number;
                             if (totalPages <= 5) {
