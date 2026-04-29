@@ -18,36 +18,20 @@ const HeroSection = () => {
             {/* Main Content */}
             <div className="relative z-10 flex-1 flex items-center justify-center px-6 md:px-12 lg:px-20">
                 <div className="max-w-4xl mx-auto text-center">
-                    {/* Label */}
-                    {/* <div className="animate-fade-in-up inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-sm border border-sky-200/80 shadow-sm md:mt-8 mb-4 hover:shadow-md transition-shadow duration-300">
-                        <span className="relative flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
-                        </span>
-                        <span className="text-sm font-medium text-slate-600">
-                            Trusted by{" "}
-                            <span className="text-slate-900 font-semibold">
-                                2,000+
-                            </span>{" "}
-                            students
-                        </span> */}
-                        {/* <Sparkles className="w-3.5 h-3.5 text-amber-500" /> */}
-                    {/* </div> */}
-
                     {/* Main Heading */}
                     <h1
-                        className="mt-24 text-4xl md:text-6xl lg:text-7xl font-bold text-slate-900 mb-6 animate-fade-in-up-delay-1 heading-tight"
+                        className="mt-24 text-4xl md:text-6xl lg:text-7xl font-bold text-slate-900 mb-4 animate-fade-in-up-delay-1 heading-tight"
                         style={{ letterSpacing: "-0.04em" }}
                     >
-                        Your Journey to{" "}
+                        Welcome To{" "}
                         <span className="whitespace-nowrap">
-                            <span className="text-sky-600">Academic</span>{" "}
-                            Excellence
+                            <span className="text-sky-600">MockTest</span>
                         </span>
                     </h1>
 
                     {/* Subheading */}
                     <p className="text-lg md:text-xl text-slate-600 font-light max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up-delay-2">
+                        Most Trusted Selective Test Preparation Platform.
                         Transform your educational aspirations into reality with
                         personalized guidance, expert mentorship, and proven
                         strategies for success.
@@ -56,7 +40,7 @@ const HeroSection = () => {
                     {/* CTA Buttons */}
                     <div className="flex flex-wrap gap-4 animate-fade-in-up-delay-3 justify-center">
                         <Link
-                            href="/auth"
+                            href="/free-trial"
                             className="group relative overflow-hidden rounded-full bg-slate-900 px-6 py-3.5 pr-14 text-sm font-medium text-white transition-all duration-500 hover:bg-transparent hover:text-[#1a1a1a] border border-transparent "
                         >
                             {/* Background slide effect - expands from arrow circle position */}
@@ -64,7 +48,7 @@ const HeroSection = () => {
 
                             {/* Text */}
                             <span className="relative z-10 transition-colors duration-200 text-white mix-blend-difference">
-                                Start Learning
+                                Free Trial
                             </span>
                             <span className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-900 transition-transform duration-300 group-hover:translate-x-0.5">
                                 <ArrowRight className="h-4 w-4" />
@@ -72,10 +56,10 @@ const HeroSection = () => {
                         </Link>
 
                         <Link
-                            href="#about"
+                            href="/pricing"
                             className="rounded-full px-6 py-3.5 text-sm text-slate-900 font-medium bg-white/60 backdrop-blur-sm border border-slate-200 hover:bg-white/80 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-[0.97]"
                         >
-                            Learn More
+                            Subscription Plan
                         </Link>
                     </div>
                 </div>

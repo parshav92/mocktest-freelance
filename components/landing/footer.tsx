@@ -2,6 +2,44 @@ import Link from "next/link";
 import { Mail, Phone, MapPin } from "lucide-react";
 
 const footerLinks = {
+    socialMedia: {
+        title: "Social Media",
+        links: [
+            { label: "Website: Home", href: "/" },
+            { label: "Email:", href: "mailto:support@mocktest.com" },
+            { label: "Facebook:", href: "https://facebook.com" },
+            { label: "Instagram:", href: "https://instagram.com" },
+        ],
+    },
+    legals: {
+        title: "Legals",
+        links: [
+            { label: "Child Safety and Conduct", href: "/terms" },
+            { label: "Terms and Conditions", href: "/terms" },
+            { label: "Privacy Policy", href: "/privacy-policy" },
+        ],
+    },
+    officialLinks: {
+        title: "Official NSW Links",
+        links: [
+            {
+                label: "NSW Dept of Education – Selective High Schools",
+                href: "https://education.nsw.gov.au/schooling/parents-and-carers/going-to-school/enrolment/selective-high-schools",
+                external: true,
+            },
+            {
+                label: "Selective Schools Placement Test",
+                href: "https://education.nsw.gov.au/schooling/parents-and-carers/going-to-school/enrolment/selective-high-schools/year-7",
+                external: true,
+            },
+            {
+                label: "Application Process",
+                href: "https://education.nsw.gov.au/schooling/parents-and-carers/going-to-school/enrolment/selective-high-schools/year-7/how-to-apply",
+                external: true,
+            },
+        ],
+    },
+    // Keep existing links as extra info
     product: [
         { label: "Features", href: "/#about" },
         { label: "Pricing", href: "/#pricing" },
@@ -25,13 +63,12 @@ const Footer = () => {
     return (
         <footer
             className="text-black border-t border-slate-700/30"
-            
         >
             <div className="max-w-6xl mx-auto px-6">
                 {/* Main Footer Content */}
-                <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
+                <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
                     {/* Brand Column */}
-                    <div className="lg:col-span-2">
+                    <div>
                         <Link
                             href="/"
                             className="inline-flex items-center gap-2.5 mb-6"
@@ -70,14 +107,14 @@ const Footer = () => {
                         </div>
                     </div>
 
-                    {/* Links Columns */}
+                    {/* Social Media / Links Column */}
                     <div>
                         <h4 className="font-semibold text-sm mb-4 text-black-200">
-                            Product
+                            {footerLinks.socialMedia.title}
                         </h4>
                         <ul className="space-y-3">
-                            {footerLinks.product.map((link) => (
-                                <li key={link.href}>
+                            {footerLinks.socialMedia.links.map((link) => (
+                                <li key={link.label}>
                                     <Link
                                         href={link.href}
                                         className="text-sm text-black-400 hover:text-sky-400 transition-colors hover:scale-[0.97] inline-block"
@@ -88,13 +125,15 @@ const Footer = () => {
                             ))}
                         </ul>
                     </div>
+
+                    {/* Legals Column */}
                     <div>
                         <h4 className="font-semibold text-sm mb-4 text-black-200">
-                            Company
+                            {footerLinks.legals.title}
                         </h4>
                         <ul className="space-y-3">
-                            {footerLinks.company.map((link) => (
-                                <li key={link.href}>
+                            {footerLinks.legals.links.map((link) => (
+                                <li key={link.label}>
                                     <Link
                                         href={link.href}
                                         className="text-sm text-black-400 hover:text-sky-400 transition-colors hover:scale-[0.97] inline-block"
@@ -105,19 +144,23 @@ const Footer = () => {
                             ))}
                         </ul>
                     </div>
+
+                    {/* Official NSW Links Column */}
                     <div>
                         <h4 className="font-semibold text-sm mb-4 text-black-200">
-                            Legal
+                            {footerLinks.officialLinks.title}
                         </h4>
                         <ul className="space-y-3">
-                            {footerLinks.legal.map((link) => (
-                                <li key={link.href}>
-                                    <Link
+                            {footerLinks.officialLinks.links.map((link) => (
+                                <li key={link.label}>
+                                    <a
                                         href={link.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
                                         className="text-sm text-black-400 hover:text-sky-400 transition-colors hover:scale-[0.97] inline-block"
                                     >
                                         {link.label}
-                                    </Link>
+                                    </a>
                                 </li>
                             ))}
                         </ul>
@@ -127,9 +170,22 @@ const Footer = () => {
                 {/* Bottom Bar */}
                 <div className="py-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-sm text-black-500">
-                        © {currentYear} MockTest. All rights reserved.
+                        © {currentYear} MockTest. All rights reserved. ABN: XX
+                        XXX XXX XXX
                     </p>
                     <div className="flex items-center gap-6">
+                        <Link
+                            href="/#faq"
+                            className="text-xs text-black-500 hover:text-black-300 transition-colors"
+                        >
+                            FAQ
+                        </Link>
+                        <Link
+                            href="/#contact"
+                            className="text-xs text-black-500 hover:text-black-300 transition-colors"
+                        >
+                            Contact Us
+                        </Link>
                         <Link
                             href="/privacy-policy"
                             className="text-xs text-black-500 hover:text-black-300 transition-colors"
@@ -141,12 +197,6 @@ const Footer = () => {
                             className="text-xs text-black-500 hover:text-black-300 transition-colors"
                         >
                             Terms
-                        </Link>
-                        <Link
-                            href="/cookies"
-                            className="text-xs text-black-500 hover:text-black-300 transition-colors"
-                        >
-                            Cookies
                         </Link>
                     </div>
                 </div>

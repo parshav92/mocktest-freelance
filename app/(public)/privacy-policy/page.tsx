@@ -9,63 +9,65 @@ const PrivacyPolicyPage = () => {
         {
             title: "1. Information We Collect",
             content:
-                "We collect information you provide directly to us, including: name, email address, phone number (optional), and payment information when you create an account or make a purchase. For student accounts, we collect student ID, name, and grade level as provided by the parent/guardian. We also automatically collect certain information when you use our platform, including device information, log data, and usage patterns.",
+                "By navigating this website or utilizing the services offered through this website, you acknowledge and accept the terms of both this Privacy Policy and the User Agreement as they may be revised periodically. This Privacy Policy applies to all our online paid and free customers; if you disagree with the Terms and Conditions request, you should not operate this Web site.",
         },
         {
-            title: "2. How We Use Your Information",
+            title: "PERSONAL INFORMATION WE COLLECT",
             content:
-                "We use the information we collect to: provide, maintain, and improve our services; process transactions and send related information; send you technical notices, updates, security alerts, and support messages; respond to your comments, questions, and requests; monitor and analyze trends, usage, and activities; personalize and improve the learning experience; detect, investigate, and prevent fraudulent transactions and other illegal activities.",
+                "When you visit this website, we automatically collect certain information about your device, including information about your web browser, IP address, time zone, and some of the cookies that are installed on your device. Additionally, as you browse this website, we collect information about the individual web pages or products that you view, what websites or search terms referred you to this website, and information about how you interact with this website. We refer to this automatically collected information as “Device Information.” By using our website, you understand and give your consent that your IP address and browser information might be processed by the security plugins installed on this site. We do this only to keep our community safe.We collect Device Information using the following technologies:",
         },
         {
-            title: "3. Information Sharing",
+            title: "Handling and Use of Personal Information",
             content:
-                "We do not sell, trade, or rent your personal information to third parties. We may share information with: service providers who perform services on our behalf; analytics partners to help us understand how our services are used; legal authorities when required by law or to protect our rights. Parents have full visibility into their children's test performance data and progress.",
+                `When we talk about “Personal Information” in this Privacy Policy, we are talking both about Device Information and Order Information. 
+We use the Order Information that we collect generally to fulfil any orders placed through this website (including processing your payment information, arranging for shipping, and providing you with invoices and/or order confirmations). Additionally, we use this Order Information to: Communicate with you; Screen our orders for potential risk or fraud; and When in line with the preferences you have shared with us, provide you with information or advertising relating to our products or services. 
+We use the Device Information that we collect to help us screen for potential risk and fraud (in particular, your IP address), and more generally to improve and optimize our website (for example, by generating analytics about how our customers browse and interact with this website, and to assess the success of our marketing and advertising campaigns).
+At the time of Free trial or Subscribe a particular course, we will ask you to disclose some personal details to create an account (your name, student name, email address and a password for your account). We need this information to provide the service. While buying the active subscription, you require to pay the fees using your Debit or Credit Card, and you need to make payment of the Subscription Fee.
+When making any payment in relation to your use of the services, you affirm that you have read all of their privacy policy and terms and available conditions on their website.
+`,
         },
         {
-            title: "4. Data Security",
+            title: "Sharing of Personal Information",
             content:
-                "We implement appropriate technical and organizational measures to protect your personal information against unauthorized access, alteration, disclosure, or destruction. This includes encryption of data in transit and at rest, secure authentication mechanisms, and regular security assessments. However, no method of transmission over the Internet is 100% secure.",
+                `Your personal information will not be sold to other third-party companies.
+However, we may share your Personal Information to comply with applicable laws and regulations, to respond to a subpoena, search warrant or other lawful requests for information we receive, or to otherwise protect our rights. 
+For our automated writing marking system and personalised analytics, we send your response to a third-party cloud for processing. This third-party does not store your data or use it for their own purposes.
+No sensitive personal data is ever sent in this process. There is no connection to the student whatsoever.
+Do Not Track
+Please note that we do not alter our website’s data collection and use practices when we see a Do Not Track signal from your browser.
+`,
         },
         {
-            title: "5. Children's Privacy",
+            title: "Data Retention",
             content:
-                "MockTest is designed for use by students under parental supervision. We do not knowingly collect personal information from children under 13 without parental consent. Student accounts are created and managed by parents/guardians who provide consent for data collection. Parents can review, update, or delete their child's information at any time through their dashboard.",
+                "When you place an order through this website, we will maintain your Order Information for our records unless and until you ask us to delete this information.",
+        },
+
+
+
+        {
+            title: "Changes",
+            content:
+                "We may update this privacy policy from time to time to reflect, for example, changes to our practices or for other operational, legal or regulatory reasons",
         },
         {
-            title: "6. Cookies and Tracking",
+            title: "COPYRIGHT",
             content:
-                "We use cookies and similar tracking technologies to collect and track information about your use of our platform. You can control cookies through your browser settings. Essential cookies are required for the platform to function properly. Analytics cookies help us understand how users interact with our platform.",
+                `Our website, our services and all of the associated products, and subscriptions are subject to copyright. The specific information and materials of our data are protected by copyright under the laws of Australia. All Questions have our own copyright; these questions are only used for solving the test; you are unauthorised to use and sell the same questions outside for business or any personal purpose. This Question Bank is used exclusively for solving tests by the students.  All Right (including copyright) in the services and compilation of the services are owned for these purposes and are reserved.
+`,
         },
         {
-            title: "7. Data Retention",
+            title: "Policy Change",
             content:
-                "We retain your personal information for as long as your account is active or as needed to provide you services. Test results and progress data are retained to provide continuous learning analytics. You can request deletion of your account and associated data at any time. Some information may be retained as required by law or for legitimate business purposes.",
+                `We reserve the right to modify, update or remove this Privacy Policy or any other of our policies or practices. We will notify you by modifying the revised version on the selective trial website homepage and ask for your agreement to it at that time. If you do not agree to the amended Privacy Policy, you may not continue navigating or operating this website. Policy changes are effective from the time of such publication. In addition, we are fully authorised to change the subscription price any time without any notice; your price may get upgraded with a new price after the completion of your (any) current package, if applicable.
+`,
         },
         {
-            title: "8. Your Rights",
+            title: "SECURITY POLICY",
             content:
-                "You have the right to: access the personal information we hold about you; correct inaccurate or incomplete information; request deletion of your personal information; object to processing of your information; export your data in a portable format; withdraw consent at any time where we rely on consent for processing.",
+                "Security policy is a definition of what it means to be secure for an organization or other entity. We consider protecting all personal information we receive from our website subscribers as critical to our company policy. This website will use your username and password to identify when you return to our website for using your paid subscription. If you forget your password, you may select the option for resetting your password. If you don’t access the account for more than a month, your account will be suspended. In that case, you have to contact us to release your account. To try to minimise this risk, we encrypt all passwords.",
         },
-        {
-            title: "9. Third-Party Services",
-            content:
-                "Our platform may contain links to third-party websites or services. We use third-party services for authentication (Google OAuth), payment processing, and analytics. These third parties have their own privacy policies governing the use of your information. We are not responsible for the privacy practices of these third parties.",
-        },
-        {
-            title: "10. International Data Transfers",
-            content:
-                "Your information may be transferred to and processed in countries other than your country of residence. We ensure appropriate safeguards are in place for international transfers. By using our services, you consent to the transfer of your information to countries outside your country of residence.",
-        },
-        {
-            title: "11. Changes to This Policy",
-            content:
-                "We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the 'Last updated' date. We encourage you to review this Privacy Policy periodically for any changes.",
-        },
-        {
-            title: "12. Contact Us",
-            content:
-                "If you have any questions about this Privacy Policy or our data practices, please contact us at privacy@mocktest.com or through our contact page. We will respond to your inquiry within 30 days.",
-        },
+
     ];
 
     return (
