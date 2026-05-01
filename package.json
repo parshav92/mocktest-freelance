@@ -10,7 +10,8 @@
     "stress-test": "npx tsx scripts/stress-test.ts",
     "stress-test:heavy": "npx tsx scripts/stress-test.ts --heavy",
     "load-test": "npx tsx scripts/load-test-students.ts",
-    "load-test:heavy": "npx tsx scripts/load-test-students.ts --heavy"
+    "load-test:heavy": "npx tsx scripts/load-test-students.ts --heavy",
+    "seed-analytics": "npx tsx scripts/generate-analytics-data.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

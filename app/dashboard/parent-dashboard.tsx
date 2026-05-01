@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { StudentAnalyticsPanel } from "./student-analytics-panel";
+import type { ParentStudentAnalytics } from "@/types/parent-analytics";
 import {
     LogOut,
     Plus,
@@ -99,12 +101,53 @@ interface StudentStats {
     };
 }
 
+const EMPTY_ANALYTICS: ParentStudentAnalytics = {
+    summary: {
+        total_tests: 0,
+        avg_percentage: 0,
+        best_percentage: 0,
+        total_time_spent_secs: 0,
+    },
+    peer_overall: {
+        student_avg_percentage: 0,
+        peer_avg_percentage: 0,
+        delta_percentage: 0,
+        percentile_rank: 0,
+        peer_student_count: 0,
+    },
+    pacing: {
+        pace_vs_allotted_pct: 0,
+        ended_early_rate_pct: 0,
+    },
+    engagement: {
+        avg_tests_per_week: 0,
+        longest_gap_days: 0,
+    },
+    subject_comparison: [],
+    error_patterns: {
+        by_difficulty: [],
+        by_question_type: [],
+    },
+    topic_breakdown: [],
+    topic_pagination: {
+        page: 1,
+        page_size: 10,
+        total_rows: 0,
+        total_pages: 0,
+    },
+    trajectories: {
+        daily: [],
+        weekly: [],
+    },
+};
+
 interface ParentDashboardProps {
     user: ParentUser;
     subscriptions: Subscription[];
 }
 
 type View = "overview" | "student-stats";
+type AnalyticsDaysFilter = "30" | "90" | "180" | "all";
 
 // ── Helpers ────────────────────────────────────────────
 
@@ -167,12 +210,20 @@ function pct(correct: number, total: number) {
 
 export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const supabase = createClient();
 
     const [view, setView] = useState<View>("overview");
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [stats, setStats] = useState<StudentStats | null>(null);
+    const [analytics, setAnalytics] =
+        useState<ParentStudentAnalytics>(EMPTY_ANALYTICS);
     const [loading, setLoading] = useState(false);
+    const [analyticsLoading, setAnalyticsLoading] = useState(false);
+    const [analyticsDays, setAnalyticsDays] = useState<AnalyticsDaysFilter>("90");
+    const [analyticsSubjectId, setAnalyticsSubjectId] = useState<string>("all");
+    const [topicPage, setTopicPage] = useState(1);
+    const [queryInitialized, setQueryInitialized] = useState(false);
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -191,28 +242,178 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
         (s) => s.status === "active",
     ).length;
 
+    const updateQueryParams = useCallback(
+        (next: {
+            student?: string | null;
+            days?: AnalyticsDaysFilter | null;
+            subject?: string | null;
+            topicPage?: number;
+        }) => {
+            const params = new URLSearchParams(searchParams.toString());
+
+            const setOrDelete = (key: string, value?: string | null) => {
+                if (value === undefined || value === null || value === "") {
+                    params.delete(key);
+                } else {
+                    params.set(key, value);
+                }
+            };
+
+            setOrDelete("student", next.student);
+            setOrDelete("days", next.days);
+            setOrDelete("subject", next.subject);
+            if (typeof next.topicPage === "number") {
+                setOrDelete("topicPage", String(next.topicPage));
+            } else {
+                params.delete("topicPage");
+            }
+
+            const query = params.toString();
+            router.replace(`/dashboard${query ? `?${query}` : ""}`, {
+                scroll: false,
+            });
+        },
+        [router, searchParams],
+    );
+
     const fetchStats = useCallback(async (id: string) => {
         setLoading(true);
         try {
-            const res = await fetch(`/api/students/${id}/stats`);
-            if (res.ok) setStats(await res.json());
+            const statsRes = await fetch(`/api/students/${id}/stats`);
+            if (statsRes.ok) {
+                setStats(await statsRes.json());
+            } else {
+                setStats(null);
+            }
         } catch {
-            /* silent */
+            setStats(null);
         } finally {
             setLoading(false);
         }
     }, []);
 
+    const fetchAnalytics = useCallback(
+        async (
+            id: string,
+            filters: {
+                days: AnalyticsDaysFilter;
+                subjectId: string;
+                topicPage: number;
+            },
+        ) => {
+            setAnalyticsLoading(true);
+            try {
+                const params = new URLSearchParams();
+                params.set("days", filters.days);
+                params.set("topicPage", String(filters.topicPage));
+                params.set("topicPageSize", "10");
+                if (filters.subjectId !== "all") {
+                    params.set("subjectId", filters.subjectId);
+                }
+
+                const analyticsRes = await fetch(
+                    `/api/students/${id}/analytics?${params.toString()}`,
+                );
+            if (analyticsRes.ok) {
+                setAnalytics(
+                    (await analyticsRes.json()) as ParentStudentAnalytics,
+                );
+            } else {
+                setAnalytics(EMPTY_ANALYTICS);
+            }
+        } catch {
+            setAnalytics(EMPTY_ANALYTICS);
+        } finally {
+            setAnalyticsLoading(false);
+        }
+        },
+        [],
+    );
+
+    useEffect(() => {
+        if (queryInitialized) return;
+
+        const studentFromQuery = searchParams.get("student");
+        const daysFromQuery = searchParams.get("days");
+        const subjectFromQuery = searchParams.get("subject");
+        const topicPageFromQuery = searchParams.get("topicPage");
+
+        if (
+            daysFromQuery === "30" ||
+            daysFromQuery === "90" ||
+            daysFromQuery === "180" ||
+            daysFromQuery === "all"
+        ) {
+            setAnalyticsDays(daysFromQuery);
+        }
+
+        if (subjectFromQuery) {
+            setAnalyticsSubjectId(subjectFromQuery);
+        }
+
+        if (topicPageFromQuery) {
+            const parsed = Number.parseInt(topicPageFromQuery, 10);
+            if (Number.isFinite(parsed) && parsed > 0) {
+                setTopicPage(parsed);
+            }
+        }
+
+        if (studentFromQuery) {
+            setSelectedId(studentFromQuery);
+            setView("student-stats");
+            void fetchStats(studentFromQuery);
+        }
+
+        setQueryInitialized(true);
+    }, [fetchStats, queryInitialized, searchParams]);
+
+    useEffect(() => {
+        if (!queryInitialized || view !== "student-stats" || !selectedId) return;
+        void fetchAnalytics(selectedId, {
+            days: analyticsDays,
+            subjectId: analyticsSubjectId,
+            topicPage,
+        });
+    }, [
+        view,
+        selectedId,
+        analyticsDays,
+        analyticsSubjectId,
+        topicPage,
+        fetchAnalytics,
+        queryInitialized,
+    ]);
+
     const openStats = (id: string) => {
         setSelectedId(id);
         setView("student-stats");
+        setAnalyticsDays("90");
+        setAnalyticsSubjectId("all");
+        setTopicPage(1);
+        setAnalytics(EMPTY_ANALYTICS);
         fetchStats(id);
+        updateQueryParams({
+            student: id,
+            days: "90",
+            subject: "all",
+            topicPage: 1,
+        });
     };
 
     const goBack = () => {
         setView("overview");
         setSelectedId(null);
         setStats(null);
+        setAnalytics(EMPTY_ANALYTICS);
+        setAnalyticsDays("90");
+        setAnalyticsSubjectId("all");
+        setTopicPage(1);
+        updateQueryParams({
+            student: null,
+            days: null,
+            subject: null,
+            topicPage: undefined,
+        });
     };
 
     const firstName = user.fullName.split(" ")[0];
@@ -255,10 +456,44 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
                 ) : (
                     <StudentDetail
                         stats={stats}
+                        analytics={analytics}
+                        analyticsLoading={analyticsLoading}
+                        analyticsDays={analyticsDays}
+                        analyticsSubjectId={analyticsSubjectId}
+                        topicPage={topicPage}
                         loading={loading}
                         subscription={assigned.find(
                             (s) => s.student?.id === selectedId,
                         )}
+                        onAnalyticsDaysChange={(value) => {
+                            setAnalyticsDays(value);
+                            setTopicPage(1);
+                            updateQueryParams({
+                                student: selectedId,
+                                days: value,
+                                subject: analyticsSubjectId,
+                                topicPage: 1,
+                            });
+                        }}
+                        onAnalyticsSubjectChange={(value) => {
+                            setAnalyticsSubjectId(value);
+                            setTopicPage(1);
+                            updateQueryParams({
+                                student: selectedId,
+                                days: analyticsDays,
+                                subject: value,
+                                topicPage: 1,
+                            });
+                        }}
+                        onTopicPageChange={(page) => {
+                            setTopicPage(page);
+                            updateQueryParams({
+                                student: selectedId,
+                                days: analyticsDays,
+                                subject: analyticsSubjectId,
+                                topicPage: page,
+                            });
+                        }}
                         onBack={goBack}
                     />
                 )}
@@ -484,13 +719,29 @@ const TESTS_PER_PAGE = 10;
 
 function StudentDetail({
     stats,
+    analytics,
+    analyticsLoading,
+    analyticsDays,
+    analyticsSubjectId,
+    topicPage,
     loading,
     subscription,
+    onAnalyticsDaysChange,
+    onAnalyticsSubjectChange,
+    onTopicPageChange,
     onBack,
 }: {
     stats: StudentStats | null;
+    analytics: ParentStudentAnalytics;
+    analyticsLoading: boolean;
+    analyticsDays: AnalyticsDaysFilter;
+    analyticsSubjectId: string;
+    topicPage: number;
     loading: boolean;
     subscription?: Subscription;
+    onAnalyticsDaysChange: (value: AnalyticsDaysFilter) => void;
+    onAnalyticsSubjectChange: (value: string) => void;
+    onTopicPageChange: (page: number) => void;
     onBack: () => void;
 }) {
     const [testPage, setTestPage] = useState(1);
@@ -519,6 +770,47 @@ function StudentDetail({
     }
 
     const { student, subjectStats, recentTests, summary } = stats;
+    const subjectFilterOptions = (() => {
+        const seen = new Set<string>();
+        const rows: Array<{ id: string; name: string }> = [];
+
+        for (const s of subjectStats) {
+            const id = s.subject.id;
+            if (!seen.has(id)) {
+                seen.add(id);
+                rows.push({ id, name: s.subject.name });
+            }
+        }
+
+        for (const t of recentTests) {
+            const id = t.subject?.id;
+            const name = t.subject?.name;
+            if (id && name && !seen.has(id)) {
+                seen.add(id);
+                rows.push({ id, name });
+            }
+        }
+
+        return rows.sort((a, b) => a.name.localeCompare(b.name));
+    })();
+    const summaryView = {
+        totalTests:
+            analytics.summary.total_tests > 0
+                ? analytics.summary.total_tests
+                : summary.totalTests,
+        avgPercentage:
+            analytics.summary.total_tests > 0
+                ? Math.round(analytics.summary.avg_percentage)
+                : summary.avgPercentage,
+        bestScore:
+            analytics.summary.total_tests > 0
+                ? Math.round(analytics.summary.best_percentage)
+                : summary.bestScore,
+        totalTimeSpent:
+            analytics.summary.total_tests > 0
+                ? analytics.summary.total_time_spent_secs
+                : summary.totalTimeSpent,
+    };
 
     return (
         <>
@@ -566,15 +858,15 @@ function StudentDetail({
             >
                 <div className="bg-white p-4">
                     <p className="text-2xl font-bold text-[#1a2744] tabular-nums">
-                        {summary.totalTests}
+                        {summaryView.totalTests}
                     </p>
                     <p className="text-md text-slate-400 mt-0.5">Tests taken</p>
                 </div>
                 <div className="bg-white p-4">
                     <p
-                        className={`text-2xl font-bold tabular-nums ${scoreFg(summary.avgPercentage)}`}
+                        className={`text-2xl font-bold tabular-nums ${scoreFg(summaryView.avgPercentage)}`}
                     >
-                        {summary.avgPercentage}
+                        {summaryView.avgPercentage}
                         <span className="text-md font-normal text-slate-400">
                             %
                         </span>
@@ -583,9 +875,9 @@ function StudentDetail({
                 </div>
                 <div className="bg-white p-4">
                     <p
-                        className={`text-2xl font-bold tabular-nums ${scoreFg(summary.bestScore)}`}
+                        className={`text-2xl font-bold tabular-nums ${scoreFg(summaryView.bestScore)}`}
                     >
-                        {summary.bestScore}
+                        {summaryView.bestScore}
                         <span className="text-md font-normal text-slate-400">
                             %
                         </span>
@@ -594,7 +886,7 @@ function StudentDetail({
                 </div>
                 <div className="bg-white p-4">
                     <p className="text-2xl font-bold text-[#1a2744] tabular-nums">
-                        {fmtTime(summary.totalTimeSpent)}
+                        {fmtTime(summaryView.totalTimeSpent)}
                     </p>
                     <p className="text-md text-slate-400 mt-0.5">
                         Practice time
@@ -697,7 +989,7 @@ function StudentDetail({
 
             {/* Recent tests */}
             <section
-                className="animate-[fade-in-up_0.4s_ease-out_both]"
+                className="mb-6 animate-[fade-in-up_0.4s_ease-out_both]"
                 style={{ animationDelay: "200ms" }}
             >
                 <h2 className="text-sm font-medium text-slate-900 mb-3">
@@ -809,6 +1101,60 @@ function StudentDetail({
                         )}
                     </>
                 )}
+            </section>
+
+            <section
+                className="animate-[fade-in-up_0.4s_ease-out_both]"
+                style={{ animationDelay: "250ms" }}
+            >
+                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-3">
+                    <h2 className="text-sm font-medium text-slate-900">
+                        Advanced Analytics
+                    </h2>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <label className="text-xs text-slate-500">
+                            Date Range
+                            <select
+                                value={analyticsDays}
+                                onChange={(e) =>
+                                    onAnalyticsDaysChange(
+                                        e.target.value as AnalyticsDaysFilter,
+                                    )
+                                }
+                                className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700"
+                            >
+                                <option value="30">Last 30 days</option>
+                                <option value="90">Last 90 days</option>
+                                <option value="180">Last 180 days</option>
+                                <option value="all">All time</option>
+                            </select>
+                        </label>
+                        <label className="text-xs text-slate-500">
+                            Subject
+                            <select
+                                value={analyticsSubjectId}
+                                onChange={(e) =>
+                                    onAnalyticsSubjectChange(e.target.value)
+                                }
+                                className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700"
+                            >
+                                <option value="all">All subjects</option>
+                                {subjectFilterOptions.map((s) => (
+                                    <option key={s.id} value={s.id}>
+                                        {s.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    </div>
+                </div>
+
+                <StudentAnalyticsPanel
+                    analytics={analytics}
+                    analyticsLoading={analyticsLoading}
+                    topicPage={topicPage}
+                    onTopicPageChange={onTopicPageChange}
+                />
             </section>
         </>
     );
