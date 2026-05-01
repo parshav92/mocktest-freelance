@@ -50,10 +50,10 @@ const Navbar = () => {
         <header
             className={cn(
                 "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
-                scrolled ? "py-2" : "py-6",
+                scrolled ? "py-3" : "py-5",
             )}
         >
-            <div className="max-w-6xl mx-auto px-6">
+            <div className="max-w-6xl w-fit ml-auto md:mx-auto px-6">
                 {/* Logo */}
                 {/* <div className={cn(
                     "flex items-center justify-center mb-2 transition-all duration-500",
@@ -74,21 +74,11 @@ const Navbar = () => {
                     className={cn(
                         "relative flex items-center justify-between md:justify-center px-4 py-2 rounded-2xl transition-all duration-500",
                         scrolled
-                            ? "bg-transparent md:bg-white/80 md:backdrop-blur-xl md:shadow-lg md:shadow-black/[0.03]"
-                            : "bg-transparent md:bg-white/60 md:backdrop-blur-sm md:border md:border-slate-200/50",
+                            ? "bg-white/80 backdrop-blur-xl shadow-lg shadow-black/[0.03]"
+                            : "bg-transparent",
                     )}
                 >
-                    {/* Logo in scrolled state */}
-                    {/* <Link href="/" className={cn(
-                        "md:flex items-center gap-2 mr-4 transition-all duration-500 hidden",
-                        scrolled ? "opacity-100 w-auto" : "opacity-0 w-0 overflow-hidden"
-                    )}>
-                        <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-500 text-white font-bold text-xs">
-                            MT
-                        </div>
-                    </Link> */}
-
-                    {/* Mobile Menu Toggle */}
+                    {/* Mobile Menu Toggle - Now on the right */}
                     <button
                         className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-zinc-100 transition-colors order-last ml-auto"
                         onClick={() => setIsOpen(!isOpen)}
@@ -102,14 +92,14 @@ const Navbar = () => {
                     </button>
 
                     {/* Desktop Navigation */}
-                    <div className="hidden md:flex items-center gap-0.5">
+                    <div className="hidden md:flex items-center gap-1">
                         {navLinks.map((link) => (
                             <Link
                                 key={link.href}
                                 href={link.href}
                                 onClick={(e) => handleAnchorClick(e, link.href)}
                                 className={cn(
-                                    "relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 hover:scale-[0.97] whitespace-nowrap",
+                                    "relative px-4 py-2 text-md font-medium rounded-lg transition-all duration-300 hover:scale-[0.97]",
                                     pathname === link.href
                                         ? "text-zinc-900"
                                         : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/80",
@@ -123,15 +113,13 @@ const Navbar = () => {
                         ))}
                     </div>
 
-                    {/* Login Button */}
-                    <div className="hidden md:flex items-center gap-3 ml-3">
-                        <Link href="/auth">
-                            <Button
-                                variant="outline"
-                                className="rounded-lg border-zinc-200 hover:scale-[0.97] transition-transform text-sm"
-                            >
-                                Login
-                            </Button>
+                    {/* Auth Buttons */}
+                    <div className="hidden md:flex items-center ml-1">
+                        <Link
+                            href="/auth"
+                            className="relative px-4 py-2 text-md font-medium rounded-lg transition-all duration-300 hover:scale-[0.97] text-white bg-gradient-to-br from-sky-500 to-sky-600 shadow-sm shadow-sky-500/30 hover:shadow-md hover:shadow-sky-500/40"
+                        >
+                            Sign in
                         </Link>
                     </div>
                 </nav>
@@ -168,13 +156,12 @@ const Navbar = () => {
                         </div>
                         <div className="h-px bg-zinc-100 my-4" />
                         <div className="space-y-2 flex flex-col gap-1">
-                            <Link href="/auth" onClick={() => setIsOpen(false)}>
-                                <Button
-                                    variant="outline"
-                                    className="w-full justify-center rounded-xl border-zinc-200 hover:scale-[0.97] transition-transform"
-                                >
-                                    Login
-                                </Button>
+                            <Link
+                                href="/auth"
+                                onClick={() => setIsOpen(false)}
+                                className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 text-white bg-gradient-to-br from-sky-500 to-sky-600 shadow-sm shadow-sky-500/30"
+                            >
+                                Sign in
                             </Link>
                             <Link href="/auth" onClick={() => setIsOpen(false)}>
                                 <Button className="w-full justify-center rounded-xl bg-zinc-900 hover:bg-zinc-800">
