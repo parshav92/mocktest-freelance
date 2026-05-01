@@ -124,6 +124,9 @@ export default function TestEnvironmentPage() {
     const [warningMessage, setWarningMessage] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Essay selection (for subjects with exactly 2 essay questions)
+    const [showEssaySelectionModal, setShowEssaySelectionModal] = useState(false);
+
     // Refs for batch answer saving
     const pendingAnswersRef = useRef<Set<string>>(new Set());
     const lastSavedRef = useRef<Record<string, unknown>>({});
@@ -141,6 +144,13 @@ export default function TestEnvironmentPage() {
         () => (currentQuestion ? (answers[currentQuestion.id] ?? null) : null),
         [currentQuestion, answers],
     );
+
+    // Memoize essay questions for this test
+    const essayQuestions = useMemo(
+        () => questions.filter((q) => q.question_type === "essay"),
+        [questions],
+    );
+    const hasDualEssay = essayQuestions.length === 2;
 
     // Memoize answered set to avoid recreation on every render
     // For essays, check that content is not empty (Tiptap emits <p></p> on init)
@@ -598,7 +608,7 @@ export default function TestEnvironmentPage() {
         }
     };
 
-    const handleSubmitTest = async () => {
+    const handleSubmitTest = async (selectedEssayId?: string) => {
         setIsSubmitting(true);
         setPhase("submitting");
 
@@ -640,6 +650,12 @@ export default function TestEnvironmentPage() {
 
             const res = await fetch(`/api/tests/${testId}/submit`, {
                 method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(
+                    selectedEssayId
+                        ? { selectedEssayQuestionId: selectedEssayId }
+                        : {},
+                ),
             });
 
             const data = await res.json();
@@ -661,17 +677,41 @@ export default function TestEnvironmentPage() {
         }
     };
 
+    /**
+     * Called by all "Submit Test" buttons.
+     * For tests with 2 essay questions, shows the essay selection modal first.
+     * For all other tests, submits directly.
+     */
+    const handleTriggerSubmit = () => {
+        if (hasDualEssay) {
+            setShowEssaySelectionModal(true);
+        } else {
+            handleSubmitTest();
+        }
+    };
+
     const handleAutoSubmit = useCallback(async (reason: string) => {
         setWarningMessage(null);
-        // Don't set error before submit - let the submit handle its own errors
-        // Show the reason after successful submit or as final message
+        // Auto-submit: pick the essay that was answered (or first) automatically
+        let autoSelectedEssayId: string | undefined;
+        if (hasDualEssay) {
+            const answeredEssay = essayQuestions.find((q) => {
+                const ans = answers[q.id];
+                return (
+                    ans &&
+                    typeof ans === "string" &&
+                    stripHtmlToText(ans).trim().length > 0
+                );
+            });
+            autoSelectedEssayId = answeredEssay?.id ?? essayQuestions[0]?.id;
+        }
         try {
-            await handleSubmitTest();
-            // After successful submit, show the reason (e.g., "Time is up!")
+            await handleSubmitTest(autoSelectedEssayId);
             setError(reason);
         } catch {
             // Submit failed - its own error is already set
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleEndTestEarly = async () => {
@@ -824,15 +864,29 @@ export default function TestEnvironmentPage() {
     // PRE-SUBMIT SUMMARY
     if (phase === "pre-submit") {
         return (
-            <PreSubmitSummary
-                totalQuestions={questions.length}
-                answeredSet={answeredSet}
-                flaggedSet={flaggedSet}
-                questionsOrder={questionsOrder}
-                onGoBack={() => setPhase("testing")}
-                onSubmit={handleSubmitTest}
-                isSubmitting={isSubmitting}
-            />
+            <>
+                <PreSubmitSummary
+                    totalQuestions={questions.length}
+                    answeredSet={answeredSet}
+                    flaggedSet={flaggedSet}
+                    questionsOrder={questionsOrder}
+                    hasDualEssay={hasDualEssay}
+                    essayQuestionIds={essayQuestions.map((q) => q.id)}
+                    onGoBack={() => setPhase("testing")}
+                    onSubmit={handleTriggerSubmit}
+                    isSubmitting={isSubmitting}
+                />
+                {showEssaySelectionModal && (
+                    <EssaySelectionModal
+                        essayQuestions={essayQuestions}
+                        onConfirm={(id) => {
+                            setShowEssaySelectionModal(false);
+                            handleSubmitTest(id);
+                        }}
+                        onCancel={() => setShowEssaySelectionModal(false)}
+                    />
+                )}
+            </>
         );
     }
 
@@ -901,6 +955,11 @@ export default function TestEnvironmentPage() {
                     >
                         Q {currentIndex + 1} / {questions.length}
                     </Badge>
+                    {hasDualEssay && essayQuestions.some((q) => q.id === currentQuestion?.id) && (
+                        <Badge className="bg-amber-500/20 text-amber-300 border-amber-400/40 text-xs border">
+                            Attempt any 1 of 2
+                        </Badge>
+                    )}
                     {passageGroup && (
                         <span className="text-xs text-white/60">
                             Passage Q{passageGroup.start + 1}-
@@ -1151,7 +1210,7 @@ export default function TestEnvironmentPage() {
                                     }
                                     setPhase("pre-submit");
                                 } else {
-                                    handleSubmitTest();
+                                    handleTriggerSubmit();
                                 }
                             }}
                             className="gap-2 bg-green-600 hover:bg-green-700"
@@ -1185,6 +1244,100 @@ export default function TestEnvironmentPage() {
                     </button>
                 </div>
             )}
+
+            {/* Essay selection modal (dual-essay subjects) */}
+            {showEssaySelectionModal && (
+                <EssaySelectionModal
+                    essayQuestions={essayQuestions}
+                    onConfirm={(id) => {
+                        setShowEssaySelectionModal(false);
+                        handleSubmitTest(id);
+                    }}
+                    onCancel={() => setShowEssaySelectionModal(false)}
+                />
+            )}
+        </div>
+    );
+}
+
+// ============================================
+// ESSAY SELECTION MODAL
+// Shown when submitting a test that has exactly 2 essay questions.
+// The student picks which essay they want evaluated.
+// ============================================
+interface EssaySelectionModalProps {
+    essayQuestions: QuestionForTest[];
+    onConfirm: (selectedId: string) => void;
+    onCancel: () => void;
+}
+
+function EssaySelectionModal({
+    essayQuestions,
+    onConfirm,
+    onCancel,
+}: EssaySelectionModalProps) {
+    const [selected, setSelected] = useState<string | null>(null);
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-8 flex flex-col gap-6">
+                {/* Heading */}
+                <div>
+                    <h2 className="text-xl font-bold text-[#1a2744] mb-1">
+                        Which Essay to Submit for Evaluation?
+                    </h2>
+                    <p className="text-sm text-gray-500">
+                        Only one essay will be marked and evaluated. Select the
+                        question you attempted.
+                    </p>
+                </div>
+
+                {/* Options */}
+                <div className="flex flex-col gap-3">
+                    {essayQuestions.map((q, idx) => {
+                        const isSelected = selected === q.id;
+                        return (
+                            <button
+                                key={q.id}
+                                onClick={() => setSelected(q.id)}
+                                className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${
+                                    isSelected
+                                        ? "border-[#1a2744] bg-[#1a2744]/5 text-[#1a2744]"
+                                        : "border-gray-200 hover:border-gray-400 text-gray-700"
+                                }`}
+                            >
+                                <span className="font-semibold">
+                                    Essay Question {idx + 1}
+                                </span>
+                                {q.code && (
+                                    <span className="ml-2 text-xs text-gray-400">
+                                        ({q.code})
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Actions */}
+                <div className="flex gap-3">
+                    <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={onCancel}
+                    >
+                        Go Back
+                    </Button>
+                    <Button
+                        className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                        disabled={!selected}
+                        onClick={() => selected && onConfirm(selected)}
+                    >
+                        <Send className="h-4 w-4 mr-2" />
+                        Submit Test
+                    </Button>
+                </div>
+            </div>
         </div>
     );
 }

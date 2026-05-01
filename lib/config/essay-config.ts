@@ -53,26 +53,28 @@ export const ESSAY_CONFIG = {
     // ============================================
     rubric: {
         /**
-         * Standard essay rubric (fixed — never changes per question).
-         * Set A (15 marks): Content, Structure, Organization, Style, Vocabulary
-         * Set B (10 marks): Sentence Structure, Punctuation, Spelling
-         * Total: 25 marks
+         * Standard persuasive essay rubric.
+         * Audience(5) + Text Structure(5) + Ideas(5) + Persuasive techniques(5)
+         * + Vocabulary(5) + Cohesion(4) + Paragraphing(3)
+         * + Sentence Structure(5) + Punctuation(5) + Spelling(5) + Heading(3)
+         * Total: 50 marks
          */
         default: {
-            // Set A — 15 marks
-            "Content":      5,
-            "Structure":    3,
-            "Organization": 3,
-            "Style":        2,
-            "Vocabulary":   2,
-            // Set B — 10 marks
-            "Sentence Structure": 5,
-            "Punctuation":        3,
-            "Spelling":           2,
+            "Audience":              5,
+            "Text Structure":        5,
+            "Ideas":                 5,
+            "Persuasive techniques": 5,
+            "Vocabulary":            5,
+            "Cohesion":              4,
+            "Paragraphing":          3,
+            "Sentence Structure":    5,
+            "Punctuation":           5,
+            "Spelling":              5,
+            "Heading":               3,
         } as Record<string, number>,
-        /** Total rubric score is always 25 */
-        minTotalScore: 25,
-        maxTotalScore: 25,
+        /** Total rubric score is always 50 */
+        minTotalScore: 50,
+        maxTotalScore: 50,
     },
 
     // ============================================

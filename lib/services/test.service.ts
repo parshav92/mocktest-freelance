@@ -806,10 +806,14 @@ export class TestService {
 
     /**
      * Submit a test for grading
+     * @param selectedEssayQuestionId - When a subject has exactly 2 essay questions,
+     *   the student must choose one for evaluation. Only that essay's answer is
+     *   graded/evaluated; the other is stripped before saving so history shows 1.
      */
     async submitTest(
         testId: string,
         studentId: string,
+        selectedEssayQuestionId?: string,
     ): Promise<{ test: Test; questions: QuestionForTest[] }> {
         const { test, can_access, reason } = await this.getTest(
             testId,
@@ -837,12 +841,54 @@ export class TestService {
             true,
         );
 
+        // -----------------------------------------------
+        // ESSAY SELECTION: when test has exactly 2 essays,
+        // strip the non-selected essay from answers so it
+        // is not counted in history / subject stats.
+        // -----------------------------------------------
+        const essayQuestionIds = questions
+            .filter((q) => q.question_type === "essay")
+            .map((q) => q.id);
+
+        let answersToGrade: TestAnswer[] = [...(test.answers || [])];
+        let adjustedTotalMarks = test.total_marks ?? 0;
+
+        if (selectedEssayQuestionId && essayQuestionIds.length === 2) {
+            const nonSelectedEssayId = essayQuestionIds.find(
+                (id) => id !== selectedEssayQuestionId,
+            );
+            if (nonSelectedEssayId) {
+                // Remove non-selected essay answer (if it exists)
+                answersToGrade = answersToGrade.filter(
+                    (a) => a.question_id !== nonSelectedEssayId,
+                );
+                // Reduce total_marks by the non-selected essay's mark value
+                const nonSelectedEssay = questions.find(
+                    (q) => q.id === nonSelectedEssayId,
+                );
+                if (nonSelectedEssay) {
+                    adjustedTotalMarks = Math.max(
+                        0,
+                        adjustedTotalMarks - nonSelectedEssay.marks,
+                    );
+                }
+            }
+        }
+
         // Validate word limits for all essay answers before grading
         const essayQuestions = questions.filter(
             (q) => q.question_type === "essay",
         );
         for (const eq of essayQuestions) {
-            const answer = (test.answers || []).find(
+            // Only validate the essay that will actually be graded
+            if (
+                selectedEssayQuestionId &&
+                essayQuestionIds.length === 2 &&
+                eq.id !== selectedEssayQuestionId
+            ) {
+                continue;
+            }
+            const answer = answersToGrade.find(
                 (a) => a.question_id === eq.id,
             );
             if (answer?.selected && typeof answer.selected === "string") {
@@ -859,13 +905,13 @@ export class TestService {
         // Grade the answers (cast to GradableQuestion since we included answers)
         const { gradedAnswers, scoreBreakdown, marksObtained } =
             this.gradeAnswers(
-                test.answers || [],
+                answersToGrade,
                 questions as unknown as GradableQuestion[],
             );
 
-        // Calculate percentage
-        const percentage = test.total_marks
-            ? Math.round((marksObtained / test.total_marks) * 100 * 100) / 100
+        // Calculate percentage using adjusted total marks
+        const percentage = adjustedTotalMarks
+            ? Math.round((marksObtained / adjustedTotalMarks) * 100 * 100) / 100
             : 0;
 
         // Update test with grading results
@@ -879,6 +925,7 @@ export class TestService {
                 marks_obtained: marksObtained,
                 percentage,
                 score_breakdown: scoreBreakdown,
+                total_marks: adjustedTotalMarks,
             })
             .eq("id", testId)
             .select()
@@ -889,7 +936,8 @@ export class TestService {
             throw new Error("Failed to submit test");
         }
 
-        // Queue essay questions for LLM evaluation
+        // Queue essay questions for LLM evaluation (only the selected essay
+        // will be in gradedAnswers, so the non-selected is automatically skipped)
         await this.queueEssayEvaluations(
             testId,
             studentId,
