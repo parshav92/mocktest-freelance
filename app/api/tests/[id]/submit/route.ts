@@ -44,14 +44,31 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         const supabase = await createClient();
         const testService = new TestService(supabase);
 
+        // Parse optional essay selection from request body
+        let selectedEssayQuestionId: string | undefined;
+        try {
+            const body = await request.json();
+            if (body?.selectedEssayQuestionId) {
+                const uuidRegex =
+                    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+                if (uuidRegex.test(body.selectedEssayQuestionId)) {
+                    selectedEssayQuestionId = body.selectedEssayQuestionId;
+                }
+            }
+        } catch {
+            // No body or invalid JSON — proceed without essay selection
+        }
+
         console.log(
             `[Submit] POST /api/tests/${testId}/submit — starting submission`,
+            selectedEssayQuestionId ? `(selected essay: ${selectedEssayQuestionId})` : "",
         );
 
         // Submit and grade the test
         const { test, questions } = await testService.submitTest(
             testId,
             auth.session.student_id,
+            selectedEssayQuestionId,
         );
 
         console.log(
