@@ -14,28 +14,40 @@ import {
 
 const faqItems = [
     {
-        question: "What is MockTest and how does it work?",
-        answer: "MockTest is an online platform designed to help students prepare for selective high school exams through practice tests. Students can access a variety of mock tests across Reading, Writing, Mathematics, and Thinking Skills, track their progress, and identify areas that need improvement.",
+        question: "How can I receive technical support?",
+        answer: "You can reach out via Contact Us page. As a Sydney-based platform, we are here to help with any technical or account related queries.",
     },
     {
-        question: "How do I create an account?",
-        answer: "Creating an account is simple. Click on the 'Free Trial' button on the homepage, select whether you're a student or parent, and follow the registration process. Students will receive login credentials from their parents, while parents can sign up using email or Google authentication.",
+        question: "How is this website offering different compared to traditional coaching?",
+        answer: "Unlike rigid, expensive coaching (often $700+), and limited test offering of traditional coaching, we offer a flexible, AI-powered platform. We provide immediate feedback and unlimited timed mock exams that simulate the real Selective Test Environment, ensuring the student builds the digital literacy required for the current NSW Department of Education format.",
     },
     {
-        question: "What subjects are covered in the mock tests?",
-        answer: "Our platform covers all key selective test subjects including Reading, Writing, Mathematics, and Thinking Skills. We regularly update our question bank to align with the latest curriculum and examination patterns.",
+        question: "What is the best way to prepare for the 2026 NSW Selective High School Placement Test?",
+        answer: "The most effective preparation involves consistent practice with materials that match the official computer-based format. This website through subscription plan provides over 3000+ NSW selective-style questions, including Reading, Mathematical Reasoning, Thinking Skills, and Writing, designed specifically for NSW and Sydney students aiming for top-tier schools.",
     },
     {
-        question: "Can parents track their child's progress?",
-        answer: "Yes! Parents have access to a dedicated dashboard where they can monitor their child's test scores, track improvement over time, view detailed analytics, and identify subjects that need more attention.",
+        question: "Are the mock tests similar to the official computer-based Selective Test?",
+        answer: "Yes. The NSW Selective Test is now fully computer-based, our platform simulates similar environment. Our 60+ full-length mock exams replicate the timing, navigation, and difficulty level of the official test, helping students master time management and reduce exam-day anxiety.",
     },
     {
-        question: "How are the mock tests structured?",
-        answer: "Our mock tests are designed to replicate real exam conditions. They include multiple-choice questions, fill-in-the-blanks, passage-based questions, and essay-type questions. Each test has a time limit and provides instant results with detailed explanations.",
+        question: "Can my child get feedback on their Writing responses?",
+        answer: "Yes. This website offers immediate and comprehensive feedback for writing responses. Our system evaluates structure, vocabulary, and grammar, providing the instant guidance needed to reach Top 10% standards without waiting days for a tutor to mark a paper.",
     },
     {
-        question: "Is there a free trial available?",
-        answer: "Yes, we offer a free trial period where you can explore our platform and attempt sample tests. This allows you to experience the quality of our content before committing to a subscription plan.",
+        question: "How many mock tests can my child attempt?",
+        answer: "Once enrolled, student can attempt unlimited mock tests of Reading, Mathematical Reasoning, Thinking Skills, and Writing, designed specifically for NSW and Sydney students aiming for top-tier schools. Our 60+ full-length mock exams replicate the timing, navigation, and difficulty level of the official test, helping students master time management and reduce exam-day anxiety.",
+    },
+    {
+        question: "How can I track my child's performance and progress?",
+        answer: "Our dashboard provides accurate progress tracking and identifies specific \"knowledge gaps.\" You can see your child's growth across all four test components, allowing you to focus their study sessions on the areas that will most impact their final score. Parents also receive a weekly summary of their child's study activity highlighting strong areas and areas that need more work, giving parents a clear insight to improvement opportunities.",
+    },
+    {
+        question: "Can I retake the practice sets and mock exams?",
+        answer: "Students have unlimited retakes for all mock tests and practice sets during their subscription period. We encourage retaking tests to master difficult concepts and improve speed, which are critical factors for success in competitive selective schools.",
+    },
+    {
+        question: "Can I use one account for multiple students?",
+        answer: "No. Each account is strictly for a single student. Our \"Custom Mock Exams\" and progress tracking are personalised to each student. Sharing an account would merge data of multiple learners, making the feedback and performance insights inaccurate.",
     },
 ];
 
