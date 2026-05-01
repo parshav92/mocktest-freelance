@@ -12,6 +12,8 @@ import type {
     FillMissingSentenceAnswer,
     EssayContent,
     Passage,
+    TypeQuotas,
+    PassageGroupQuota,
 } from "@/types/test";
 import { EssayEvaluationService } from "@/lib/services/essay-evaluation.service";
 import { countWords, stripHtmlToText } from "@/lib/utils";
@@ -250,31 +252,45 @@ export class TestService {
             );
         }
 
-        // 3. Get adaptive distribution — use total_questions from the subject row
+        // 3. Get default template (with type_quotas for template-based selection)
+        const { data: template } = await this.supabase
+            .from("subject_templates")
+            .select("id, type_quotas")
+            .eq("subject_id", subjectId)
+            .eq("is_default", true)
+            .single();
+
+        // 4. Get adaptive distribution — use total_questions from the subject row
         const distribution = await this.getAdaptiveDistribution(
             studentId,
             subjectId,
             subject.total_questions,
         );
 
-        // 4. Select questions using adaptive algorithm
-        const questionIds = await this.getTestQuestions(
-            studentId,
-            subjectId,
-            distribution,
-        );
+        // 5. Select questions — branch on template type
+        let questionIds: string[];
+
+        if (template?.type_quotas) {
+            // Template-based selection (Reading: per-type quotas)
+            questionIds = await this.getTemplateBasedQuestions(
+                studentId,
+                subjectId,
+                template.type_quotas as TypeQuotas,
+                distribution,
+                subject.total_questions,
+            );
+        } else {
+            // Legacy difficulty-only selection (Math, Thinking Skills, Writing)
+            questionIds = await this.getTestQuestions(
+                studentId,
+                subjectId,
+                distribution,
+            );
+        }
 
         if (questionIds.length === 0) {
             throw new Error("No questions available for this subject");
         }
-
-        // 5. Get default template
-        const { data: template } = await this.supabase
-            .from("subject_templates")
-            .select("id")
-            .eq("subject_id", subjectId)
-            .eq("is_default", true)
-            .single();
 
         // 6. Calculate total marks
         const { data: questionsData } = await this.supabase
@@ -983,20 +999,35 @@ export class TestService {
 
             if (!subject) return;
 
-            // Get adaptive distribution — use total_questions from the subject row
-            const distribution = await this.getAdaptiveDistribution(studentId, subjectId, subject.total_questions);
-
-            // Select questions
-            const questionIds = await this.getTestQuestions(studentId, subjectId, distribution);
-            if (questionIds.length === 0) return;
-
-            // Get template
+            // Get template (with type_quotas for template-based selection)
             const { data: template } = await this.supabase
                 .from("subject_templates")
-                .select("id")
+                .select("id, type_quotas")
                 .eq("subject_id", subjectId)
                 .eq("is_default", true)
                 .single();
+
+            // Get adaptive distribution — use total_questions from the subject row
+            const distribution = await this.getAdaptiveDistribution(studentId, subjectId, subject.total_questions);
+
+            // Select questions — branch on template type
+            let questionIds: string[];
+
+            if (template?.type_quotas) {
+                // Template-based selection (Reading: per-type quotas)
+                questionIds = await this.getTemplateBasedQuestions(
+                    studentId,
+                    subjectId,
+                    template.type_quotas as TypeQuotas,
+                    distribution,
+                    subject.total_questions,
+                );
+            } else {
+                // Legacy difficulty-only selection (Math, Thinking Skills, Writing)
+                questionIds = await this.getTestQuestions(studentId, subjectId, distribution);
+            }
+
+            if (questionIds.length === 0) return;
 
             // Calculate total marks
             const { data: questionsData } = await this.supabase
@@ -1325,6 +1356,249 @@ export class TestService {
                 console.warn(`Unknown question type: ${questionType}`);
                 return false;
         }
+    }
+
+    // ============================================
+    // TEMPLATE-BASED QUESTION SELECTION
+    // ============================================
+
+    /**
+     * Select questions using per-type quotas from the template.
+     * Used when subject_templates.type_quotas is non-null (e.g., Reading).
+     *
+     * Algorithm:
+     *  1. Compute difficulty ratios from adaptive distribution
+     *  2. Process passage groups first (passage-first selection)
+     *  3. Process standalone types, absorbing any passage shortfall via fallback_type
+     *  4. Final ordering via groupAndShuffleQuestions()
+     */
+    private async getTemplateBasedQuestions(
+        studentId: string,
+        subjectId: string,
+        typeQuotas: TypeQuotas,
+        globalDistribution: { easy: number; medium: number; hard: number },
+        totalQuestions: number,
+    ): Promise<string[]> {
+        const allQuestionIds: string[] = [];
+        const totalFromDistribution =
+            globalDistribution.easy + globalDistribution.medium + globalDistribution.hard;
+
+        // Compute difficulty ratios from adaptive distribution
+        const easyRatio = totalFromDistribution > 0
+            ? globalDistribution.easy / totalFromDistribution
+            : 0.5;
+        const mediumRatio = totalFromDistribution > 0
+            ? globalDistribution.medium / totalFromDistribution
+            : 0.375;
+        // hardRatio is the remainder (1 - easy - medium)
+
+        let overflow = 0; // Tracks shortfall from passage groups
+
+        // ========================================
+        // PHASE 1: Process passage groups
+        // ========================================
+        for (const group of typeQuotas.passage_groups) {
+            const selected = await this.selectPassageGroupQuestions(
+                studentId,
+                subjectId,
+                group,
+                easyRatio,
+                mediumRatio,
+            );
+
+            allQuestionIds.push(...selected);
+
+            // Track overflow (shortfall = quota - actual)
+            if (selected.length < group.total_questions) {
+                overflow += (group.total_questions - selected.length);
+                console.warn(
+                    `[Template] ${group.question_type}: got ${selected.length}/${group.total_questions}, overflow +${group.total_questions - selected.length}`,
+                );
+            }
+        }
+
+        // ========================================
+        // PHASE 2: Process standalone types
+        // ========================================
+        for (const standalone of typeQuotas.standalone_types) {
+            let typeCount = standalone.count;
+
+            // If this type is the fallback, absorb overflow from passage shortfall
+            if (standalone.question_type === typeQuotas.fallback_type) {
+                typeCount += overflow;
+                overflow = 0;
+            }
+
+            // Apply difficulty ratio per type
+            const typeEasy = Math.round(typeCount * easyRatio);
+            const typeHard = Math.round(typeCount * (1 - easyRatio - mediumRatio));
+            const typeMedium = typeCount - typeEasy - typeHard;
+
+            const { data, error } = await this.supabase.rpc("get_test_questions_by_type", {
+                p_student_id: studentId,
+                p_subject_id: subjectId,
+                p_question_type: standalone.question_type,
+                p_easy_count: typeEasy,
+                p_medium_count: typeMedium,
+                p_hard_count: typeHard,
+            });
+
+            if (error) {
+                console.error(
+                    `[Template] Error selecting ${standalone.question_type}:`,
+                    error,
+                );
+                continue;
+            }
+
+            const ids = (data || []).map(
+                (r: { question_id: string }) => r.question_id,
+            );
+            allQuestionIds.push(...ids);
+
+            // If this type is also short, carry overflow forward
+            if (ids.length < typeCount) {
+                overflow += (typeCount - ids.length);
+                console.warn(
+                    `[Template] ${standalone.question_type}: got ${ids.length}/${typeCount}, overflow +${typeCount - ids.length}`,
+                );
+            }
+        }
+
+        // If there's still overflow after all types, log a warning
+        if (overflow > 0) {
+            console.warn(
+                `[Template] ${overflow} questions short of ${totalQuestions} target after all types exhausted`,
+            );
+        }
+
+        return this.groupAndShuffleQuestions(allQuestionIds);
+    }
+
+    /**
+     * Select questions for a passage group (e.g., 2 extract passages, 10 passage_mcq total).
+     *
+     * Algorithm:
+     *  1. Fetch all passages of the specified type for this subject
+     *  2. For each passage, get available (unseen/incorrect) questions via DB function
+     *  3. Sort passages by available question count (most available first)
+     *  4. Pick top N passages
+     *  5. From each passage, select questions applying difficulty ratio
+     *  6. Hit exact count target — take subsets from passages if needed
+     */
+    private async selectPassageGroupQuestions(
+        studentId: string,
+        subjectId: string,
+        group: PassageGroupQuota,
+        easyRatio: number,
+        mediumRatio: number,
+    ): Promise<string[]> {
+        // 1. Get all eligible passages of this type
+        const { data: passages, error: passageError } = await this.supabase
+            .from("passages")
+            .select("id, code")
+            .eq("subject_id", subjectId)
+            .eq("passage_type", group.passage_type);
+
+        if (passageError || !passages || passages.length === 0) {
+            console.warn(
+                `[Template] No passages found for type "${group.passage_type}" in subject ${subjectId}`,
+            );
+            return [];
+        }
+
+        // 2. For each passage, get available (unseen/incorrect) questions
+        const passageAvailability: Array<{
+            passage_id: string;
+            available_questions: Array<{ question_id: string; difficulty: string }>;
+        }> = [];
+
+        for (const passage of passages) {
+            const { data: questions } = await this.supabase.rpc(
+                "get_passage_questions_for_test",
+                {
+                    p_student_id: studentId,
+                    p_passage_id: passage.id,
+                },
+            );
+
+            if (questions && questions.length > 0) {
+                passageAvailability.push({
+                    passage_id: passage.id,
+                    available_questions: questions,
+                });
+            }
+        }
+
+        if (passageAvailability.length === 0) {
+            console.warn(
+                `[Template] No passages with available questions for type "${group.passage_type}"`,
+            );
+            return [];
+        }
+
+        // 3. Sort by available question count descending (prefer passages with more unseen questions)
+        //    Then shuffle among equal counts for variety
+        passageAvailability.sort(
+            (a, b) => b.available_questions.length - a.available_questions.length,
+        );
+
+        // 4. Pick top N passages
+        const selectedPassages = passageAvailability.slice(0, group.passage_count);
+
+        // 5. Distribute target questions across selected passages
+        const allSelected: string[] = [];
+        let remaining = group.total_questions;
+
+        for (let i = 0; i < selectedPassages.length; i++) {
+            const passage = selectedPassages[i];
+            const isLast = i === selectedPassages.length - 1;
+
+            // Per-passage quota: divide equally, last one gets remainder
+            const perPassageTarget = isLast
+                ? remaining
+                : Math.ceil(group.total_questions / group.passage_count);
+
+            const available = passage.available_questions;
+            const toTake = Math.min(perPassageTarget, available.length);
+
+            // Apply difficulty ratio within this passage's questions
+            const byDifficulty = {
+                easy: available.filter((q) => q.difficulty === "easy"),
+                medium: available.filter((q) => q.difficulty === "medium"),
+                hard: available.filter((q) => q.difficulty === "hard"),
+            };
+
+            const easyTarget = Math.round(toTake * easyRatio);
+            const hardTarget = Math.round(toTake * (1 - easyRatio - mediumRatio));
+            const mediumTarget = toTake - easyTarget - hardTarget;
+
+            const picked: string[] = [];
+            picked.push(
+                ...byDifficulty.easy.slice(0, easyTarget).map((q) => q.question_id),
+            );
+            picked.push(
+                ...byDifficulty.medium.slice(0, mediumTarget).map((q) => q.question_id),
+            );
+            picked.push(
+                ...byDifficulty.hard.slice(0, hardTarget).map((q) => q.question_id),
+            );
+
+            // If still short (e.g., not enough of a specific difficulty),
+            // backfill from any remaining available questions
+            if (picked.length < toTake) {
+                const pickedSet = new Set(picked);
+                const extras = available
+                    .filter((q) => !pickedSet.has(q.question_id))
+                    .slice(0, toTake - picked.length);
+                picked.push(...extras.map((q) => q.question_id));
+            }
+
+            allSelected.push(...picked);
+            remaining -= picked.length;
+        }
+
+        return allSelected;
     }
 
     // ============================================

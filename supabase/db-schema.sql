@@ -196,6 +196,7 @@ CREATE TABLE public.subject_templates (
   medium_count integer NOT NULL DEFAULT 10,
   hard_count integer NOT NULL DEFAULT 5,
   passing_score integer,
+  type_quotas jsonb DEFAULT NULL,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT subject_templates_pkey PRIMARY KEY (id),
   CONSTRAINT subject_templates_subject_id_fkey FOREIGN KEY (subject_id) REFERENCES public.subjects(id)
