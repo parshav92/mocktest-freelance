@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { createClient } from "@/lib/supabase/client";
@@ -225,6 +225,13 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
     const [topicPage, setTopicPage] = useState(1);
     const [queryInitialized, setQueryInitialized] = useState(false);
 
+    /** Full analytics responses keyed by student + filters + topic page (avoids refetch on Prev). */
+    const analyticsCacheRef = useRef<Map<string, ParentStudentAnalytics>>(
+        new Map(),
+    );
+    /** Ignores stale network responses when the user changes page/filters quickly. */
+    const analyticsFetchSeqRef = useRef(0);
+
     const handleSignOut = async () => {
         await supabase.auth.signOut();
         router.push("/auth");
@@ -301,6 +308,17 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
                 topicPage: number;
             },
         ) => {
+            analyticsFetchSeqRef.current += 1;
+            const seq = analyticsFetchSeqRef.current;
+
+            const cacheKey = `${id}:${filters.days}:${filters.subjectId}:${filters.topicPage}`;
+            const cached = analyticsCacheRef.current.get(cacheKey);
+            if (cached) {
+                setAnalytics(cached);
+                setAnalyticsLoading(false);
+                return;
+            }
+
             setAnalyticsLoading(true);
             try {
                 const params = new URLSearchParams();
@@ -314,18 +332,26 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
                 const analyticsRes = await fetch(
                     `/api/students/${id}/analytics?${params.toString()}`,
                 );
-            if (analyticsRes.ok) {
-                setAnalytics(
-                    (await analyticsRes.json()) as ParentStudentAnalytics,
-                );
-            } else {
-                setAnalytics(EMPTY_ANALYTICS);
+                if (analyticsFetchSeqRef.current !== seq) {
+                    return;
+                }
+                if (analyticsRes.ok) {
+                    const data =
+                        (await analyticsRes.json()) as ParentStudentAnalytics;
+                    analyticsCacheRef.current.set(cacheKey, data);
+                    setAnalytics(data);
+                } else {
+                    setAnalytics(EMPTY_ANALYTICS);
+                }
+            } catch {
+                if (analyticsFetchSeqRef.current === seq) {
+                    setAnalytics(EMPTY_ANALYTICS);
+                }
+            } finally {
+                if (analyticsFetchSeqRef.current === seq) {
+                    setAnalyticsLoading(false);
+                }
             }
-        } catch {
-            setAnalytics(EMPTY_ANALYTICS);
-        } finally {
-            setAnalyticsLoading(false);
-        }
         },
         [],
     );
@@ -385,6 +411,8 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
     ]);
 
     const openStats = (id: string) => {
+        analyticsCacheRef.current.clear();
+        analyticsFetchSeqRef.current += 1;
         setSelectedId(id);
         setView("student-stats");
         setAnalyticsDays("90");
@@ -401,6 +429,8 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
     };
 
     const goBack = () => {
+        analyticsCacheRef.current.clear();
+        analyticsFetchSeqRef.current += 1;
         setView("overview");
         setSelectedId(null);
         setStats(null);
