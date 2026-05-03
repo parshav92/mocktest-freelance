@@ -155,13 +155,29 @@ export class TestService {
         }
 
         // Create maps for question info
+        // passage_ids may be a JS array (JSONB array) or a string (JSONB stored via JSON.stringify)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const parsePassageIds = (raw: any): string[] => {
+            if (!raw) return [];
+            if (Array.isArray(raw)) return raw as string[];
+            if (typeof raw === "string") {
+                try {
+                    const parsed = JSON.parse(raw);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch {
+                    return [];
+                }
+            }
+            return [];
+        };
+
         const questionInfoMap = new Map<
             string,
             { passage_ids: string[]; question_type: string }
         >();
         for (const q of questionsWithPassage) {
             questionInfoMap.set(q.id, {
-                passage_ids: (q.passage_ids as string[]) || [],
+                passage_ids: parsePassageIds(q.passage_ids),
                 question_type: q.question_type,
             });
         }
