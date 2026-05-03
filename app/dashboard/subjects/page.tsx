@@ -724,7 +724,7 @@ export default function AdminSubjectsPage() {
 
                                                 {/* Info */}
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
+                                                    <div className="flex items-center gap-2 mb-1 flex-wrap">
                                                         <h3 className="font-semibold text-zinc-900">
                                                             {subject.name}
                                                         </h3>
@@ -808,6 +808,15 @@ export default function AdminSubjectsPage() {
                                                             </div>
                                                         )}
                                                     </div>
+                                                </div>
+                                                {/* Manage link */}
+                                                <div className="shrink-0">
+                                                    <Link
+                                                        href={`/dashboard/subjects/${subject.id}`}
+                                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-emerald-700 border border-emerald-200 rounded-lg hover:bg-emerald-50 transition-colors"
+                                                    >
+                                                        Manage
+                                                    </Link>
                                                 </div>
                                             </div>
                                         </CardContent>

@@ -42,6 +42,31 @@ export interface InstructionPage {
     content: string;
 }
 
+// ============================================
+// TYPE QUOTA TYPES
+// ============================================
+
+/**
+ * Flat map stored in subject_templates.type_quotas (JSONB).
+ * When present, overrides the legacy easy/medium/hard adaptive algorithm.
+ *
+ * Reserved passage-control keys (not treated as question types):
+ *   "passage"       → number of extract-type passages to select
+ *   "passage_mcq"   → questions taken from each extract passage
+ *   "passage_poem"  → number of poem-type passages to select
+ *   "poem_mcq"      → questions taken from each poem passage
+ *
+ * Every other key is treated as a question_type whose value is the total
+ * standalone question count for that type.  Adding a new question type to
+ * the subject only requires updating this JSONB — no code change needed.
+ *
+ * Examples:
+ *   { "mcq": 40 }
+ *   { "passage": 3, "passage_mcq": 5, "passage_poem": 2, "poem_mcq": 5,
+ *     "fill_blank_dropdown": 8, "fill_missing_sentence": 7 }
+ */
+export type TypeQuotas = Record<string, number>;
+
 export interface SubjectTemplate {
     id: string;
     subject_id: string;
@@ -52,6 +77,7 @@ export interface SubjectTemplate {
     hard_count: number;
     passing_score: number | null;
     created_at: string;
+    type_quotas: TypeQuotas | null;
 }
 
 export interface Passage {
