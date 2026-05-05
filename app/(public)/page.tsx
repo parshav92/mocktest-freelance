@@ -1,11 +1,11 @@
 import Navbar from "@/components/navbar";
 import HeroSection from "@/components/landing/hero-section";
+import SampleReportSection from "@/components/landing/sample-report-section";
 import AboutSection from "@/components/landing/about-section";
 import WhyUsSection from "@/components/landing/why-us-section";
+import TestimonialsSection from "@/components/landing/testimonials-section";
 import PricingSection from "@/components/landing/pricing-section";
-import FAQSection from "@/components/landing/faq-section";
-import GradientTransition from "@/components/landing/gradient-transition";
-import ContactSection from "@/components/landing/contact-section";
+import FaqContactSection from "@/components/landing/faq-contact-section";
 import Footer from "@/components/landing/footer";
 
 export default function Home() {
@@ -13,12 +13,12 @@ export default function Home() {
         <div className="min-h-screen">
             <Navbar />
             <HeroSection />
-            <AboutSection />
-            <WhyUsSection />
+            <SampleReportSection />
+            {/* <AboutSection /> */}
+            {/* <WhyUsSection /> */}
+            <TestimonialsSection />
             <PricingSection />
-            <FAQSection />
-           
-            <ContactSection />
+            <FaqContactSection />
             <Footer />
         </div>
     );

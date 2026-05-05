@@ -252,6 +252,8 @@ interface PreSubmitSummaryProps {
     answeredSet: Set<string>;
     flaggedSet: Set<string>;
     questionsOrder: string[];
+    hasDualEssay?: boolean;
+    essayQuestionIds?: string[];
     onGoBack: () => void;
     onSubmit: () => void;
     isSubmitting: boolean;
@@ -262,11 +264,32 @@ export function PreSubmitSummary({
     answeredSet,
     flaggedSet,
     questionsOrder,
+    hasDualEssay = false,
+    essayQuestionIds = [],
     onGoBack,
     onSubmit,
     isSubmitting,
 }: PreSubmitSummaryProps) {
-    const unanswered = totalQuestions - answeredSet.size;
+    // For dual-essay tests, count each essay pair as requiring only 1 answer.
+    // If at least 1 of the 2 essays is answered, the essay slot is "done".
+    const essayAnswered = essayQuestionIds.filter((id) =>
+        answeredSet.has(id),
+    ).length;
+    const essaySlotAnswered = hasDualEssay
+        ? Math.min(1, essayAnswered) // at most 1 slot for 2 essays
+        : essayAnswered;
+    const nonEssayTotal = hasDualEssay
+        ? totalQuestions - 2 // subtract both essay questions
+        : totalQuestions;
+    const nonEssayAnswered = hasDualEssay
+        ? answeredSet.size - essayAnswered
+        : answeredSet.size;
+
+    const displayTotal = hasDualEssay ? nonEssayTotal + 1 : totalQuestions;
+    const displayAnswered = hasDualEssay
+        ? nonEssayAnswered + essaySlotAnswered
+        : answeredSet.size;
+    const unanswered = displayTotal - displayAnswered;
     const flaggedCount = flaggedSet.size;
 
     return (
@@ -281,15 +304,21 @@ export function PreSubmitSummary({
                         Ready to Submit?
                     </h2>
 
+                    {hasDualEssay && (
+                        <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
+                            <span className="font-semibold">Note:</span> This test has 2 essay questions you only need to attempt <span className="font-semibold">1</span>. You will be asked to select which essay to submit for evaluation.
+                        </div>
+                    )}
+
                     <div className="space-y-4">
                         <SummaryRow
                             label="Total Questions"
-                            value={totalQuestions}
+                            value={displayTotal}
                             color="text-neutral-800"
                         />
                         <SummaryRow
                             label="Answered"
-                            value={answeredSet.size}
+                            value={displayAnswered}
                             color="text-blue-600"
                         />
                         {unanswered > 0 && (
@@ -327,13 +356,20 @@ export function PreSubmitSummary({
                         </h3>
                         <div className="grid grid-cols-10 gap-1.5">
                             {questionsOrder.map((qId, idx) => {
+                                const isEssay = essayQuestionIds.includes(qId);
                                 const isAnswered = answeredSet.has(qId);
                                 const isFlagged = flaggedSet.has(qId);
                                 return (
                                     <div
                                         key={idx}
+                                        title={
+                                            hasDualEssay && isEssay
+                                                ? "Essay (attempt any 1 of 2)"
+                                                : undefined
+                                        }
                                         className={`relative w-full aspect-square rounded flex items-center justify-center text-xs font-medium
-                      ${isAnswered ? "bg-blue-100 text-blue-800" : "bg-gray-100 text-gray-700"}
+                      ${isAnswered ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"}
+                      ${hasDualEssay && isEssay ? "ring-2 ring-amber-400" : ""}
                     `}
                                     >
                                         {idx + 1}
@@ -344,6 +380,12 @@ export function PreSubmitSummary({
                                 );
                             })}
                         </div>
+                        {hasDualEssay && (
+                            <p className="text-xs text-amber-700 mt-2">
+                                <span className="inline-block w-3 h-3 rounded border-2 border-amber-400 mr-1 align-middle" />
+                                Question marked in blue is answered.
+                            </p>
+                        )}
                     </div>
 
                     <div className="flex gap-3 pt-2">

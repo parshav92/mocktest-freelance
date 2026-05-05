@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, ClipboardList, Play } from "lucide-react";
+import { ArrowLeft, Loader2, ClipboardList, Play, Pencil, Send } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 interface SubjectInfo {
@@ -171,6 +171,25 @@ export default function CustomTestDetailPage() {
     const [questions, setQuestions] = useState<TestQuestion[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [publishing, setPublishing] = useState(false);
+
+    const handlePublish = async () => {
+        if (!test) return;
+        setPublishing(true);
+        try {
+            const res = await fetch(`/api/admin/custom-tests/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ is_active: true }),
+            });
+            if (!res.ok) throw new Error("Failed to publish");
+            setTest((prev) => prev ? { ...prev, is_active: true } : prev);
+        } catch {
+            // could add error toast here
+        } finally {
+            setPublishing(false);
+        }
+    };
 
     useEffect(() => {
         if (!id) return;
@@ -233,14 +252,42 @@ export default function CustomTestDetailPage() {
                             /{test.slug}
                         </p>
                     </div>
-                    {test.is_active && questions.length > 0 && (
-                        <Link href={`/custom-test/${test.slug}`}>
-                            <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2">
-                                <Play className="h-4 w-4" />
-                                Take Test
+
+                    <div className="flex items-center gap-2">
+                        {/* Edit button */}
+                        <Link href={`/dashboard/custom-tests/${id}/edit`}>
+                            <Button variant="outline" className="gap-2">
+                                <Pencil className="h-4 w-4" />
+                                Edit
                             </Button>
                         </Link>
-                    )}
+
+                        {/* Quick-publish for drafts */}
+                        {!test.is_active && (
+                            <Button
+                                className="bg-emerald-600 hover:bg-emerald-700 gap-2"
+                                onClick={handlePublish}
+                                disabled={publishing}
+                            >
+                                {publishing ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                    <Send className="h-4 w-4" />
+                                )}
+                                Publish
+                            </Button>
+                        )}
+
+                        {/* Take test (active only) */}
+                        {test.is_active && questions.length > 0 && (
+                            <Link href={`/custom-test/${test.slug}`}>
+                                <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2">
+                                    <Play className="h-4 w-4" />
+                                    Take Test
+                                </Button>
+                            </Link>
+                        )}
+                    </div>
                 </div>
             </div>
 

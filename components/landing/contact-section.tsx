@@ -25,7 +25,7 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
         <section
             id="contact"
             className={`w-full ${isPage ? "min-h-screen pt-24" : ""} py-20 px-6`}
-           
+
         >
             <div className="max-w-6xl mx-auto">
                 {/* Section Header */}
@@ -48,7 +48,7 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
                     {/* Contact Form */}
-                    <div className="bg-slate-800/50 backdrop-blur-sm rounded-3xl border border-slate-700/50 p-8 md:p-10">
+                    <div className="bg-[#7DD3FC] backdrop-blur-sm rounded-3xl border border-slate-700/50 p-8 md:p-10">
                         <h3 className="text-xl font-semibold text-white mb-6">
                             Send us a message
                         </h3>
@@ -65,7 +65,7 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                         id="firstName"
                                         name="firstName"
                                         placeholder="John"
-                                        className="bg-slate-900/50 border-slate-700 focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
+                                        className="bg-white focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
                                         required
                                     />
                                 </div>
@@ -80,7 +80,7 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                         id="lastName"
                                         name="lastName"
                                         placeholder="Doe"
-                                        className="bg-slate-900/50 border-slate-700 focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
+                                        className="bg-white focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
                                         required
                                     />
                                 </div>
@@ -97,7 +97,7 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                     name="email"
                                     type="email"
                                     placeholder="you@example.com"
-                                    className="bg-slate-900/50 border-slate-700 focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
+                                    className="bg-white focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
                                     required
                                 />
                             </div>
@@ -113,7 +113,7 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                     name="phone"
                                     type="tel"
                                     placeholder="+91 98765 43210"
-                                    className="bg-slate-900/50 border-slate-700 focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
+                                    className="bg-white  focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -128,13 +128,13 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                     name="message"
                                     placeholder="Tell us about your query..."
                                     rows={4}
-                                    className="w-full bg-slate-900/50 border border-slate-700 focus:border-sky-500 text-black placeholder:text-black-500 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/20"
+                                    className="w-full bg-white  focus:border-sky-500 text-black placeholder:text-black-500 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                                     required
                                 />
                             </div>
                             <Button
                                 type="submit"
-                                className="w-full h-12 bg-white text-black rounded-xl font-medium shadow-lg transition-all duration-300"
+                                className="w-full h-12 bg-white text-black rounded-xl font-medium shadow-lg transition-all duration-300 hover:bg-white/80"
                                 disabled={isSubmitting}
                             >
                                 {isSubmitting ? (
@@ -165,10 +165,10 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                         <div className="space-y-6">
                             <a
                                 href="mailto:support@mocktest.com"
-                                className="group flex items-center gap-4 p-4 rounded-2xl bg-slate-800/30 border border-slate-700/50 hover:bg-slate-800/50 hover:border-sky-700/50 transition-all duration-300 hover:scale-[0.98]"
+                                className="group flex items-center gap-4 p-4 rounded-2xl border border-slate-700/50 hover:bg-slate-800/50 hover:border-white/50 transition-all duration-300 hover:scale-[0.98]"
                             >
                                 <div className="w-12 h-12 rounded-xl bg-sky-900/50 flex items-center justify-center group-hover:bg-sky-800/50 transition-colors">
-                                    <Mail className="w-5 h-5 text-sky-400" />
+                                    <Mail className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
                                     <p className="text-sm text-black-500 mb-0.5">
@@ -178,15 +178,15 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                         support@mocktest.com
                                     </p>
                                 </div>
-                                <ArrowRight className="w-4 h-4 text-black-500 ml-auto group-hover:text-sky-400 group-hover:translate-x-1 transition-all" />
+                                <ArrowRight className="w-4 h-4 text-black-500 ml-auto group-hover:text-white group-hover:translate-x-1 transition-all" />
                             </a>
 
                             <a
                                 href="tel:+919876543210"
-                                className="group flex items-center gap-4 p-4 rounded-2xl bg-slate-800/30 border border-slate-700/50 hover:bg-slate-800/50 hover:border-sky-700/50 transition-all duration-300 hover:scale-[0.98]"
+                                className="group flex items-center gap-4 p-4 rounded-2xl border border-slate-700/50 hover:bg-slate-800/50 hover:border-white/50 transition-all duration-300 hover:scale-[0.98]"
                             >
                                 <div className="w-12 h-12 rounded-xl bg-sky-900/50 flex items-center justify-center group-hover:bg-sky-800/50 transition-colors">
-                                    <Phone className="w-5 h-5 text-sky-400" />
+                                    <Phone className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
                                     <p className="text-sm text-black-500 mb-0.5">
@@ -196,12 +196,12 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                         +91 98765 43210
                                     </p>
                                 </div>
-                                <ArrowRight className="w-4 h-4 text-black-500 ml-auto group-hover:text-sky-400 group-hover:translate-x-1 transition-all" />
+                                <ArrowRight className="w-4 h-4 text-black-500 ml-auto group-hover:text-white group-hover:translate-x-1 transition-all" />
                             </a>
 
-                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-800/30 border border-slate-700/50">
+                            <div className="flex items-center gap-4 p-4 rounded-2xl border border-slate-700/50 hover:bg-slate-800/50 hover:border-white/50 transition-all duration-300 hover:scale-[0.98]">
                                 <div className="w-12 h-12 rounded-xl bg-sky-900/50 flex items-center justify-center">
-                                    <MapPin className="w-5 h-5 text-sky-400" />
+                                    <MapPin className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
                                     <p className="text-sm text-black-500 mb-0.5">
@@ -215,7 +215,7 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                         </div>
 
                         {/* Working Hours */}
-                        <div className="p-6 rounded-2xl bg-gradient-to-br from-sky-900/30 to-slate-800/30 border border-sky-800/30">
+                        <div className="p-6 rounded-2xl border border-slate-700/50 hover:bg-slate-800/50 hover:border-white/50 transition-all duration-300 hover:scale-[0.98]">
                             <h4 className="text-black font-semibold mb-3">
                                 Working Hours
                             </h4>

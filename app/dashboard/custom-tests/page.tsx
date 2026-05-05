@@ -22,6 +22,7 @@ import {
     Filter,
     X,
     ClipboardList,
+    Pencil,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -307,10 +308,9 @@ export default function AdminCustomTestsPage() {
                 ) : (
                     <div className="space-y-4">
                         {tests.map((t) => (
-                            <Link
+                            <div
                                 key={t.id}
-                                href={`/dashboard/custom-tests/${t.id}`}
-                                className="block rounded-2xl border border-slate-200/70 bg-white hover:shadow-sm transition-shadow"
+                                className="rounded-2xl border border-slate-200/70 bg-white hover:shadow-sm transition-shadow"
                             >
                                 {/* Meta bar */}
                                 <div className="flex flex-wrap items-center gap-2 px-5 pt-4 pb-2">
@@ -337,32 +337,48 @@ export default function AdminCustomTestsPage() {
                                     <span className="text-xs text-zinc-400 ml-auto">
                                         {formatDate(t.created_at)}
                                     </span>
+
+                                    {/* Edit button */}
+                                    <Link
+                                        href={`/dashboard/custom-tests/${t.id}/edit`}
+                                        onClick={(e) => e.stopPropagation()}
+                                    >
+                                        <button className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors">
+                                            <Pencil className="h-3.5 w-3.5" />
+                                        </button>
+                                    </Link>
                                 </div>
 
-                                {/* Title + description */}
-                                <div className="px-5 pb-2">
-                                    <p className="text-sm font-semibold text-zinc-900">
-                                        {t.name}
-                                    </p>
-                                    {t.description && (
-                                        <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">
-                                            {t.description}
+                                {/* Clickable body */}
+                                <Link
+                                    href={`/dashboard/custom-tests/${t.id}`}
+                                    className="block"
+                                >
+                                    {/* Title + description */}
+                                    <div className="px-5 pb-2">
+                                        <p className="text-sm font-semibold text-zinc-900">
+                                            {t.name}
                                         </p>
-                                    )}
-                                </div>
+                                        {t.description && (
+                                            <p className="text-xs text-zinc-500 mt-0.5 line-clamp-2">
+                                                {t.description}
+                                            </p>
+                                        )}
+                                    </div>
 
-                                {/* Stats row */}
-                                <div className="flex flex-wrap items-center gap-4 px-5 pb-4 text-xs text-zinc-500">
-                                    <span>
-                                        {t.question_count} question
-                                        {t.question_count !== 1 ? "s" : ""}
-                                    </span>
-                                    <span>{t.duration_mins} min</span>
-                                    <span className="font-mono text-zinc-400">
-                                        /{t.slug}
-                                    </span>
-                                </div>
-                            </Link>
+                                    {/* Stats row */}
+                                    <div className="flex flex-wrap items-center gap-4 px-5 pb-4 text-xs text-zinc-500">
+                                        <span>
+                                            {t.question_count} question
+                                            {t.question_count !== 1 ? "s" : ""}
+                                        </span>
+                                        <span>{t.duration_mins} min</span>
+                                        <span className="font-mono text-zinc-400">
+                                            /{t.slug}
+                                        </span>
+                                    </div>
+                                </Link>
+                            </div>
                         ))}
                     </div>
                 )}

@@ -700,7 +700,7 @@ async function insertQuestions(
 
         return {
             subject_id: subjectId || null,
-            passage_ids: JSON.stringify(passageIds),
+            passage_ids: passageIds,
             code: q.code,
             question_type: getQuestionType(uploadType),
             difficulty: q.data.difficulty?.toLowerCase() || "medium",

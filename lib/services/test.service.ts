@@ -12,6 +12,7 @@ import type {
     FillMissingSentenceAnswer,
     EssayContent,
     Passage,
+    TypeQuotas,
 } from "@/types/test";
 import { EssayEvaluationService } from "@/lib/services/essay-evaluation.service";
 import { countWords, stripHtmlToText } from "@/lib/utils";
@@ -155,13 +156,29 @@ export class TestService {
         }
 
         // Create maps for question info
+        // passage_ids may be a JS array (JSONB array) or a string (JSONB stored via JSON.stringify)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const parsePassageIds = (raw: any): string[] => {
+            if (!raw) return [];
+            if (Array.isArray(raw)) return raw as string[];
+            if (typeof raw === "string") {
+                try {
+                    const parsed = JSON.parse(raw);
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch {
+                    return [];
+                }
+            }
+            return [];
+        };
+
         const questionInfoMap = new Map<
             string,
             { passage_ids: string[]; question_type: string }
         >();
         for (const q of questionsWithPassage) {
             questionInfoMap.set(q.id, {
-                passage_ids: (q.passage_ids as string[]) || [],
+                passage_ids: parsePassageIds(q.passage_ids),
                 question_type: q.question_type,
             });
         }
@@ -250,31 +267,35 @@ export class TestService {
             );
         }
 
-        // 3. Get adaptive distribution — use total_questions from the subject row
-        const distribution = await this.getAdaptiveDistribution(
-            studentId,
-            subjectId,
-            subject.total_questions,
-        );
-
-        // 4. Select questions using adaptive algorithm
-        const questionIds = await this.getTestQuestions(
-            studentId,
-            subjectId,
-            distribution,
-        );
-
-        if (questionIds.length === 0) {
-            throw new Error("No questions available for this subject");
-        }
-
-        // 5. Get default template
+        // 3. Get default template — needed to determine question-selection strategy
         const { data: template } = await this.supabase
             .from("subject_templates")
-            .select("id")
+            .select("id, type_quotas")
             .eq("subject_id", subjectId)
             .eq("is_default", true)
             .single();
+
+        // 4. Select questions: typed-quota strategy if template has type_quotas, else legacy adaptive
+        let questionIds: string[];
+        if (template?.type_quotas) {
+            questionIds = await this.buildTypedTestQuestions(
+                studentId,
+                subjectId,
+                template.type_quotas as TypeQuotas,
+            );
+        } else {
+            const distribution = await this.getAdaptiveDistribution(
+                studentId,
+                subjectId,
+                subject.total_questions,
+            );
+            questionIds = await this.getTestQuestions(studentId, subjectId, distribution);
+        }
+
+        // 5. Validate we have questions
+        if (questionIds.length === 0) {
+            throw new Error("No questions available for this subject");
+        }
 
         // 6. Calculate total marks
         const { data: questionsData } = await this.supabase
@@ -806,10 +827,14 @@ export class TestService {
 
     /**
      * Submit a test for grading
+     * @param selectedEssayQuestionId - When a subject has exactly 2 essay questions,
+     *   the student must choose one for evaluation. Only that essay's answer is
+     *   graded/evaluated; the other is stripped before saving so history shows 1.
      */
     async submitTest(
         testId: string,
         studentId: string,
+        selectedEssayQuestionId?: string,
     ): Promise<{ test: Test; questions: QuestionForTest[] }> {
         const { test, can_access, reason } = await this.getTest(
             testId,
@@ -837,12 +862,54 @@ export class TestService {
             true,
         );
 
+        // -----------------------------------------------
+        // ESSAY SELECTION: when test has exactly 2 essays,
+        // strip the non-selected essay from answers so it
+        // is not counted in history / subject stats.
+        // -----------------------------------------------
+        const essayQuestionIds = questions
+            .filter((q) => q.question_type === "essay")
+            .map((q) => q.id);
+
+        let answersToGrade: TestAnswer[] = [...(test.answers || [])];
+        let adjustedTotalMarks = test.total_marks ?? 0;
+
+        if (selectedEssayQuestionId && essayQuestionIds.length === 2) {
+            const nonSelectedEssayId = essayQuestionIds.find(
+                (id) => id !== selectedEssayQuestionId,
+            );
+            if (nonSelectedEssayId) {
+                // Remove non-selected essay answer (if it exists)
+                answersToGrade = answersToGrade.filter(
+                    (a) => a.question_id !== nonSelectedEssayId,
+                );
+                // Reduce total_marks by the non-selected essay's mark value
+                const nonSelectedEssay = questions.find(
+                    (q) => q.id === nonSelectedEssayId,
+                );
+                if (nonSelectedEssay) {
+                    adjustedTotalMarks = Math.max(
+                        0,
+                        adjustedTotalMarks - nonSelectedEssay.marks,
+                    );
+                }
+            }
+        }
+
         // Validate word limits for all essay answers before grading
         const essayQuestions = questions.filter(
             (q) => q.question_type === "essay",
         );
         for (const eq of essayQuestions) {
-            const answer = (test.answers || []).find(
+            // Only validate the essay that will actually be graded
+            if (
+                selectedEssayQuestionId &&
+                essayQuestionIds.length === 2 &&
+                eq.id !== selectedEssayQuestionId
+            ) {
+                continue;
+            }
+            const answer = answersToGrade.find(
                 (a) => a.question_id === eq.id,
             );
             if (answer?.selected && typeof answer.selected === "string") {
@@ -859,13 +926,13 @@ export class TestService {
         // Grade the answers (cast to GradableQuestion since we included answers)
         const { gradedAnswers, scoreBreakdown, marksObtained } =
             this.gradeAnswers(
-                test.answers || [],
+                answersToGrade,
                 questions as unknown as GradableQuestion[],
             );
 
-        // Calculate percentage
-        const percentage = test.total_marks
-            ? Math.round((marksObtained / test.total_marks) * 100 * 100) / 100
+        // Calculate percentage using adjusted total marks
+        const percentage = adjustedTotalMarks
+            ? Math.round((marksObtained / adjustedTotalMarks) * 100 * 100) / 100
             : 0;
 
         // Update test with grading results
@@ -879,6 +946,7 @@ export class TestService {
                 marks_obtained: marksObtained,
                 percentage,
                 score_breakdown: scoreBreakdown,
+                total_marks: adjustedTotalMarks,
             })
             .eq("id", testId)
             .select()
@@ -889,7 +957,8 @@ export class TestService {
             throw new Error("Failed to submit test");
         }
 
-        // Queue essay questions for LLM evaluation
+        // Queue essay questions for LLM evaluation (only the selected essay
+        // will be in gradedAnswers, so the non-selected is automatically skipped)
         await this.queueEssayEvaluations(
             testId,
             studentId,
@@ -935,20 +1004,28 @@ export class TestService {
 
             if (!subject) return;
 
-            // Get adaptive distribution — use total_questions from the subject row
-            const distribution = await this.getAdaptiveDistribution(studentId, subjectId, subject.total_questions);
-
-            // Select questions
-            const questionIds = await this.getTestQuestions(studentId, subjectId, distribution);
-            if (questionIds.length === 0) return;
-
-            // Get template
+            // Get default template — determines question-selection strategy
             const { data: template } = await this.supabase
                 .from("subject_templates")
-                .select("id")
+                .select("id, type_quotas")
                 .eq("subject_id", subjectId)
                 .eq("is_default", true)
                 .single();
+
+            // Select questions: typed-quota or legacy adaptive
+            let questionIds: string[];
+            if (template?.type_quotas) {
+                questionIds = await this.buildTypedTestQuestions(
+                    studentId,
+                    subjectId,
+                    template.type_quotas as TypeQuotas,
+                );
+            } else {
+                // Get adaptive distribution — use total_questions from the subject row
+                const distribution = await this.getAdaptiveDistribution(studentId, subjectId, subject.total_questions);
+                questionIds = await this.getTestQuestions(studentId, subjectId, distribution);
+            }
+            if (questionIds.length === 0) return;
 
             // Calculate total marks
             const { data: questionsData } = await this.supabase
@@ -1321,6 +1398,101 @@ export class TestService {
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
         return shuffled;
+    }
+
+    /**
+     * Select questions using the typed-quota strategy (when template.type_quotas is set).
+     *
+     * Flat TypeQuotas format — reserved passage-control keys:
+     *   "passage"      → extract passage count
+     *   "passage_mcq"  → questions per extract passage
+     *   "passage_poem" → poem passage count
+     *   "poem_mcq"     → questions per poem passage
+     *
+     * Every other key is automatically treated as a standalone question_type with
+     * the value as the total count (easy 62.5 / medium 25 / hard 12.5 %).
+     * No code change is needed when new question types are added to a subject.
+     *
+     * Returns: passage blocks (shuffled) first, then standalone questions.
+     */
+    private async buildTypedTestQuestions(
+        studentId: string,
+        subjectId: string,
+        typeQuotas: TypeQuotas,
+    ): Promise<string[]> {
+        // Reserved keys that control passage selection — not question types themselves
+        const PASSAGE_CONTROL_KEYS = new Set([
+            "passage", "passage_mcq", "passage_poem", "poem_mcq",
+        ]);
+
+        const passageGroupBlocks: string[][] = [];
+
+        // ---- 1. Extract passages (passage_type = "extract") ----
+        const extractCount = typeQuotas["passage"] ?? 0;
+        const extractQuestionsPerPassage = typeQuotas["passage_mcq"] ?? 0;
+        if (extractCount > 0 && extractQuestionsPerPassage > 0) {
+            const { data: passageRows, error: passageError } = await this.supabase.rpc(
+                "get_fresh_passages_for_test",
+                { p_student_id: studentId, p_subject_id: subjectId, p_passage_type: "extract", p_count: extractCount },
+            );
+            if (passageError) {
+                console.error("[TypedQuota] get_fresh_passages_for_test (extract) error:", passageError);
+            } else {
+                for (const row of (passageRows || []) as { passage_id: string }[]) {
+                    const { data: questionRows, error: qError } = await this.supabase.rpc(
+                        "get_questions_for_passage_typed",
+                        { p_student_id: studentId, p_passage_id: row.passage_id, p_question_type: "passage_mcq", p_limit: extractQuestionsPerPassage },
+                    );
+                    if (qError) { console.error("[TypedQuota] get_questions_for_passage_typed (extract) error:", qError); continue; }
+                    const qIds = (questionRows || []).map((r: { question_id: string }) => r.question_id);
+                    if (qIds.length > 0) passageGroupBlocks.push(qIds);
+                }
+            }
+        }
+
+        // ---- 2. Poem passages (passage_type = "poem") ----
+        const poemCount = typeQuotas["passage_poem"] ?? 0;
+        const poemQuestionsPerPassage = typeQuotas["poem_mcq"] ?? 0;
+        if (poemCount > 0 && poemQuestionsPerPassage > 0) {
+            const { data: passageRows, error: passageError } = await this.supabase.rpc(
+                "get_fresh_passages_for_test",
+                { p_student_id: studentId, p_subject_id: subjectId, p_passage_type: "poem", p_count: poemCount },
+            );
+            if (passageError) {
+                console.error("[TypedQuota] get_fresh_passages_for_test (poem) error:", passageError);
+            } else {
+                for (const row of (passageRows || []) as { passage_id: string }[]) {
+                    const { data: questionRows, error: qError } = await this.supabase.rpc(
+                        "get_questions_for_passage_typed",
+                        { p_student_id: studentId, p_passage_id: row.passage_id, p_question_type: "passage_mcq", p_limit: poemQuestionsPerPassage },
+                    );
+                    if (qError) { console.error("[TypedQuota] get_questions_for_passage_typed (poem) error:", qError); continue; }
+                    const qIds = (questionRows || []).map((r: { question_id: string }) => r.question_id);
+                    if (qIds.length > 0) passageGroupBlocks.push(qIds);
+                }
+            }
+        }
+
+        // ---- 3. Standalone types — every non-reserved key is a question_type ----
+        const standaloneIds: string[] = [];
+        for (const [key, count] of Object.entries(typeQuotas)) {
+            if (PASSAGE_CONTROL_KEYS.has(key) || !count) continue;
+            const easy = Math.round(count * 0.625);
+            const hard = Math.round(count * 0.125);
+            const medium = count - easy - hard;
+            const { data: questionRows, error: qError } = await this.supabase.rpc(
+                "get_test_questions_by_type",
+                { p_student_id: studentId, p_subject_id: subjectId, p_question_type: key, p_easy_count: easy, p_medium_count: medium, p_hard_count: hard },
+            );
+            if (qError) { console.error(`[TypedQuota] get_test_questions_by_type (${key}) error:`, qError); continue; }
+            standaloneIds.push(...(questionRows || []).map((r: { question_id: string }) => r.question_id));
+        }
+
+        // ---- 4. Assemble: passage blocks (shuffled) then standalone ----
+        return [
+            ...this.shuffleArray(passageGroupBlocks).flat(),
+            ...this.shuffleArray(standaloneIds),
+        ];
     }
 
     /**

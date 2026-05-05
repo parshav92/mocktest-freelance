@@ -9,10 +9,13 @@ import { Button } from "@/components/ui/button";
 
 const navLinks = [
     { href: "/", label: "Home" },
-    { href: "/#about", label: "About", isAnchor: true },
-    { href: "/courses", label: "Courses" },
+    { href: "/free-trial", label: "Free Trial" },
+    // { href: "/#about", label: "About Us", isAnchor: true },
+    { href: "/#sample-report", label: "Analytics", isAnchor: true },
     { href: "/pricing", label: "Pricing" },
-    { href: "/#contact", label: "Contact", isAnchor: true },
+    { href: "/#faq", label: "FAQ", isAnchor: true },
+    { href: "/#contact", label: "Contact Us", isAnchor: true },
+    { href: "/blog", label: "Blog" },
 ];
 
 const Navbar = () => {
@@ -51,6 +54,22 @@ const Navbar = () => {
             )}
         >
             <div className="max-w-6xl w-fit ml-auto md:mx-auto px-6">
+                {/* Logo */}
+                {/* <div className={cn(
+                    "flex items-center justify-center mb-2 transition-all duration-500",
+                    scrolled ? "opacity-0 h-0 mb-0 overflow-hidden" : "opacity-100"
+                )}>
+                    <Link href="/" className="flex items-center gap-2.5">
+                        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-sky-500 text-white font-bold text-sm">
+                            MT
+                        </div>
+                        <span className="font-semibold text-lg tracking-tight text-slate-900">
+                            MockTest
+                        </span>
+                    </Link>
+                </div> */}
+
+                {/* Navigation Bar */}
                 <nav
                     className={cn(
                         "relative flex items-center justify-between md:justify-center px-4 py-2 rounded-2xl transition-all duration-500",
@@ -94,15 +113,13 @@ const Navbar = () => {
                         ))}
                     </div>
 
-                    {/* Auth Buttons - Hidden for now */}
-                    <div className="hidden md:flex items-center gap-3">
-                        <Link href="/auth">
-                            <Button
-                                variant="outline"
-                                className="rounded-lg border-zinc-200 hover:scale-[0.97] transition-transform"
-                            >
-                                Sign in
-                            </Button>
+                    {/* Auth Buttons */}
+                    <div className="hidden md:flex items-center ml-1">
+                        <Link
+                            href="/auth"
+                            className="relative px-4 py-2 text-md font-medium rounded-lg transition-all duration-300 hover:scale-[0.97] text-white bg-gradient-to-br from-sky-500 to-sky-600 shadow-sm shadow-sky-500/30 hover:shadow-md hover:shadow-sky-500/40"
+                        >
+                            Sign in
                         </Link>
                     </div>
                 </nav>
@@ -139,13 +156,12 @@ const Navbar = () => {
                         </div>
                         <div className="h-px bg-zinc-100 my-4" />
                         <div className="space-y-2 flex flex-col gap-1">
-                            <Link href="/auth" onClick={() => setIsOpen(false)}>
-                                <Button
-                                    variant="outline"
-                                    className="w-full justify-center rounded-xl border-zinc-200 hover:scale-[0.97] transition-transform"
-                                >
-                                    Sign in
-                                </Button>
+                            <Link
+                                href="/auth"
+                                onClick={() => setIsOpen(false)}
+                                className="w-full flex items-center justify-center px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 text-white bg-gradient-to-br from-sky-500 to-sky-600 shadow-sm shadow-sky-500/30"
+                            >
+                                Sign in
                             </Link>
                             <Link href="/auth" onClick={() => setIsOpen(false)}>
                                 <Button className="w-full justify-center rounded-xl bg-zinc-900 hover:bg-zinc-800">

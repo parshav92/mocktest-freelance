@@ -5,46 +5,64 @@ import { Check, ArrowRight, Sparkles } from "lucide-react";
 const PricingSection = () => {
     const plans = [
         {
-            name: "6 Month Plan",
-            description: "Perfect for short-term preparation",
-            price: "₹2,999",
-            period: "6 months",
+            name: "Silver Subscription",
+            description: "Perfect for getting started",
+            price: "$30",
+            period: "1 month",
             features: [
-                "Full access to all mock tests",
-                "Detailed performance analytics",
-                "Progress tracking dashboard",
-                "Email support",
+                "5 full sized mock exams",
+                "Reading practice tests",
+                "Writing practice tests",
+                "Mathematics practice tests",
+                "Thinking Skill practice tests",
             ],
+            availability: "Available for 1 month",
             buttonText: "Get Started",
             popular: false,
         },
         {
-            name: "Yearly Plan",
+            name: "Gold Subscription",
             description: "Best value for serious learners",
-            price: "₹4,999",
-            period: "year",
-            originalPrice: "₹5,998",
-            savings: "Save ₹999",
+            price: "$55",
+            period: "3 months",
             features: [
-                "Everything in 6 Month Plan",
-                "Priority customer support",
-                "Exclusive study materials",
-                "Performance comparison with peers",
-                "Certificate of completion",
+                "Unlimited full sized mock exams",
+                "Reading practice tests",
+                "Writing practice tests",
+                "Mathematics practice tests",
+                "Thinking Skill practice tests",
             ],
-            buttonText: "Best Value",
+            availability: "Available for 3 months",
+            buttonText: "Most Popular",
             popular: true,
+        },
+        {
+            name: "Platinum Subscription",
+            description: "Complete preparation package",
+            price: "$105",
+            period: "6 months",
+            features: [
+                "Unlimited full sized mock exams",
+                "Reading practice tests",
+                "Writing practice tests",
+                "Mathematics practice tests",
+                "Thinking Skill practice tests",
+                "Weekly Tips and Tricks",
+            ],
+            availability: "Available for 6 months",
+            buttonText: "Best Value",
+            popular: false,
         },
     ];
 
     return (
         <section id="pricing" className="w-full bg-slate-50 py-24 px-6">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-6xl mx-auto">
                 {/* Section Header */}
                 <div className="text-center mb-16">
                     <span className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100 rounded-full px-4 py-2 text-sky-600 text-[10px] font-bold tracking-[0.2em] uppercase mb-6">
                         <Sparkles className="w-3 h-3" />
-                        Simple Pricing
+                        Pricing
                     </span>
                     <h2
                         className="text-3xl md:text-5xl font-bold text-slate-900 mb-4"
@@ -58,8 +76,8 @@ const PricingSection = () => {
                     </p>
                 </div>
 
-                {/* Pricing Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+                {/* Pricing Grid - 3 columns */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
                     {plans.map((plan, index) => (
                         <div
                             key={index}
@@ -82,7 +100,7 @@ const PricingSection = () => {
 
                             {/* Card */}
                             <div
-                                className={`relative bg-white rounded-3xl p-8 transition-all duration-300 ${
+                                className={`relative bg-white rounded-3xl p-8 transition-all duration-300 h-full flex flex-col ${
                                     plan.popular
                                         ? ""
                                         : "border border-zinc-200 hover:border-zinc-300"
@@ -92,7 +110,7 @@ const PricingSection = () => {
                                 {plan.popular && (
                                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                                         <span className="bg-linear-to-r from-emerald-500 to-emerald-600 text-white text-xs font-semibold px-4 py-1.5 rounded-full shadow-sm">
-                                            RECOMMENDED
+                                            MOST POPULAR
                                         </span>
                                     </div>
                                 )}
@@ -120,20 +138,10 @@ const PricingSection = () => {
                                             /{plan.period}
                                         </span>
                                     </div>
-                                    {plan.originalPrice && (
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-zinc-400 text-sm line-through">
-                                                {plan.originalPrice}
-                                            </span>
-                                            <span className="text-emerald-600 text-xs font-semibold bg-emerald-50 px-2 py-0.5 rounded-full">
-                                                {plan.savings}
-                                            </span>
-                                        </div>
-                                    )}
                                 </div>
 
                                 {/* Features */}
-                                <ul className="space-y-3 mb-8">
+                                <ul className="space-y-3 mb-6 flex-1">
                                     {plan.features.map(
                                         (feature, featureIndex) => (
                                             <li
@@ -148,6 +156,11 @@ const PricingSection = () => {
                                         ),
                                     )}
                                 </ul>
+
+                                {/* Availability */}
+                                <p className="text-xs text-zinc-500 text-center mb-4 font-medium">
+                                    {plan.availability}
+                                </p>
 
                                 {/* CTA Button */}
                                 <button
@@ -166,7 +179,6 @@ const PricingSection = () => {
                 </div>
 
                 {/* Bottom Note */}
-                
             </div>
         </section>
     );
