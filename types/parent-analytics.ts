@@ -97,3 +97,39 @@ export interface ParentStudentAnalytics {
     topic_pagination: TopicPagination;
     trajectories: AnalyticsTrajectories;
 }
+
+// ── SWOT Analysis ──────────────────────────────────────
+
+export interface SwotTopicRow {
+    topic: string;
+    subtopic: string;
+    student_accuracy: number;
+    attempts: number;
+    peer_accuracy: number;
+    delta: number;
+}
+
+export interface SwotSubjectRow {
+    subject_id: string;
+    subject_name: string;
+    student_avg: number;
+    peer_avg: number;
+    delta: number;
+    quadrant: "strength" | "weakness" | "opportunity" | "threat";
+}
+
+export interface SwotMeta {
+    student_overall_accuracy: number;
+    peer_overall_accuracy: number;
+    total_topics_analysed: number;
+    days_analysed: number;
+}
+
+export interface StudentSwot {
+    strengths: SwotTopicRow[];
+    weaknesses: SwotTopicRow[];
+    opportunities: SwotTopicRow[];
+    threats: SwotTopicRow[];
+    subject_swot: SwotSubjectRow[];
+    meta: SwotMeta;
+}

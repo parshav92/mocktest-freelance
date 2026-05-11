@@ -7,7 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StudentAnalyticsPanel } from "./student-analytics-panel";
-import type { ParentStudentAnalytics } from "@/types/parent-analytics";
+import { StudentSwotPanel } from "./student-swot-panel";
+import type { ParentStudentAnalytics, StudentSwot } from "@/types/parent-analytics";
 import {
     LogOut,
     Plus,
@@ -141,6 +142,20 @@ const EMPTY_ANALYTICS: ParentStudentAnalytics = {
     },
 };
 
+const EMPTY_SWOT: StudentSwot = {
+    strengths: [],
+    weaknesses: [],
+    opportunities: [],
+    threats: [],
+    subject_swot: [],
+    meta: {
+        student_overall_accuracy: 0,
+        peer_overall_accuracy: 0,
+        total_topics_analysed: 0,
+        days_analysed: 0,
+    },
+};
+
 interface ParentDashboardProps {
     user: ParentUser;
     subscriptions: Subscription[];
@@ -220,6 +235,8 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
         useState<ParentStudentAnalytics>(EMPTY_ANALYTICS);
     const [loading, setLoading] = useState(false);
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
+    const [swot, setSwot] = useState<StudentSwot>(EMPTY_SWOT);
+    const [swotLoading, setSwotLoading] = useState(false);
     const [analyticsDays, setAnalyticsDays] = useState<AnalyticsDaysFilter>("90");
     const [analyticsSubjectId, setAnalyticsSubjectId] = useState<string>("all");
     const [topicPage, setTopicPage] = useState(1);
@@ -231,6 +248,10 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
     );
     /** Ignores stale network responses when the user changes page/filters quickly. */
     const analyticsFetchSeqRef = useRef(0);
+
+    /** SWOT cache keyed by student + filters. */
+    const swotCacheRef = useRef<Map<string, StudentSwot>>(new Map());
+    const swotFetchSeqRef = useRef(0);
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
@@ -356,6 +377,54 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
         [],
     );
 
+    const fetchSwot = useCallback(
+        async (
+            id: string,
+            filters: { days: AnalyticsDaysFilter; subjectId: string },
+        ) => {
+            swotFetchSeqRef.current += 1;
+            const seq = swotFetchSeqRef.current;
+
+            const cacheKey = `${id}:${filters.days}:${filters.subjectId}`;
+            const cached = swotCacheRef.current.get(cacheKey);
+            if (cached) {
+                setSwot(cached);
+                setSwotLoading(false);
+                return;
+            }
+
+            setSwotLoading(true);
+            try {
+                const params = new URLSearchParams();
+                params.set("days", filters.days);
+                if (filters.subjectId !== "all") {
+                    params.set("subjectId", filters.subjectId);
+                }
+
+                const res = await fetch(
+                    `/api/students/${id}/swot?${params.toString()}`,
+                );
+                if (swotFetchSeqRef.current !== seq) return;
+                if (res.ok) {
+                    const data = (await res.json()) as StudentSwot;
+                    swotCacheRef.current.set(cacheKey, data);
+                    setSwot(data);
+                } else {
+                    setSwot(EMPTY_SWOT);
+                }
+            } catch {
+                if (swotFetchSeqRef.current === seq) {
+                    setSwot(EMPTY_SWOT);
+                }
+            } finally {
+                if (swotFetchSeqRef.current === seq) {
+                    setSwotLoading(false);
+                }
+            }
+        },
+        [],
+    );
+
     useEffect(() => {
         if (queryInitialized) return;
 
@@ -400,6 +469,10 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
             subjectId: analyticsSubjectId,
             topicPage,
         });
+        void fetchSwot(selectedId, {
+            days: analyticsDays,
+            subjectId: analyticsSubjectId,
+        });
     }, [
         view,
         selectedId,
@@ -407,18 +480,22 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
         analyticsSubjectId,
         topicPage,
         fetchAnalytics,
+        fetchSwot,
         queryInitialized,
     ]);
 
     const openStats = (id: string) => {
         analyticsCacheRef.current.clear();
         analyticsFetchSeqRef.current += 1;
+        swotCacheRef.current.clear();
+        swotFetchSeqRef.current += 1;
         setSelectedId(id);
         setView("student-stats");
         setAnalyticsDays("90");
         setAnalyticsSubjectId("all");
         setTopicPage(1);
         setAnalytics(EMPTY_ANALYTICS);
+        setSwot(EMPTY_SWOT);
         fetchStats(id);
         updateQueryParams({
             student: id,
@@ -431,10 +508,13 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
     const goBack = () => {
         analyticsCacheRef.current.clear();
         analyticsFetchSeqRef.current += 1;
+        swotCacheRef.current.clear();
+        swotFetchSeqRef.current += 1;
         setView("overview");
         setSelectedId(null);
         setStats(null);
         setAnalytics(EMPTY_ANALYTICS);
+        setSwot(EMPTY_SWOT);
         setAnalyticsDays("90");
         setAnalyticsSubjectId("all");
         setTopicPage(1);
@@ -488,6 +568,8 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
                         stats={stats}
                         analytics={analytics}
                         analyticsLoading={analyticsLoading}
+                        swot={swot}
+                        swotLoading={swotLoading}
                         analyticsDays={analyticsDays}
                         analyticsSubjectId={analyticsSubjectId}
                         topicPage={topicPage}
@@ -751,6 +833,8 @@ function StudentDetail({
     stats,
     analytics,
     analyticsLoading,
+    swot,
+    swotLoading,
     analyticsDays,
     analyticsSubjectId,
     topicPage,
@@ -764,6 +848,8 @@ function StudentDetail({
     stats: StudentStats | null;
     analytics: ParentStudentAnalytics;
     analyticsLoading: boolean;
+    swot: StudentSwot;
+    swotLoading: boolean;
     analyticsDays: AnalyticsDaysFilter;
     analyticsSubjectId: string;
     topicPage: number;
@@ -1184,6 +1270,17 @@ function StudentDetail({
                     analyticsLoading={analyticsLoading}
                     topicPage={topicPage}
                     onTopicPageChange={onTopicPageChange}
+                />
+            </section>
+
+            {/* SWOT Analysis */}
+            <section
+                className="mb-6 animate-[fade-in-up_0.4s_ease-out_both]"
+                style={{ animationDelay: "300ms" }}
+            >
+                <StudentSwotPanel
+                    swot={swot}
+                    swotLoading={swotLoading}
                 />
             </section>
         </>

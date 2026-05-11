@@ -57,6 +57,15 @@ function getDeltaClass(delta: number) {
     return "text-slate-600";
 }
 
+function computeGrade(percentile: number): { letter: string; cls: string } {
+    if (percentile >= 85) return { letter: "A", cls: "bg-emerald-100 text-emerald-800 border-emerald-300" };
+    if (percentile >= 70) return { letter: "B", cls: "bg-sky-100 text-sky-800 border-sky-300" };
+    if (percentile >= 55) return { letter: "C", cls: "bg-amber-100 text-amber-800 border-amber-300" };
+    if (percentile >= 40) return { letter: "D", cls: "bg-orange-100 text-orange-800 border-orange-300" };
+    if (percentile >= 25) return { letter: "E", cls: "bg-red-100 text-red-700 border-red-300" };
+    return { letter: "F", cls: "bg-red-200 text-red-800 border-red-400" };
+}
+
 function AnalyticsLoadingSkeleton() {
     return (
         <div className="space-y-6">
@@ -210,7 +219,7 @@ export function StudentAnalyticsPanel({
                 <h3 className="text-sm font-medium text-slate-900 mb-3">
                     Peer Benchmark
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-px bg-slate-200 rounded-lg overflow-hidden mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-px bg-slate-200 rounded-lg overflow-hidden mb-4">
                     <div className="bg-slate-50 p-3">
                         <p className="text-xs text-slate-500">Student avg</p>
                         <p className="text-lg font-semibold text-slate-900 tabular-nums">
@@ -243,6 +252,14 @@ export function StudentAnalyticsPanel({
                         <p className="text-[11px] text-slate-400">
                             {analytics.peer_overall.peer_student_count} peers
                         </p>
+                    </div>
+                    <div className="bg-slate-50 p-3 flex flex-col items-center justify-center">
+                        <p className="text-xs text-slate-500 mb-1">Grade</p>
+                        <span
+                            className={`inline-flex items-center justify-center w-9 h-9 rounded-lg border text-lg font-bold ${computeGrade(analytics.peer_overall.percentile_rank).cls}`}
+                        >
+                            {computeGrade(analytics.peer_overall.percentile_rank).letter}
+                        </span>
                     </div>
                 </div>
                 {peerBarData[0].student > 0 || peerBarData[0].peer > 0 ? (
