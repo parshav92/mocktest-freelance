@@ -163,7 +163,7 @@ export interface EssayContent {
     prompt_images?: string[]; // New: supports [img:1], [img:2] etc in prompt text
     word_limit: number;
     time_mins: number;
-    rubric: Record<string, number>; // e.g., {"content": 10, "structure": 5}
+    rubric?: Record<string, number>; // Legacy only; new questions use writing_marking_criteria
 }
 
 // ============================================
