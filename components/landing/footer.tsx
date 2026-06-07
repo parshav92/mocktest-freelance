@@ -57,8 +57,21 @@ const footerLinks = {
     ],
 };
 
-const Footer = () => {
+interface FooterProps {
+    email?: string;
+    facebookUrl?: string;
+    instagramUrl?: string;
+    copyrightText?: string;
+}
+
+const Footer = ({
+    email = "support@mocktest.com",
+    facebookUrl = "https://facebook.com",
+    instagramUrl = "https://instagram.com",
+    copyrightText,
+}: FooterProps) => {
     const currentYear = new Date().getFullYear();
+    const copyright = copyrightText ?? `© ${currentYear} MockTest. All rights reserved. ABN: XX XXX XXX XXX`;
 
     return (
         <footer
@@ -87,11 +100,11 @@ const Footer = () => {
                         </p>
                         <div className="space-y-3">
                             <a
-                                href="mailto:support@mocktest.com"
+                                href={`mailto:${email}`}
                                 className="flex items-center gap-3 text-sm text-black-400 hover:text-sky-400 transition-colors"
                             >
                                 <Mail className="w-4 h-4" />
-                                support@mocktest.com
+                                {email}
                             </a>
                             <a
                                 href="tel:+919876543210"
@@ -110,10 +123,15 @@ const Footer = () => {
                     {/* Social Media / Links Column */}
                     <div>
                         <h4 className="font-semibold text-sm mb-4 text-black-200">
-                            {footerLinks.socialMedia.title}
+                            Social Media
                         </h4>
                         <ul className="space-y-3">
-                            {footerLinks.socialMedia.links.map((link) => (
+                            {[
+                                { label: "Website: Home", href: "/" },
+                                { label: "Email:", href: `mailto:${email}` },
+                                { label: "Facebook:", href: facebookUrl },
+                                { label: "Instagram:", href: instagramUrl },
+                            ].map((link) => (
                                 <li key={link.label}>
                                     <Link
                                         href={link.href}
@@ -170,8 +188,7 @@ const Footer = () => {
                 {/* Bottom Bar */}
                 <div className="py-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
                     <p className="text-sm text-black-500">
-                        © {currentYear} MockTest. All rights reserved. ABN: XX
-                        XXX XXX XXX
+                        {copyright}
                     </p>
                     <div className="flex items-center gap-6">
                         <Link

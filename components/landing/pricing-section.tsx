@@ -2,58 +2,76 @@
 
 import { Check, ArrowRight, Sparkles } from "lucide-react";
 
-const PricingSection = () => {
-    const plans = [
-        {
-            name: "Silver Subscription",
-            description: "Perfect for getting started",
-            price: "$30",
-            period: "1 month",
-            features: [
-                "5 full sized mock exams",
-                "Reading practice tests",
-                "Writing practice tests",
-                "Mathematics practice tests",
-                "Thinking Skill practice tests",
-            ],
-            availability: "Available for 1 month",
-            buttonText: "Get Started",
-            popular: false,
-        },
-        {
-            name: "Gold Subscription",
-            description: "Best value for serious learners",
-            price: "$55",
-            period: "3 months",
-            features: [
-                "Unlimited full sized mock exams",
-                "Reading practice tests",
-                "Writing practice tests",
-                "Mathematics practice tests",
-                "Thinking Skill practice tests",
-            ],
-            availability: "Available for 3 months",
-            buttonText: "Most Popular",
-            popular: true,
-        },
-        {
-            name: "Platinum Subscription",
-            description: "Complete preparation package",
-            price: "$105",
-            period: "6 months",
-            features: [
-                "Unlimited full sized mock exams",
-                "Reading practice tests",
-                "Writing practice tests",
-                "Mathematics practice tests",
-                "Thinking Skill practice tests",
-                "Weekly Tips and Tricks",
-            ],
-            availability: "Available for 6 months",
-            buttonText: "Best Value",
-            popular: false,
-        },
-    ];
+interface PricingPlan {
+    _id?: string;
+    name: string;
+    description: string;
+    price: string;
+    period: string;
+    features: string[];
+    availability?: string;
+    buttonText?: string;
+    popular: boolean;
+}
+
+interface PricingSectionProps {
+    plans?: PricingPlan[];
+}
+
+const DEFAULT_PLANS: PricingPlan[] = [
+    {
+        name: "Silver Subscription",
+        description: "Perfect for getting started",
+        price: "$30",
+        period: "1 month",
+        features: [
+            "5 full sized mock exams",
+            "Reading practice tests",
+            "Writing practice tests",
+            "Mathematics practice tests",
+            "Thinking Skill practice tests",
+        ],
+        availability: "Available for 1 month",
+        buttonText: "Get Started",
+        popular: false,
+    },
+    {
+        name: "Gold Subscription",
+        description: "Best value for serious learners",
+        price: "$55",
+        period: "3 months",
+        features: [
+            "Unlimited full sized mock exams",
+            "Reading practice tests",
+            "Writing practice tests",
+            "Mathematics practice tests",
+            "Thinking Skill practice tests",
+        ],
+        availability: "Available for 3 months",
+        buttonText: "Most Popular",
+        popular: true,
+    },
+    {
+        name: "Platinum Subscription",
+        description: "Complete preparation package",
+        price: "$105",
+        period: "6 months",
+        features: [
+            "Unlimited full sized mock exams",
+            "Reading practice tests",
+            "Writing practice tests",
+            "Mathematics practice tests",
+            "Thinking Skill practice tests",
+            "Weekly Tips and Tricks",
+        ],
+        availability: "Available for 6 months",
+        buttonText: "Best Value",
+        popular: false,
+    },
+];
+
+const PricingSection = ({ plans }: PricingSectionProps) => {
+    const activePlans = plans && plans.length > 0 ? plans : DEFAULT_PLANS;
 
     return (
         <section id="pricing" className="w-full bg-slate-50 py-24 px-6">
@@ -78,7 +96,7 @@ const PricingSection = () => {
 
                 {/* Pricing Grid - 3 columns */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-                    {plans.map((plan, index) => (
+                    {activePlans.map((plan, index) => (
                         <div
                             key={index}
                             className={`relative ${plan.popular ? "md:-mt-4 md:mb-4" : ""}`}

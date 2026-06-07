@@ -12,7 +12,7 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 
-const faqItems = [
+const defaultFaqItems = [
     {
         question: "How can I receive technical support?",
         answer: "You can reach out via Contact Us page. As a Sydney-based platform, we are here to help with any technical or account related queries.",
@@ -53,9 +53,11 @@ const faqItems = [
 
 interface FaqContactSectionProps {
     isPage?: boolean;
+    faqItems?: Array<{ _id?: string; question: string; answer: string }>;
 }
 
-const FaqContactSection = ({ isPage = false }: FaqContactSectionProps) => {
+const FaqContactSection = ({ isPage = false, faqItems }: FaqContactSectionProps) => {
+    const activeFaqItems = faqItems && faqItems.length > 0 ? faqItems : defaultFaqItems;
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -98,7 +100,7 @@ const FaqContactSection = ({ isPage = false }: FaqContactSectionProps) => {
                                 collapsible
                                 className="w-full"
                             >
-                                {faqItems.map((item, index) => (
+                                {activeFaqItems.map((item, index) => (
                                     <AccordionItem
                                         key={index}
                                         value={`item-${index}`}

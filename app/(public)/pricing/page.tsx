@@ -1,10 +1,14 @@
-"use client";
-
 import Navbar from "@/components/navbar";
 import PricingSection from "@/components/landing/pricing-section";
 import Footer from "@/components/landing/footer";
+import { getPricingPlans, getFooterSettings } from "@/lib/sanity/queries";
 
-const PricingPage = () => {
+const PricingPage = async () => {
+    const [plans, footer] = await Promise.all([
+        getPricingPlans(),
+        getFooterSettings(),
+    ]);
+
     return (
         <div className="min-h-screen bg-white">
             <Navbar />
@@ -35,8 +39,13 @@ const PricingPage = () => {
                 </div>
             </section>
 
-            <PricingSection />
-            <Footer />
+            <PricingSection plans={plans} />
+            <Footer
+                email={footer?.email}
+                facebookUrl={footer?.facebookUrl}
+                instagramUrl={footer?.instagramUrl}
+                copyrightText={footer?.copyrightText}
+            />
         </div>
     );
 };

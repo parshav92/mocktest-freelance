@@ -2,14 +2,25 @@
 
 import { Star, Quote } from "lucide-react";
 
-const testimonials = [
+interface Testimonial {
+    _id?: string;
+    name: string;
+    role: string;
+    content: string;
+    rating: number;
+}
+
+interface TestimonialsSectionProps {
+    testimonials?: Testimonial[];
+}
+
+const DEFAULT_TESTIMONIALS: Testimonial[] = [
     {
         name: "Priya Sharma",
         role: "Parent",
         content:
             "MockTest has been a game-changer for my daughter's preparation. The detailed analytics helped us identify weak areas and focus on improvement. She scored in the top 5% in her selective test!",
         rating: 5,
-        avatar: "PS",
     },
     {
         name: "Rahul Mehta",
@@ -17,7 +28,6 @@ const testimonials = [
         content:
             "I love how the mock tests feel just like the real exam. The timed practice really helped me manage my time better. The reading and thinking skill sections are especially well-designed.",
         rating: 5,
-        avatar: "RM",
     },
     {
         name: "Anita Patel",
@@ -25,7 +35,6 @@ const testimonials = [
         content:
             "The parent dashboard is fantastic. I can track my son's progress without hovering over him. The weekly reports give us clear insights into what subjects need more attention.",
         rating: 5,
-        avatar: "AP",
     },
     {
         name: "David Chen",
@@ -33,11 +42,14 @@ const testimonials = [
         content:
             "The practice tests are really challenging and prepare you well. I especially like the comparative analysis that shows how I'm doing compared to others. It motivates me to do better!",
         rating: 4,
-        avatar: "DC",
     },
 ];
 
-const TestimonialsSection = () => {
+const TestimonialsSection = ({ testimonials }: TestimonialsSectionProps) => {
+    const activeTestimonials =
+        testimonials && testimonials.length > 0
+            ? testimonials
+            : DEFAULT_TESTIMONIALS;
     return (
         <section id="testimonials" className="w-full bg-white py-24 px-6">
             <div className="max-w-6xl mx-auto">
@@ -61,9 +73,9 @@ const TestimonialsSection = () => {
 
                 {/* Testimonials Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {testimonials.map((testimonial, index) => (
+                    {activeTestimonials.map((testimonial, index) => (
                         <div
-                            key={index}
+                            key={testimonial._id ?? index}
                             className="relative bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-lg hover:border-slate-200 transition-all duration-300 group"
                         >
                             {/* Quote Icon */}
@@ -94,7 +106,12 @@ const TestimonialsSection = () => {
                             <div className="flex items-center gap-3">
                                 <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center">
                                     <span className="text-sm font-semibold text-sky-700">
-                                        {testimonial.avatar}
+                                        {testimonial.name
+                                            .split(" ")
+                                            .map((n) => n[0])
+                                            .join("")
+                                            .slice(0, 2)
+                                            .toUpperCase()}
                                     </span>
                                 </div>
                                 <div>
