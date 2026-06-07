@@ -85,8 +85,13 @@ export const ESSAY_CONFIG = {
         model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
         /** Temperature for LLM responses (lower = more consistent) */
         temperature: 0.3,
-        /** Max output tokens for evaluation response (increased for rubrics with many categories) */
-        maxOutputTokens: 2048,
+        /** Max output tokens for the JSON score/feedback response */
+        maxOutputTokens: 1024,
+        /**
+         * Disable Gemini 2.5 thinking tokens so the full output budget
+         * is available for the JSON response (prevents MAX_TOKENS truncation).
+         */
+        thinkingBudget: 0,
         /** Maximum retry attempts for failed evaluations */
         maxAttempts: 3,
         /** Batch size for queue processing */

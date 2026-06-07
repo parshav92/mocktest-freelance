@@ -1,0 +1,3 @@
+-- Placeholder to align local migration history with remote.
+-- Migration 20260512000000 was already applied on the remote database
+-- before this file existed in the repository.

@@ -124,13 +124,12 @@ export const CSV_COLUMNS = {
         "code", // (Optional) Question code. If empty/missing, auto-generated.
         "subject", // Subject slug (required)
         "difficulty", // easy, medium, hard
-        "topic", // (Optional) Broad topic label
-        "subtopic", // (Optional) Narrow subtopic label
+        "topic", // Main writing style (Narrative, Persuasive, Informative)
+        "subtopic", // Sub-style / genre (must match writing_marking_criteria)
         "prompt", // Essay prompt/topic
         "word_limit", // Max words (e.g., 300)
         "time_mins", // Time limit in minutes
-        // NOTE: rubric is fixed (Set A 15 marks + Set B 10 marks = 25 total)
-        // and is applied automatically — do NOT add a rubric column here.
+        // Marking criteria are resolved from writing_marking_criteria at evaluation time.
     ],
 };
 
@@ -162,8 +161,8 @@ RD_P_001,extract,The Loyal Friend,"Once upon a time, there lived two friends nam
 RD_POEM_P_001,poem,The Morning Sun,"The sun rises in the east so bright, Spreading warmth and golden light...",no`,
 
     essay: `code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins
-WR_001,writing,easy,Personal writing,Relationships,Write about your best friend and why they are special to you.,150,15
-WR_002,writing,medium,Narrative writing,Challenge response,Describe a time when you faced a challenge and how you overcame it.,250,20`,
+WR_001,writing,medium,Narrative,Imaginative / Adventure,"For years, everyone in your town has been warned never to go beyond a tall fence at the edge of the community. One day, the gate is left open. Write a story about someone who decides to cross the fence.",400,30
+WR_002,writing,medium,Persuasive,Argumentative / Speech,"Your local council is planning to close the town's physical library and replace it with a digital hub. Write a letter to the Mayor expressing your opinion on this change.",400,30`,
 };
 
 // Get CSV header row for a question type

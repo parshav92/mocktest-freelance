@@ -1,37 +1,47 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Sparkles, Clock, Users, Award } from "lucide-react";
+import { Sparkles, Clock, Users, Award, LucideIcon } from "lucide-react";
 
-const WhyUsSection = () => {
+const ICON_CYCLE: LucideIcon[] = [Sparkles, Clock, Users, Award];
+
+interface WhyUsItem {
+    _id?: string;
+    title: string;
+    description: string;
+}
+
+interface WhyUsSectionProps {
+    items?: WhyUsItem[];
+}
+
+const DEFAULT_ITEMS: WhyUsItem[] = [
+    {
+        title: "Expert Guidance",
+        description: "Clear roadmap and hands-on support from expert advisors.",
+    },
+    {
+        title: "24/7 Practice Access",
+        description:
+            "Take mock tests anytime, anywhere. Available round the clock.",
+    },
+    {
+        title: "Parent Dashboard",
+        description:
+            "Track progress and stay updated with detailed analytics.",
+    },
+    {
+        title: "Proven Results",
+        description: "Join thousands who've achieved their academic goals.",
+    },
+];
+
+const WhyUsSection = ({ items }: WhyUsSectionProps) => {
     const [scrollProgress, setScrollProgress] = useState(0);
     const sectionRef = useRef<HTMLElement>(null);
 
-    const items = [
-        {
-            title: "Expert Guidance",
-            description:
-                "Clear roadmap and hands-on support from expert advisors.",
-            icon: Sparkles,
-        },
-        {
-            title: "24/7 Practice Access",
-            description:
-                "Take mock tests anytime, anywhere. Available round the clock.",
-            icon: Clock,
-        },
-        {
-            title: "Parent Dashboard",
-            description:
-                "Track progress and stay updated with detailed analytics.",
-            icon: Users,
-        },
-        {
-            title: "Proven Results",
-            description: "Join thousands who've achieved their academic goals.",
-            icon: Award,
-        },
-    ];
+    const activeItems =
+        items && items.length > 0 ? items : DEFAULT_ITEMS;
 
     useEffect(() => {
         const handleScroll = () => {
@@ -86,10 +96,11 @@ const WhyUsSection = () => {
                 <div className="relative">
                     {/* Cards */}
                     <div className="space-y-4">
-                        {items.map((item, index) => {
-                            const cardProgress = (index + 1) / items.length;
+                        {activeItems.map((item, index) => {
+                            const cardProgress = (index + 1) / activeItems.length;
                             const isVisible =
                                 scrollProgress >= cardProgress * 0.5;
+                            const Icon = ICON_CYCLE[index % ICON_CYCLE.length];
 
                             return (
                                 <div
@@ -104,7 +115,7 @@ const WhyUsSection = () => {
                                     <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-xl bg-sky-100 flex items-center justify-center shrink-0">
-                                                <item.icon className="w-5 h-5 text-sky-600" />
+                                                <Icon className="w-5 h-5 text-sky-600" />
                                             </div>
                                             <div>
                                                 <h3 className="text-lg font-semibold text-slate-900">

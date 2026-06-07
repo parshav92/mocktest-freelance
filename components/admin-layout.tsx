@@ -14,6 +14,10 @@ import {
     CreditCard,
     ClipboardList,
     Library,
+    BarChart2,
+    AlertCircle,
+    Trophy,
+    Activity,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
@@ -88,6 +92,27 @@ export function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
             href: "/dashboard/users",
             icon: Users,
             label: "Manage Users (TBD)",
+        },
+        // ── Reports ──────────────────────────────────────────────────────
+        {
+            href: "/dashboard/reports/subscribers",
+            icon: BarChart2,
+            label: "Subscriber Report",
+        },
+        {
+            href: "/dashboard/reports/expiring",
+            icon: AlertCircle,
+            label: "Expiring Soon",
+        },
+        {
+            href: "/dashboard/reports/top-students",
+            icon: Trophy,
+            label: "Top Students",
+        },
+        {
+            href: "/dashboard/reports/test-activity",
+            icon: Activity,
+            label: "Test Activity",
         },
     ];
 

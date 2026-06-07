@@ -2,24 +2,35 @@
 
 import { ArrowRight, Play } from "lucide-react";
 
-const AboutSection = () => {
-    const stats = [
-        {
-            value: "2,000+",
-            label: "Students Enrolled",
-            color: "text-sky-500",
-        },
-        {
-            value: "50+",
-            label: "Mock Tests Available",
-            color: "text-emerald-500",
-        },
-        {
-            value: "95%",
-            label: "Success Rate",
-            color: "text-amber-500",
-        },
-    ];
+interface Stat {
+    value: string;
+    label: string;
+    color?: string;
+}
+
+interface AboutSectionProps {
+    heading?: string;
+    description?: string;
+    stats?: Stat[];
+}
+
+const DEFAULT_STATS: Stat[] = [
+    { value: "2,000+", label: "Students Enrolled", color: "text-sky-500" },
+    { value: "50+", label: "Mock Tests Available", color: "text-emerald-500" },
+    { value: "95%", label: "Success Rate", color: "text-amber-500" },
+];
+
+const STAT_COLORS = ["text-sky-500", "text-emerald-500", "text-amber-500"];
+
+const AboutSection = ({
+    heading = "Welcome to MockTest!",
+    description = "We provide comprehensive academic preparation to help students excel in their examinations. Our platform offers expertly crafted mock tests, detailed analytics, and personalized insights for academic success.",
+    stats,
+}: AboutSectionProps) => {
+    const activeStats =
+        stats && stats.length > 0
+            ? stats.map((s, i) => ({ ...s, color: s.color ?? STAT_COLORS[i % STAT_COLORS.length] }))
+            : DEFAULT_STATS;
 
     return (
         <section id="about" className="w-full bg-slate-50 py-48 px-6">
@@ -125,17 +136,12 @@ const AboutSection = () => {
                             className="text-4xl md:text-5xl font-bold text-slate-900 mb-6"
                             style={{ letterSpacing: "-0.04em" }}
                         >
-                            Welcome to{" "}
-                            <span className="text-sky-600">MockTest</span>!
+                            {heading}
                         </h2>
 
                         {/* Description */}
                         <p className="text-slate-600 text-lg leading-relaxed mb-6">
-                            We provide comprehensive academic preparation to
-                            help students excel in their examinations. Our
-                            platform offers expertly crafted mock tests,
-                            detailed analytics, and personalized insights for
-                            academic success.
+                            {description}
                         </p>
 
                         <p className="text-slate-600 leading-relaxed mb-8">
@@ -157,7 +163,7 @@ const AboutSection = () => {
 
                         {/* Stats Row */}
                         <div className="grid grid-cols-3 gap-6">
-                            {stats.map((stat, index) => (
+                            {activeStats.map((stat, index) => (
                                 <div
                                     key={index}
                                     className="text-center lg:text-left"

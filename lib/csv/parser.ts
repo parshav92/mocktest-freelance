@@ -767,6 +767,8 @@ function parseEssay(
     const required = [
         "subject",
         "difficulty",
+        "topic",
+        "subtopic",
         "prompt",
         "word_limit",
         "time_mins",
@@ -817,6 +819,25 @@ function parseEssay(
                 row: i + 1,
                 column: "prompt",
                 message: "Prompt is required",
+            });
+            continue;
+        }
+
+        if (!rowData.topic?.trim()) {
+            errors.push({
+                row: i + 1,
+                column: "topic",
+                message:
+                    "Topic is required (Narrative, Persuasive, or Informative)",
+            });
+            continue;
+        }
+
+        if (!rowData.subtopic?.trim()) {
+            errors.push({
+                row: i + 1,
+                column: "subtopic",
+                message: "Subtopic is required (writing sub-style/genre)",
             });
             continue;
         }

@@ -14,6 +14,8 @@
     "seed-analytics": "npx tsx scripts/generate-analytics-data.ts"
   },
   "dependencies": {
+    "@sanity/image-url": "^2.1.1",
+    "@sanity/vision": "^5.23.0",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.94.1",
     "@tiptap/extension-placeholder": "^3.20.0",
@@ -28,10 +30,12 @@
     "katex": "^0.16.38",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
+    "next-sanity": "^12.4.0",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "^2.15.4",
+    "sanity": "^5.23.0",
     "tailwind-merge": "^3.4.0",
     "xlsx": "^0.18.5"
   },
