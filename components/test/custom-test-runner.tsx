@@ -1124,7 +1124,7 @@ export function CustomTestRunner({
                                         <>
                                             <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
                                                 <span className="text-sm font-medium text-[#1a2744]">
-                                                        isPoem(openItem.passages[0].passage_type)
+                                                    {isPoem(openItem.passages[0].passage_type)
                                                         ? "Poem"
                                                         : openItem.passages[0]
                                                             .title ||
