@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { TEST_CONFIG } from "@/lib/config/test-rules";
 import { MathText } from "@/components/ui/math-text";
+import { ImageEnhancedText } from "@/components/ui/image-enhanced-text";
 import { InstructionPages } from "@/components/test/instruction-pages";
 import { QuestionRenderer } from "@/components/test/question-renderers";
 import {
@@ -1749,9 +1750,9 @@ function ReviewQuestionDisplay({
                     {/* Left: Question stem + solution */}
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
-                        <p className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
-                            {questionText}
-                        </p>
+                        <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
+                            <ImageEnhancedText content={questionText} block />
+                        </div>
                         {questionImages.length > 0 && (
                             <div
                                 className={`mt-4 grid gap-3 ${questionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
@@ -1821,7 +1822,7 @@ function ReviewQuestionDisplay({
                                                             : "text-gray-700",
                                                     )}
                                                 >
-                                                    {option.text}
+                                                    <ImageEnhancedText content={option.text} />
                                                 </span>
                                             )}
                                             {option.image_url && (
@@ -1870,7 +1871,7 @@ function ReviewQuestionDisplay({
                         <div className="text-base leading-relaxed text-slate-800">
                             {parts.map((part, index) => (
                                 <span key={`fb-part-${index}`}>
-                                    {part}
+                                    <ImageEnhancedText content={part} />
                                     {index < blanks.length &&
                                         (() => {
                                             const isCorrectBlank =
@@ -1890,7 +1891,12 @@ function ReviewQuestionDisplay({
                                                             : "bg-rose-50 border-rose-300 text-rose-700",
                                                     )}
                                                 >
-                                                    {studentOption || "Skipped"}
+                                                    <ImageEnhancedText
+                                                        content={
+                                                            studentOption ||
+                                                            "Skipped"
+                                                        }
+                                                    />
                                                     {isCorrectBlank ? (
                                                         <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
                                                     ) : (
@@ -1928,7 +1934,9 @@ function ReviewQuestionDisplay({
                                                 Blank {idx + 1}
                                             </span>
                                             <span className="text-emerald-700 font-medium">
-                                                {correctOpt}
+                                                <ImageEnhancedText
+                                                    content={correctOpt ?? "—"}
+                                                />
                                             </span>
                                             {isCorrectBlank && (
                                                 <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
@@ -1985,7 +1993,9 @@ function ReviewQuestionDisplay({
                                 if (part.type === "text") {
                                     return (
                                         <span key={`fms-text-${i}`}>
-                                            {part.value}
+                                            <ImageEnhancedText
+                                                content={part.value}
+                                            />
                                         </span>
                                     );
                                 }
@@ -2007,7 +2017,9 @@ function ReviewQuestionDisplay({
                                                 : "bg-rose-50 border-rose-300 text-rose-700",
                                         )}
                                     >
-                                        {selectedSentence || "Empty"}
+                                        <ImageEnhancedText
+                                            content={selectedSentence || "Empty"}
+                                        />
                                         {isCorrectGap ? (
                                             <CheckCircle className="inline h-3.5 w-3.5 ml-1 text-emerald-500" />
                                         ) : (
@@ -2037,11 +2049,13 @@ function ReviewQuestionDisplay({
                                                 {gapKey.replace("_", " ")}
                                             </span>
                                             <span className="text-emerald-700">
-                                                {
-                                                    sentences[
-                                                        sentenceIdx as number
-                                                    ]
-                                                }
+                                                <ImageEnhancedText
+                                                    content={
+                                                        sentences[
+                                                            sentenceIdx as number
+                                                        ]
+                                                    }
+                                                />
                                             </span>
                                         </div>
                                     ),
