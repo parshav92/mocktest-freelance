@@ -59,6 +59,43 @@ import { MathText } from "@/components/ui/math-text";
 import { ImageEnhancedText } from "@/components/ui/image-enhanced-text";
 
 // Upload types with descriptions
+
+/**
+ * Converts an Excel worksheet to CSV while preserving in-cell newlines.
+ *
+ * XLSX.utils.sheet_to_csv() strips \n characters inside cells on some
+ * SheetJS builds, turning multi-line passage content into a flat string.
+ * This function reads raw cell values and applies RFC 4180 quoting so that
+ * embedded \n characters survive the round-trip to the CSV parser.
+ */
+function sheetToCsvPreservingNewlines(sheet: XLSX.WorkSheet): string {
+    if (!sheet["!ref"]) return "";
+    const range = XLSX.utils.decode_range(sheet["!ref"]);
+    const rows: string[] = [];
+
+    for (let R = range.s.r; R <= range.e.r; R++) {
+        const row: string[] = [];
+        for (let C = range.s.c; C <= range.e.c; C++) {
+            const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+            const cell = sheet[cellAddress];
+            let value = "";
+            if (cell != null) {
+                // Prefer formatted text (w), fall back to raw value (v)
+                value = cell.w ?? (cell.v != null ? String(cell.v) : "");
+                // Normalise CRLF → LF so the parser sees consistent newlines
+                value = value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+            }
+            // RFC 4180: quote fields that contain comma, newline, or double-quote
+            if (value.includes(",") || value.includes("\n") || value.includes('"')) {
+                value = '"' + value.replace(/"/g, '""') + '"';
+            }
+            row.push(value);
+        }
+        rows.push(row.join(","));
+    }
+    return rows.join("\n");
+}
+
 const UPLOAD_TYPES = [
     {
         value: "mcq",
@@ -184,11 +221,13 @@ export default function AdminUploadPage() {
             setParseResult(null);
 
             if (isExcel) {
-                // Convert Excel to CSV using SheetJS
+                // Convert Excel to CSV using SheetJS, but preserve in-cell newlines
+                // (Alt+Enter line breaks in Excel cells). sheet_to_csv() destroys
+                // these; we read cell values directly and apply RFC 4180 quoting.
                 const arrayBuffer = await selectedFile.arrayBuffer();
                 const workbook = XLSX.read(arrayBuffer, { type: "array" });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const csv = XLSX.utils.sheet_to_csv(firstSheet);
+                const csv = sheetToCsvPreservingNewlines(firstSheet);
                 setCsvText(csv);
             } else {
                 // Read CSV with explicit UTF-8 decoding.

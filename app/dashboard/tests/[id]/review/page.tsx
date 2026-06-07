@@ -293,8 +293,8 @@ export default function TestReviewPage() {
         pct >= 75
             ? "bg-emerald-500"
             : pct >= 50
-              ? "bg-amber-400"
-              : "bg-rose-400";
+                ? "bg-amber-400"
+                : "bg-rose-400";
 
     if (isDetailMode && openItem && openIndex !== null) {
         return (
@@ -325,15 +325,15 @@ export default function TestReviewPage() {
                                 !openItem.was_attempted
                                     ? "bg-slate-500/40 text-white"
                                     : openItem.is_correct
-                                      ? "bg-emerald-500/90 text-white"
-                                      : "bg-rose-400/90 text-white",
+                                        ? "bg-emerald-500/90 text-white"
+                                        : "bg-rose-400/90 text-white",
                             )}
                         >
                             {!openItem.was_attempted
                                 ? "Unattempted"
                                 : openItem.is_correct
-                                  ? "Correct"
-                                  : "Incorrect"}
+                                    ? "Correct"
+                                    : "Incorrect"}
                         </Badge>
                         <span className="text-xs text-white/60 tabular-nums">
                             {openItem.marks_earned}/{openItem.question.marks} mk
@@ -360,7 +360,7 @@ export default function TestReviewPage() {
                                                 .passage_type === "poem"
                                                 ? "Poem"
                                                 : openItem.question.passages[0]
-                                                      .title || "Extract"}
+                                                    .title || "Extract"}
                                         </span>
                                     </div>
                                     <ScrollArea className="flex-1">
@@ -375,31 +375,25 @@ export default function TestReviewPage() {
                                             )}
                                             {openItem.question.passages[0]
                                                 .image_url && (
-                                                <div className="mb-4">
-                                                    <img
-                                                        src={
-                                                            openItem.question
-                                                                .passages[0]
-                                                                .image_url
-                                                        }
-                                                        alt={
-                                                            openItem.question
-                                                                .passages[0]
-                                                                .title ||
-                                                            "Passage image"
-                                                        }
-                                                        className="max-w-full rounded-lg"
-                                                    />
-                                                </div>
-                                            )}
+                                                    <div className="mb-4">
+                                                        <img
+                                                            src={
+                                                                openItem.question
+                                                                    .passages[0]
+                                                                    .image_url
+                                                            }
+                                                            alt={
+                                                                openItem.question
+                                                                    .passages[0]
+                                                                    .title ||
+                                                                "Passage image"
+                                                            }
+                                                            className="max-w-full rounded-lg"
+                                                        />
+                                                    </div>
+                                                )}
                                             <div
-                                                className={`leading-relaxed text-gray-800 ${
-                                                    openItem.question
-                                                        .passages[0]
-                                                        .passage_type === "poem"
-                                                        ? "whitespace-pre-line italic"
-                                                        : ""
-                                                }`}
+                                                className={`leading-relaxed text-gray-800 whitespace-pre-line${openItem.question.passages[0].passage_type === "poem" ? " italic" : ""}`}
                                             >
                                                 <MathText
                                                     content={
@@ -427,10 +421,10 @@ export default function TestReviewPage() {
                                                         className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
                                                     >
                                                         {p.passage_type ===
-                                                        "poem"
+                                                            "poem"
                                                             ? `Poem ${idx + 1}`
                                                             : p.title ||
-                                                              `Extract ${idx + 1}`}
+                                                            `Extract ${idx + 1}`}
                                                     </TabsTrigger>
                                                 ),
                                             )}
@@ -462,12 +456,7 @@ export default function TestReviewPage() {
                                                         </div>
                                                     )}
                                                     <div
-                                                        className={`leading-relaxed text-gray-800 ${
-                                                            p.passage_type ===
-                                                            "poem"
-                                                                ? "whitespace-pre-line italic"
-                                                                : ""
-                                                        }`}
+                                                        className={`leading-relaxed text-gray-800 whitespace-pre-line${p.passage_type === "poem" ? " italic" : ""}`}
                                                     >
                                                         <MathText
                                                             content={p.content}
@@ -536,8 +525,8 @@ export default function TestReviewPage() {
                                     !item.was_attempted
                                         ? "bg-slate-200 text-slate-500"
                                         : item.is_correct
-                                          ? "bg-emerald-500 text-white"
-                                          : "bg-rose-400 text-white",
+                                            ? "bg-emerald-500 text-white"
+                                            : "bg-rose-400 text-white",
                                 )}
                             >
                                 {item.question_number}
@@ -739,8 +728,8 @@ export default function TestReviewPage() {
                                     !item.was_attempted
                                         ? "bg-slate-200 text-slate-500"
                                         : item.is_correct
-                                          ? "bg-emerald-500 text-white"
-                                          : "bg-rose-400 text-white",
+                                            ? "bg-emerald-500 text-white"
+                                            : "bg-rose-400 text-white",
                                 )}
                             >
                                 {item.question_number}
@@ -959,15 +948,15 @@ export default function TestReviewPage() {
                                     !openItem.was_attempted
                                         ? "bg-slate-500/40 text-white"
                                         : openItem.is_correct
-                                          ? "bg-emerald-500/90 text-white"
-                                          : "bg-rose-400/90 text-white",
+                                            ? "bg-emerald-500/90 text-white"
+                                            : "bg-rose-400/90 text-white",
                                 )}
                             >
                                 {!openItem.was_attempted
                                     ? "Unattempted"
                                     : openItem.is_correct
-                                      ? "Correct"
-                                      : "Incorrect"}
+                                        ? "Correct"
+                                        : "Incorrect"}
                             </Badge>
                             <span className="text-xs text-white/60 tabular-nums">
                                 {openItem.marks_earned}/
@@ -1006,52 +995,45 @@ export default function TestReviewPage() {
                                                     .passage_type === "poem"
                                                     ? "Poem"
                                                     : openItem.question
-                                                          .passages[0].title ||
-                                                      "Extract"}
+                                                        .passages[0].title ||
+                                                    "Extract"}
                                             </span>
                                         </div>
                                         <ScrollArea className="flex-1">
                                             <div className="p-6 md:p-8">
                                                 {openItem.question.passages[0]
                                                     .title && (
-                                                    <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                        {
-                                                            openItem.question
-                                                                .passages[0]
-                                                                .title
-                                                        }
-                                                    </h3>
-                                                )}
+                                                        <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                            {
+                                                                openItem.question
+                                                                    .passages[0]
+                                                                    .title
+                                                            }
+                                                        </h3>
+                                                    )}
                                                 {openItem.question.passages[0]
                                                     .image_url && (
-                                                    <div className="mb-4">
-                                                        <img
-                                                            src={
-                                                                openItem
-                                                                    .question
-                                                                    .passages[0]
-                                                                    .image_url
-                                                            }
-                                                            alt={
-                                                                openItem
-                                                                    .question
-                                                                    .passages[0]
-                                                                    .title ||
-                                                                "Passage image"
-                                                            }
-                                                            className="max-w-full rounded-lg"
-                                                        />
-                                                    </div>
-                                                )}
+                                                        <div className="mb-4">
+                                                            <img
+                                                                src={
+                                                                    openItem
+                                                                        .question
+                                                                        .passages[0]
+                                                                        .image_url
+                                                                }
+                                                                alt={
+                                                                    openItem
+                                                                        .question
+                                                                        .passages[0]
+                                                                        .title ||
+                                                                    "Passage image"
+                                                                }
+                                                                className="max-w-full rounded-lg"
+                                                            />
+                                                        </div>
+                                                    )}
                                                 <div
-                                                    className={`leading-relaxed text-gray-800 ${
-                                                        openItem.question
-                                                            .passages[0]
-                                                            .passage_type ===
-                                                        "poem"
-                                                            ? "whitespace-pre-line italic"
-                                                            : ""
-                                                    }`}
+                                                    className={`leading-relaxed text-gray-800 whitespace-pre-line${openItem.question.passages[0].passage_type === "poem" ? " italic" : ""}`}
                                                 >
                                                     <MathText
                                                         content={
@@ -1081,10 +1063,10 @@ export default function TestReviewPage() {
                                                             className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
                                                         >
                                                             {p.passage_type ===
-                                                            "poem"
+                                                                "poem"
                                                                 ? `Poem ${idx + 1}`
                                                                 : p.title ||
-                                                                  `Extract ${idx + 1}`}
+                                                                `Extract ${idx + 1}`}
                                                         </TabsTrigger>
                                                     ),
                                                 )}
@@ -1119,12 +1101,7 @@ export default function TestReviewPage() {
                                                                 </div>
                                                             )}
                                                             <div
-                                                                className={`leading-relaxed text-gray-800 ${
-                                                                    p.passage_type ===
-                                                                    "poem"
-                                                                        ? "whitespace-pre-line italic"
-                                                                        : ""
-                                                                }`}
+                                                                className={`leading-relaxed text-gray-800 whitespace-pre-line${p.passage_type === "poem" ? " italic" : ""}`}
                                                             >
                                                                 <MathText
                                                                     content={
@@ -1207,8 +1184,8 @@ export default function TestReviewPage() {
                                         !item.was_attempted
                                             ? "bg-slate-200 text-slate-500"
                                             : item.is_correct
-                                              ? "bg-emerald-500 text-white"
-                                              : "bg-rose-400 text-white",
+                                                ? "bg-emerald-500 text-white"
+                                                : "bg-rose-400 text-white",
                                     )}
                                 >
                                     {item.question_number}
@@ -1276,12 +1253,12 @@ function ReviewQuestionDisplay({
     const questionBadge = (
         <div className="mb-6">
             <div className="flex items-center gap-3">
-            <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
-                Q{questionNumber}
-            </span>
-            <Badge variant="outline" className="text-xs">
-                {question.marks === 1 ? "1 mark" : `${question.marks} marks`}
-            </Badge>
+                <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
+                    Q{questionNumber}
+                </span>
+                <Badge variant="outline" className="text-xs">
+                    {question.marks === 1 ? "1 mark" : `${question.marks} marks`}
+                </Badge>
             </div>
             {(question.topic || question.subtopic) && (
                 <p className="mt-2 text-xs text-slate-500">
@@ -1354,8 +1331,8 @@ function ReviewQuestionDisplay({
                 (content.question_image
                     ? [content.question_image as string]
                     : content.question_image_url
-                      ? [content.question_image_url as string]
-                      : undefined);
+                        ? [content.question_image_url as string]
+                        : undefined);
 
             // Find which image indices are referenced via [img:N] syntax
             const imagePattern = /\[img:(\d+)\]/g;
@@ -1425,8 +1402,8 @@ function ReviewQuestionDisplay({
                                             isCorrect
                                                 ? "border-emerald-500 bg-emerald-50/80 shadow-sm"
                                                 : isWrong
-                                                  ? "border-rose-400 bg-rose-50/60"
-                                                  : "border-gray-200 bg-white",
+                                                    ? "border-rose-400 bg-rose-50/60"
+                                                    : "border-gray-200 bg-white",
                                         )}
                                     >
                                         <span
@@ -1435,8 +1412,8 @@ function ReviewQuestionDisplay({
                                                 isCorrect
                                                     ? "bg-emerald-500 text-white"
                                                     : isWrong
-                                                      ? "bg-rose-400 text-white"
-                                                      : "bg-gray-100 text-gray-600",
+                                                        ? "bg-rose-400 text-white"
+                                                        : "bg-gray-100 text-gray-600",
                                             )}
                                         >
                                             {optionLabel}
@@ -1511,7 +1488,7 @@ function ReviewQuestionDisplay({
                                                 correctAnswers[index];
                                             const studentOption =
                                                 blanks[index]?.options[
-                                                    studentAnswers[index]
+                                                studentAnswers[index]
                                                 ];
 
                                             return (
@@ -1694,7 +1671,7 @@ function ReviewQuestionDisplay({
                                                 <MathText
                                                     content={
                                                         sentences[
-                                                            sentenceIdx as number
+                                                        sentenceIdx as number
                                                         ]
                                                     }
                                                 />
@@ -1777,19 +1754,19 @@ function ReviewQuestionDisplay({
                                                     "ml-2 text-xs",
                                                     essayEvaluation.score! >=
                                                         essayEvaluation.max_score! *
-                                                            0.75
+                                                        0.75
                                                         ? "bg-emerald-100 text-emerald-700"
                                                         : essayEvaluation.score! >=
                                                             essayEvaluation.max_score! *
-                                                                0.5
-                                                          ? "bg-amber-100 text-amber-700"
-                                                          : "bg-rose-100 text-rose-700",
+                                                            0.5
+                                                            ? "bg-amber-100 text-amber-700"
+                                                            : "bg-rose-100 text-rose-700",
                                                 )}
                                             >
                                                 {Math.round(
                                                     (essayEvaluation.score! /
                                                         essayEvaluation.max_score!) *
-                                                        100,
+                                                    100,
                                                 )}
                                                 %
                                             </Badge>
@@ -1805,13 +1782,13 @@ function ReviewQuestionDisplay({
                                                         ([category, score]) => {
                                                             const maxPoints =
                                                                 rubric[
-                                                                    category
+                                                                category
                                                                 ] || score;
                                                             const pct =
                                                                 maxPoints > 0
                                                                     ? (score /
-                                                                          maxPoints) *
-                                                                      100
+                                                                        maxPoints) *
+                                                                    100
                                                                     : 0;
                                                             return (
                                                                 <div

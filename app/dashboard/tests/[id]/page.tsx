@@ -1056,10 +1056,7 @@ export default function TestEnvironmentPage() {
                                             </div>
                                         )}
                                         <div
-                                            className={`leading-relaxed text-gray-800 ${passages[0].passage_type === "poem"
-                                                ? "whitespace-pre-line italic"
-                                                : ""
-                                                }`}
+                                            className={`leading-relaxed text-gray-800 whitespace-pre-line${passages[0].passage_type === "poem" ? " italic" : ""}`}
                                         >
                                             <MathText content={passages[0].content} block />
                                         </div>
@@ -1107,10 +1104,7 @@ export default function TestEnvironmentPage() {
                                                     </div>
                                                 )}
                                                 <div
-                                                    className={`leading-relaxed text-gray-800 ${p.passage_type === "poem"
-                                                        ? "whitespace-pre-line italic"
-                                                        : ""
-                                                        }`}
+                                                    className={`leading-relaxed text-gray-800 whitespace-pre-line${p.passage_type === "poem" ? " italic" : ""}`}
                                                 >
                                                     <MathText content={p.content} block />
                                                 </div>
@@ -1300,11 +1294,10 @@ function EssaySelectionModal({
                             <button
                                 key={q.id}
                                 onClick={() => setSelected(q.id)}
-                                className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${
-                                    isSelected
-                                        ? "border-[#1a2744] bg-[#1a2744]/5 text-[#1a2744]"
-                                        : "border-gray-200 hover:border-gray-400 text-gray-700"
-                                }`}
+                                className={`w-full text-left px-5 py-4 rounded-xl border-2 transition-all ${isSelected
+                                    ? "border-[#1a2744] bg-[#1a2744]/5 text-[#1a2744]"
+                                    : "border-gray-200 hover:border-gray-400 text-gray-700"
+                                    }`}
                             >
                                 <span className="font-semibold">
                                     Essay Question {idx + 1}

@@ -440,7 +440,7 @@ export const MathText = React.memo(function MathText({
     const Tag = block ? "div" : "span";
 
     return (
-        <Tag className={`math-content ${className ?? ""}`}>
+        <Tag className={`math-content ${block ? "whitespace-pre-line " : ""}${className ?? ""}`}>
             {rendered}
         </Tag>
     );

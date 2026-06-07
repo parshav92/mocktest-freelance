@@ -261,7 +261,7 @@ async function insertPassages(
         return {
             code: p.code,
             subject_id: subjectId,
-            passage_type: p.data.type, // CSV column is 'type', DB column is 'passage_type'
+            passage_type: p.data.type.toLowerCase(), // CSV column is 'type', DB column is 'passage_type' — normalize to lowercase
             title: p.data.title || null,
             content: p.data.content,
             image_url: imageUrl,
