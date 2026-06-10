@@ -4,7 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/auth/admin";
 import { getCSVTemplate } from "@/lib/csv/templates";
 import type { ParsedQuestion, ParsedPassage } from "@/lib/csv/parser";
-import { ESSAY_CONFIG } from "@/lib/config/essay-config";
+import {
+    loadValidWritingSubtopicKeys,
+    validateWritingTopicPair,
+    canonicalizeWritingMainTopic,
+} from "@/lib/services/writing-marking-criteria.service";
+import { WRITING_TOTAL_MARKS } from "@/lib/types/writing-marking-criteria";
 
 // GET - Download template
 export async function GET(request: NextRequest) {
@@ -261,7 +266,7 @@ async function insertPassages(
         return {
             code: p.code,
             subject_id: subjectId,
-            passage_type: p.data.type, // CSV column is 'type', DB column is 'passage_type'
+            passage_type: p.data.type.toLowerCase(), // CSV column is 'type', DB column is 'passage_type' — normalize to lowercase
             title: p.data.title || null,
             content: p.data.content,
             image_url: imageUrl,
@@ -318,6 +323,28 @@ async function insertQuestions(
 ) {
     if (questions.length === 0) {
         return { inserted: 0, batchId: null };
+    }
+
+    const validWritingSubtopicKeys =
+        uploadType === "essay"
+            ? await loadValidWritingSubtopicKeys(supabase)
+            : null;
+
+    if (uploadType === "essay") {
+        for (const q of questions) {
+            const topic = q.data.topic?.trim() || "";
+            const subtopic = q.data.subtopic?.trim() || "";
+            const validationError = validateWritingTopicPair(
+                validWritingSubtopicKeys!,
+                topic,
+                subtopic,
+            );
+            if (validationError) {
+                throw new Error(
+                    `Row ${q.rowIndex}: ${validationError}`,
+                );
+            }
+        }
     }
 
     // Get subject IDs and code_prefix mappings
@@ -665,19 +692,12 @@ async function insertQuestions(
 
             correctAnswer = { mapping: correctMapping };
         } else if (uploadType === "essay") {
-            // Rubric is always the standard scheme from config
-            // (Set A: Content/Structure/Organization/Style/Vocabulary = 15 marks)
-            // (Set B: Sentence Structure/Punctuation/Spelling = 10 marks)
-            // Total: 25 marks — never parsed from CSV.
-            const rubric = { ...ESSAY_CONFIG.rubric.default };
-
             content = {
                 prompt: q.data.prompt,
                 word_limit: parseInt(q.data.word_limit, 10),
                 time_mins: parseInt(q.data.time_mins, 10),
-                rubric,
             };
-            correctAnswer = { rubric };
+            correctAnswer = {};
         }
 
         // Build passage_ids array from comma-separated passage codes
@@ -704,13 +724,18 @@ async function insertQuestions(
             code: q.code,
             question_type: getQuestionType(uploadType),
             difficulty: q.data.difficulty?.toLowerCase() || "medium",
-            topic: toNullableText(q.data.topic),
+            topic: toNullableText(
+                uploadType === "essay"
+                    ? canonicalizeWritingMainTopic(q.data.topic || "") ||
+                      q.data.topic
+                    : q.data.topic,
+            ),
             subtopic: toNullableText(q.data.subtopic),
             content,
             correct_answer: correctAnswer,
             solution_text: q.data.solution || null,
             solution_images: solutionImages,
-            marks: uploadType === "essay" ? 25 : 1,
+            marks: uploadType === "essay" ? WRITING_TOTAL_MARKS : 1,
             is_active: true,
         };
     });

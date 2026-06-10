@@ -213,6 +213,10 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxx
 
 # Student JWT (CHANGE IN PRODUCTION!)
 STUDENT_JWT_SECRET=your-super-secret-key-min-32-chars-long
+
+# Sanity CMS
+NEXT_PUBLIC_SANITY_PROJECT_ID=your-sanity-project-id
+NEXT_PUBLIC_SANITY_DATASET=production
 ```
 
 ---

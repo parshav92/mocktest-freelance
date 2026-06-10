@@ -3,7 +3,19 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 
-const HeroSection = () => {
+interface HeroSectionProps {
+    heading?: string;
+    subheading?: string;
+    primaryButtonText?: string;
+    secondaryButtonText?: string;
+}
+
+const HeroSection = ({
+    heading = "Welcome To MockTest",
+    subheading = "Most Trusted Selective Test Preparation Platform. Transform your educational aspirations into reality with personalized guidance, expert mentorship, and proven strategies for success.",
+    primaryButtonText = "Free Trial",
+    secondaryButtonText = "Subscription Plan",
+}: HeroSectionProps) => {
     return (
         <section className="relative min-h-screen overflow-hidden flex flex-col">
             {/* Background Gradient - Light blue from top to lighter at bottom */}
@@ -23,18 +35,12 @@ const HeroSection = () => {
                         className="mt-24 text-4xl md:text-6xl lg:text-7xl font-bold text-slate-900 mb-4 animate-fade-in-up-delay-1 heading-tight"
                         style={{ letterSpacing: "-0.04em" }}
                     >
-                        Welcome To{" "}
-                        <span className="whitespace-nowrap">
-                            <span className="text-sky-600">MockTest</span>
-                        </span>
+                        {heading}
                     </h1>
 
                     {/* Subheading */}
                     <p className="text-lg md:text-xl text-slate-600 font-light max-w-2xl mx-auto mb-10 leading-relaxed animate-fade-in-up-delay-2">
-                        Most Trusted Selective Test Preparation Platform.
-                        Transform your educational aspirations into reality with
-                        personalized guidance, expert mentorship, and proven
-                        strategies for success.
+                        {subheading}
                     </p>
 
                     {/* CTA Buttons */}
@@ -48,7 +54,7 @@ const HeroSection = () => {
 
                             {/* Text */}
                             <span className="relative z-10 transition-colors duration-200 text-white mix-blend-difference">
-                                Free Trial
+                                {primaryButtonText}
                             </span>
                             <span className="absolute right-2 top-1/2 -translate-y-1/2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white text-slate-900 transition-transform duration-300 group-hover:translate-x-0.5">
                                 <ArrowRight className="h-4 w-4" />
@@ -59,7 +65,7 @@ const HeroSection = () => {
                             href="/pricing"
                             className="rounded-full px-6 py-3.5 text-sm text-slate-900 font-medium bg-white/60 backdrop-blur-sm border border-slate-200 hover:bg-white/80 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-[0.97]"
                         >
-                            Subscription Plan
+                            {secondaryButtonText}
                         </Link>
                     </div>
                 </div>

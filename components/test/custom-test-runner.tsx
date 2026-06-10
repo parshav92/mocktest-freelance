@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { TEST_CONFIG } from "@/lib/config/test-rules";
 import { MathText } from "@/components/ui/math-text";
+import { ImageEnhancedText } from "@/components/ui/image-enhanced-text";
 import { InstructionPages } from "@/components/test/instruction-pages";
 import { QuestionRenderer } from "@/components/test/question-renderers";
 import {
@@ -43,6 +44,12 @@ import {
 import { useTimer } from "@/hooks/use-timer";
 import { useAntiCheat } from "@/hooks/use-anti-cheat";
 import type { QuestionForTest, Passage, InstructionPage } from "@/types/test";
+
+// ── Helpers ─────────────────────────────────────────────
+
+/** Case-insensitive check for poem passage_type (guards against DB data with inconsistent casing) */
+const isPoem = (passageType?: string) =>
+    passageType?.toLowerCase() === "poem";
 
 // ── Types ──────────────────────────────────────────────
 
@@ -411,7 +418,7 @@ export function CustomTestRunner({
                 <InstructionPages
                     subjectName={testName}
                     subjectInstructions={instrPages}
-                    onComplete={() => {}}
+                    onComplete={() => { }}
                 />
                 <StartConfirmation
                     open={true}
@@ -484,10 +491,10 @@ export function CustomTestRunner({
         const timeSpent =
             startedAt && endedAt
                 ? Math.round(
-                      (new Date(endedAt).getTime() -
-                          new Date(startedAt).getTime()) /
-                          1000,
-                  )
+                    (new Date(endedAt).getTime() -
+                        new Date(startedAt).getTime()) /
+                    1000,
+                )
                 : 0;
         const mins = Math.floor(timeSpent / 60);
         const secs = timeSpent % 60;
@@ -499,8 +506,8 @@ export function CustomTestRunner({
             percentage >= 75
                 ? "#22c55e"
                 : percentage >= 50
-                  ? "#f59e0b"
-                  : "#ef4444";
+                    ? "#f59e0b"
+                    : "#ef4444";
 
         const getHeadline = (pct: number) => {
             if (pct >= 90) return "Outstanding performance.";
@@ -697,10 +704,10 @@ export function CustomTestRunner({
         const timeSpentR =
             startedAt && endedAt
                 ? Math.round(
-                      (new Date(endedAt).getTime() -
-                          new Date(startedAt).getTime()) /
-                          1000,
-                  )
+                    (new Date(endedAt).getTime() -
+                        new Date(startedAt).getTime()) /
+                    1000,
+                )
                 : 0;
         const formatTime = (s: number) =>
             `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`;
@@ -732,8 +739,8 @@ export function CustomTestRunner({
             pct >= 75
                 ? "bg-emerald-500"
                 : pct >= 50
-                  ? "bg-amber-400"
-                  : "bg-rose-400";
+                    ? "bg-amber-400"
+                    : "bg-rose-400";
 
         const getTypeIcon = (type: string) => {
             switch (type) {
@@ -768,8 +775,8 @@ export function CustomTestRunner({
 
         const openItem =
             reviewIndex !== null &&
-            reviewIndex >= 0 &&
-            reviewIndex < rQuestions.length
+                reviewIndex >= 0 &&
+                reviewIndex < rQuestions.length
                 ? rQuestions[reviewIndex]
                 : null;
         const openHasPassage = !!(
@@ -934,8 +941,8 @@ export function CustomTestRunner({
                                         gq.selected === null
                                             ? "bg-slate-200 text-slate-500"
                                             : gq.is_correct
-                                              ? "bg-emerald-500 text-white"
-                                              : "bg-rose-400 text-white",
+                                                ? "bg-emerald-500 text-white"
+                                                : "bg-rose-400 text-white",
                                     )}
                                 >
                                     {idx + 1}
@@ -1084,15 +1091,15 @@ export function CustomTestRunner({
                                         openItem.selected === null
                                             ? "bg-slate-500/40 text-white"
                                             : openItem.is_correct
-                                              ? "bg-emerald-500/90 text-white"
-                                              : "bg-rose-400/90 text-white",
+                                                ? "bg-emerald-500/90 text-white"
+                                                : "bg-rose-400/90 text-white",
                                     )}
                                 >
                                     {openItem.selected === null
                                         ? "Unattempted"
                                         : openItem.is_correct
-                                          ? "Correct"
-                                          : "Incorrect"}
+                                            ? "Correct"
+                                            : "Incorrect"}
                                 </Badge>
                                 <span className="text-xs text-white/60 tabular-nums">
                                     {openItem.marks_earned}/{openItem.marks} mk
@@ -1117,53 +1124,46 @@ export function CustomTestRunner({
                                         <>
                                             <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
                                                 <span className="text-sm font-medium text-[#1a2744]">
-                                                    {openItem.passages[0]
-                                                        .passage_type === "poem"
+                                                    {isPoem(openItem.passages[0].passage_type)
                                                         ? "Poem"
                                                         : openItem.passages[0]
-                                                              .title ||
-                                                          "Extract"}
+                                                            .title ||
+                                                        "Extract"}
                                                 </span>
                                             </div>
                                             <ScrollArea className="flex-1">
                                                 <div className="p-6 md:p-8">
                                                     {openItem.passages[0]
                                                         .title && (
-                                                        <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                            {
-                                                                openItem
-                                                                    .passages[0]
-                                                                    .title
-                                                            }
-                                                        </h3>
-                                                    )}
+                                                            <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                                {
+                                                                    openItem
+                                                                        .passages[0]
+                                                                        .title
+                                                                }
+                                                            </h3>
+                                                        )}
                                                     {openItem.passages[0]
                                                         .image_url && (
-                                                        <div className="mb-4">
-                                                            <img
-                                                                src={
-                                                                    openItem
-                                                                        .passages[0]
-                                                                        .image_url
-                                                                }
-                                                                alt={
-                                                                    openItem
-                                                                        .passages[0]
-                                                                        .title ||
-                                                                    "Passage image"
-                                                                }
-                                                                className="max-w-full rounded-lg"
-                                                            />
-                                                        </div>
-                                                    )}
+                                                            <div className="mb-4">
+                                                                <img
+                                                                    src={
+                                                                        openItem
+                                                                            .passages[0]
+                                                                            .image_url
+                                                                    }
+                                                                    alt={
+                                                                        openItem
+                                                                            .passages[0]
+                                                                            .title ||
+                                                                        "Passage image"
+                                                                    }
+                                                                    className="max-w-full rounded-lg"
+                                                                />
+                                                            </div>
+                                                        )}
                                                     <div
-                                                        className={`leading-relaxed text-gray-800 ${
-                                                            openItem.passages[0]
-                                                                .passage_type ===
-                                                            "poem"
-                                                                ? "whitespace-pre-line italic"
-                                                                : ""
-                                                        }`}
+                                                        className={`leading-relaxed text-gray-800 whitespace-pre-line${isPoem(openItem.passages[0].passage_type) ? " italic" : ""}`}
                                                     >
                                                         {
                                                             openItem.passages[0]
@@ -1188,10 +1188,10 @@ export function CustomTestRunner({
                                                                 className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
                                                             >
                                                                 {p.passage_type ===
-                                                                "poem"
+                                                                    "poem"
                                                                     ? `Poem ${idx + 1}`
                                                                     : p.title ||
-                                                                      `Extract ${idx + 1}`}
+                                                                    `Extract ${idx + 1}`}
                                                             </TabsTrigger>
                                                         ),
                                                     )}
@@ -1225,12 +1225,7 @@ export function CustomTestRunner({
                                                                 </div>
                                                             )}
                                                             <div
-                                                                className={`leading-relaxed text-gray-800 ${
-                                                                    p.passage_type ===
-                                                                    "poem"
-                                                                        ? "whitespace-pre-line italic"
-                                                                        : ""
-                                                                }`}
+                                                                className={`leading-relaxed text-gray-800 whitespace-pre-line${isPoem(p.passage_type) ? " italic" : ""}`}
                                                             >
                                                                 {p.content}
                                                             </div>
@@ -1294,8 +1289,8 @@ export function CustomTestRunner({
                                             gq.selected === null
                                                 ? "bg-slate-200 text-slate-500"
                                                 : gq.is_correct
-                                                  ? "bg-emerald-500 text-white"
-                                                  : "bg-rose-400 text-white",
+                                                    ? "bg-emerald-500 text-white"
+                                                    : "bg-rose-400 text-white",
                                         )}
                                     >
                                         {idx + 1}
@@ -1340,8 +1335,8 @@ export function CustomTestRunner({
     const hasPassage = passages.length > 0;
     const questionLayout: "split" | "stacked" =
         !hasPassage &&
-        (currentQuestion.question_type === "mcq" ||
-            currentQuestion.question_type === "essay")
+            (currentQuestion.question_type === "mcq" ||
+                currentQuestion.question_type === "essay")
             ? "split"
             : "stacked";
 
@@ -1389,13 +1384,12 @@ export function CustomTestRunner({
                     </button>
                     {!timer.isHidden && (
                         <div
-                            className={`flex items-center gap-1.5 font-mono text-lg font-bold ${
-                                timer.isCritical
+                            className={`flex items-center gap-1.5 font-mono text-lg font-bold ${timer.isCritical
                                     ? "text-red-400 animate-pulse"
                                     : timer.isWarning
-                                      ? "text-amber-400"
-                                      : "text-white"
-                            }`}
+                                        ? "text-amber-400"
+                                        : "text-white"
+                                }`}
                         >
                             <Clock className="h-4 w-4" />
                             {timer.formatted}
@@ -1426,7 +1420,7 @@ export function CustomTestRunner({
                             <>
                                 <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
                                     <span className="text-sm font-medium text-[#1a2744]">
-                                        {passages[0].passage_type === "poem"
+                                        {isPoem(passages[0].passage_type)
                                             ? "Poem"
                                             : passages[0].title || "Extract"}
                                     </span>
@@ -1451,12 +1445,7 @@ export function CustomTestRunner({
                                             </div>
                                         )}
                                         <div
-                                            className={`leading-relaxed text-gray-800 ${
-                                                passages[0].passage_type ===
-                                                "poem"
-                                                    ? "whitespace-pre-line italic"
-                                                    : ""
-                                            }`}
+                                            className={`leading-relaxed text-gray-800 whitespace-pre-line${isPoem(passages[0].passage_type) ? " italic" : ""}`}
                                         >
                                             {passages[0].content}
                                         </div>
@@ -1476,10 +1465,10 @@ export function CustomTestRunner({
                                                 value={`passage-${idx}`}
                                                 className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
                                             >
-                                                {p.passage_type === "poem"
+                                                {isPoem(p.passage_type)
                                                     ? `Poem ${idx + 1}`
                                                     : p.title ||
-                                                      `Extract ${idx + 1}`}
+                                                    `Extract ${idx + 1}`}
                                             </TabsTrigger>
                                         ))}
                                     </TabsList>
@@ -1510,12 +1499,7 @@ export function CustomTestRunner({
                                                     </div>
                                                 )}
                                                 <div
-                                                    className={`leading-relaxed text-gray-800 ${
-                                                        p.passage_type ===
-                                                        "poem"
-                                                            ? "whitespace-pre-line italic"
-                                                            : ""
-                                                    }`}
+                                                    className={`leading-relaxed text-gray-800 whitespace-pre-line${isPoem(p.passage_type) ? " italic" : ""}`}
                                                 >
                                                     {p.content}
                                                 </div>
@@ -1537,7 +1521,7 @@ export function CustomTestRunner({
                             className={cn(
                                 "p-6 md:p-8",
                                 questionLayout === "stacked" &&
-                                    "max-w-3xl mx-auto",
+                                "max-w-3xl mx-auto",
                             )}
                         >
                             <div className="flex items-center justify-between mb-6">
@@ -1577,11 +1561,10 @@ export function CustomTestRunner({
                         <Button
                             variant={isFlagged ? "default" : "outline"}
                             onClick={handleToggleFlag}
-                            className={`gap-2 ${
-                                isFlagged
+                            className={`gap-2 ${isFlagged
                                     ? "bg-amber-500 hover:bg-amber-600 text-white"
                                     : ""
-                            }`}
+                                }`}
                         >
                             <Flag
                                 className={`h-4 w-4 ${isFlagged ? "fill-current" : ""}`}
@@ -1656,20 +1639,20 @@ function ReviewQuestionDisplay({
     const questionBadge = (
         <div className="mb-6">
             <div className="flex items-center gap-3">
-            <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
-                Q{questionNumber}
-            </span>
-            <Badge variant="outline" className="text-xs">
-                {question.marks === 1 ? "1 mark" : `${question.marks} marks`}
-            </Badge>
+                <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
+                    Q{questionNumber}
+                </span>
+                <Badge variant="outline" className="text-xs">
+                    {question.marks === 1 ? "1 mark" : `${question.marks} marks`}
+                </Badge>
             </div>
             {(question.topic || question.subtopic) && (
                 <p className="mt-2 text-xs text-slate-500">
                     {question.topic && question.subtopic
                         ? `Topic: ${question.topic} | Subtopic: ${question.subtopic}`
                         : question.topic
-                          ? `Topic: ${question.topic}`
-                          : `Subtopic: ${question.subtopic}`}
+                            ? `Topic: ${question.topic}`
+                            : `Subtopic: ${question.subtopic}`}
                 </p>
             )}
         </div>
@@ -1729,10 +1712,10 @@ function ReviewQuestionDisplay({
                 questionImagesRaw && questionImagesRaw.length > 0
                     ? questionImagesRaw
                     : content.question_image
-                      ? [content.question_image as string]
-                      : content.question_image_url
-                        ? [content.question_image_url as string]
-                        : [];
+                        ? [content.question_image as string]
+                        : content.question_image_url
+                            ? [content.question_image_url as string]
+                            : [];
             const options = content.options as Array<{
                 label: string;
                 text?: string;
@@ -1749,9 +1732,9 @@ function ReviewQuestionDisplay({
                     {/* Left: Question stem + solution */}
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
-                        <p className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
-                            {questionText}
-                        </p>
+                        <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
+                            <ImageEnhancedText content={questionText} block />
+                        </div>
                         {questionImages.length > 0 && (
                             <div
                                 className={`mt-4 grid gap-3 ${questionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
@@ -1795,8 +1778,8 @@ function ReviewQuestionDisplay({
                                             isCorrect
                                                 ? "border-emerald-500 bg-emerald-50/80 shadow-sm"
                                                 : isWrong
-                                                  ? "border-rose-400 bg-rose-50/60"
-                                                  : "border-gray-200 bg-white",
+                                                    ? "border-rose-400 bg-rose-50/60"
+                                                    : "border-gray-200 bg-white",
                                         )}
                                     >
                                         <span
@@ -1805,8 +1788,8 @@ function ReviewQuestionDisplay({
                                                 isCorrect
                                                     ? "bg-emerald-500 text-white"
                                                     : isWrong
-                                                      ? "bg-rose-400 text-white"
-                                                      : "bg-gray-100 text-gray-600",
+                                                        ? "bg-rose-400 text-white"
+                                                        : "bg-gray-100 text-gray-600",
                                             )}
                                         >
                                             {optionLabel}
@@ -1821,7 +1804,7 @@ function ReviewQuestionDisplay({
                                                             : "text-gray-700",
                                                     )}
                                                 >
-                                                    {option.text}
+                                                    <ImageEnhancedText content={option.text} />
                                                 </span>
                                             )}
                                             {option.image_url && (
@@ -1870,7 +1853,7 @@ function ReviewQuestionDisplay({
                         <div className="text-base leading-relaxed text-slate-800">
                             {parts.map((part, index) => (
                                 <span key={`fb-part-${index}`}>
-                                    {part}
+                                    <ImageEnhancedText content={part} />
                                     {index < blanks.length &&
                                         (() => {
                                             const isCorrectBlank =
@@ -1878,7 +1861,7 @@ function ReviewQuestionDisplay({
                                                 correctAnswers[index];
                                             const studentOption =
                                                 blanks[index]?.options[
-                                                    studentAnswers[index]
+                                                studentAnswers[index]
                                                 ];
 
                                             return (
@@ -1890,7 +1873,12 @@ function ReviewQuestionDisplay({
                                                             : "bg-rose-50 border-rose-300 text-rose-700",
                                                     )}
                                                 >
-                                                    {studentOption || "Skipped"}
+                                                    <ImageEnhancedText
+                                                        content={
+                                                            studentOption ||
+                                                            "Skipped"
+                                                        }
+                                                    />
                                                     {isCorrectBlank ? (
                                                         <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
                                                     ) : (
@@ -1928,7 +1916,9 @@ function ReviewQuestionDisplay({
                                                 Blank {idx + 1}
                                             </span>
                                             <span className="text-emerald-700 font-medium">
-                                                {correctOpt}
+                                                <ImageEnhancedText
+                                                    content={correctOpt ?? "—"}
+                                                />
                                             </span>
                                             {isCorrectBlank && (
                                                 <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
@@ -1985,7 +1975,9 @@ function ReviewQuestionDisplay({
                                 if (part.type === "text") {
                                     return (
                                         <span key={`fms-text-${i}`}>
-                                            {part.value}
+                                            <ImageEnhancedText
+                                                content={part.value}
+                                            />
                                         </span>
                                     );
                                 }
@@ -2007,7 +1999,9 @@ function ReviewQuestionDisplay({
                                                 : "bg-rose-50 border-rose-300 text-rose-700",
                                         )}
                                     >
-                                        {selectedSentence || "Empty"}
+                                        <ImageEnhancedText
+                                            content={selectedSentence || "Empty"}
+                                        />
                                         {isCorrectGap ? (
                                             <CheckCircle className="inline h-3.5 w-3.5 ml-1 text-emerald-500" />
                                         ) : (
@@ -2037,11 +2031,13 @@ function ReviewQuestionDisplay({
                                                 {gapKey.replace("_", " ")}
                                             </span>
                                             <span className="text-emerald-700">
-                                                {
-                                                    sentences[
+                                                <ImageEnhancedText
+                                                    content={
+                                                        sentences[
                                                         sentenceIdx as number
-                                                    ]
-                                                }
+                                                        ]
+                                                    }
+                                                />
                                             </span>
                                         </div>
                                     ),

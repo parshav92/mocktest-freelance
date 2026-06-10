@@ -1,5 +1,3 @@
-"use client";
-
 import {
     Accordion,
     AccordionContent,
@@ -10,8 +8,9 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/landing/footer";
+import { getFaqItems, getFooterSettings } from "@/lib/sanity/queries";
 
-const faqItems = [
+const DEFAULT_FAQ_ITEMS = [
     {
         question: "How can I receive technical support?",
         answer: "You can reach out via Contact Us page. As a Sydney-based platform, we are here to help with any technical or account related queries.",
@@ -38,7 +37,7 @@ const faqItems = [
     },
     {
         question: "How can I track my child's performance and progress?",
-        answer: "Our dashboard provides accurate progress tracking and identifies specific \"knowledge gaps.\" You can see your child's growth across all four test components, allowing you to focus their study sessions on the areas that will most impact their final score. Parents also receive a weekly summary of their child's study activity highlighting strong areas and areas that need more work, giving parents a clear insight to improvement opportunities.",
+        answer: 'Our dashboard provides accurate progress tracking and identifies specific "knowledge gaps." You can see your child\'s growth across all four test components, allowing you to focus their study sessions on the areas that will most impact their final score.',
     },
     {
         question: "Can I retake the practice sets and mock exams?",
@@ -50,7 +49,14 @@ const faqItems = [
     },
 ];
 
-export default function FAQPage() {
+export default async function FAQPage() {
+    const [sanityFaq, footer] = await Promise.all([
+        getFaqItems(),
+        getFooterSettings(),
+    ]);
+    const faqItems =
+        sanityFaq && sanityFaq.length > 0 ? sanityFaq : DEFAULT_FAQ_ITEMS;
+
     return (
         <div className="min-h-screen">
             <Navbar />
@@ -84,7 +90,7 @@ export default function FAQPage() {
                                 collapsible
                                 className="w-full"
                             >
-                                {faqItems.map((item, index) => (
+                                {faqItems.map((item: { _id?: string; question: string; answer: string }, index: number) => (
                                     <AccordionItem
                                         key={index}
                                         value={`item-${index}`}
@@ -127,7 +133,12 @@ export default function FAQPage() {
                     </div>
                 </section>
             </div>
-            <Footer />
+            <Footer
+                email={footer?.email}
+                facebookUrl={footer?.facebookUrl}
+                instagramUrl={footer?.instagramUrl}
+                copyrightText={footer?.copyrightText}
+            />
         </div>
     );
 }

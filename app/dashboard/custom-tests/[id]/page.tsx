@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { MathText } from "@/components/ui/math-text";
 import { ArrowLeft, Loader2, ClipboardList, Play, Pencil, Send } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -433,9 +434,11 @@ export default function CustomTestDetailPage() {
 
                                     {/* Question text */}
                                     <div className="px-5 pb-3">
-                                        <p className="text-sm text-zinc-800 whitespace-pre-wrap">
-                                            {getQuestionText(q.content)}
-                                        </p>
+                                        <MathText
+                                            content={getQuestionText(q.content)}
+                                            block
+                                            className="text-sm text-zinc-800 whitespace-pre-wrap"
+                                        />
                                     </div>
 
                                     {/* Options */}
@@ -459,8 +462,12 @@ export default function CustomTestDetailPage() {
                                                             )
                                                         </span>
                                                         <span>
-                                                            {opt.text ??
-                                                                "—"}
+                                                            <MathText
+                                                                content={
+                                                                    opt.text ??
+                                                                    "—"
+                                                                }
+                                                            />
                                                         </span>
                                                     </div>
                                                 );
@@ -475,11 +482,13 @@ export default function CustomTestDetailPage() {
                                             <div className="px-5 pb-3">
                                                 <span className="inline-block rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-1.5 text-xs text-emerald-800">
                                                     Answer:{" "}
-                                                    {getCorrectAnswerDisplay(
-                                                        q.question_type,
-                                                        q.correct_answer,
-                                                        q.content
-                                                    )}
+                                                    <MathText
+                                                        content={getCorrectAnswerDisplay(
+                                                            q.question_type,
+                                                            q.correct_answer,
+                                                            q.content,
+                                                        )}
+                                                    />
                                                 </span>
                                             </div>
                                         )}

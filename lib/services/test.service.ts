@@ -16,7 +16,6 @@ import type {
 } from "@/types/test";
 import { EssayEvaluationService } from "@/lib/services/essay-evaluation.service";
 import { countWords, stripHtmlToText } from "@/lib/utils";
-import { validateRubric } from "@/lib/config/essay-config";
 
 // Internal type for questions with answers during grading
 interface GradableQuestion {
@@ -1105,7 +1104,6 @@ export class TestService {
                     student_id: studentId,
                     essay_prompt: content.prompt,
                     student_answer: String(answer.selected),
-                    rubric: validateRubric(content.rubric),
                     word_limit: content.word_limit,
                 });
                 queuedCount++;
