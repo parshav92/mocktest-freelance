@@ -299,20 +299,127 @@ interface Segment {
     value: string;
 }
 
-// Match likely inline math snippets after normalization.
-const INLINE_MATH_SNIPPET =
-    /\\[a-zA-Z]+(?:\s*(?:\[[^\]]*\]|\{[^{}]*\}|[_^]\{[^}]*\}|[_^][A-Za-z0-9]))*|\{\}(?:\^\{[^}]+\}|\^[A-Za-z0-9+-]|_\{[^}]+\}|_[A-Za-z0-9+-])+|[A-Za-z0-9]+(?:\^\{[^}]+\}|\^[A-Za-z0-9+-]|_\{[^}]+\}|_[A-Za-z0-9+-])+/g;
+// ============================================
+// STACK-BASED MATH TOKEN EXTRACTOR
+// ============================================
+// Handles arbitrary nesting depth — regex cannot do this reliably.
+
+/** Consume a balanced brace group `{...}` starting at index i (pointing at `{`). Returns new index after closing `}`. */
+function consumeBraceGroup(text: string, i: number): number {
+    if (text[i] !== "{") return i;
+    let depth = 1;
+    i++; // skip opening {
+    while (i < text.length && depth > 0) {
+        if (text[i] === "{") depth++;
+        else if (text[i] === "}") depth--;
+        i++;
+    }
+    return i;
+}
+
+/** Consume a bracket group `[...]` starting at index i. Returns new index. */
+function consumeBracketGroup(text: string, i: number): number {
+    if (text[i] !== "[") return i;
+    let depth = 1;
+    i++;
+    while (i < text.length && depth > 0) {
+        if (text[i] === "[") depth++;
+        else if (text[i] === "]") depth--;
+        i++;
+    }
+    return i;
+}
 
 /**
- * Walk through the string and split it into segments.
- *
- * Strategy: scan character-by-character. When we hit something
- * that looks like the start of a math expression, we accumulate
- * it into a "math" segment. Everything else is a "text" segment.
- *
- * We use a simpler heuristic: split on sentence/clause boundaries
- * and check each chunk for math content.
+ * Extract math token positions from `text` using a character-level scanner.
+ * Handles:
+ *  - `\command[opt]{arg}{arg}` with unlimited nesting
+ *  - `{}^{...}` / `{}_{...}` orphan scripts
+ *  - `word^{...}` / `word_{...}` superscript/subscript
  */
+function extractMathTokens(text: string): Array<{ start: number; end: number }> {
+    const tokens: Array<{ start: number; end: number }> = [];
+    let i = 0;
+
+    while (i < text.length) {
+        // ── Case 1: KaTeX command \name[...]{...}... ──
+        if (text[i] === "\\" && i + 1 < text.length && /[a-zA-Z]/.test(text[i + 1])) {
+            const start = i;
+            i += 2;
+            while (i < text.length && /[a-zA-Z]/.test(text[i])) i++;
+
+            // Consume optional argument lists (any mix of [] and {})
+            let progress = true;
+            while (progress) {
+                progress = false;
+                // skip spaces between command and args
+                const ws = i;
+                while (i < text.length && text[i] === " ") i++;
+                if (i < text.length && text[i] === "[") {
+                    i = consumeBracketGroup(text, i);
+                    progress = true;
+                } else if (i < text.length && text[i] === "{") {
+                    i = consumeBraceGroup(text, i);
+                    progress = true;
+                } else {
+                    i = ws; // restore whitespace — no argument found
+                }
+            }
+
+            // Consume trailing ^{} / _{} modifiers on the command result
+            while (i < text.length && (text[i] === "^" || text[i] === "_")) {
+                i++;
+                if (i < text.length && text[i] === "{") i = consumeBraceGroup(text, i);
+                else if (i < text.length && /[A-Za-z0-9+-]/.test(text[i])) i++;
+            }
+
+            tokens.push({ start, end: i });
+            continue;
+        }
+
+        // ── Case 2: orphan `{}^{...}` or `{}_{...}` scripts ──
+        if (
+            text[i] === "{" &&
+            text[i + 1] === "}" &&
+            i + 2 < text.length &&
+            (text[i + 2] === "^" || text[i + 2] === "_")
+        ) {
+            const start = i;
+            i += 2; // skip {}
+            while (i < text.length && (text[i] === "^" || text[i] === "_")) {
+                i++;
+                if (i < text.length && text[i] === "{") i = consumeBraceGroup(text, i);
+                else if (i < text.length && /[A-Za-z0-9+-]/.test(text[i])) i++;
+            }
+            tokens.push({ start, end: i });
+            continue;
+        }
+
+        // ── Case 3: alphanumeric word with ^{} or _{} ──
+        if (/[A-Za-z0-9]/.test(text[i])) {
+            const wordStart = i;
+            while (i < text.length && /[A-Za-z0-9]/.test(text[i])) i++;
+            if (i < text.length && (text[i] === "^" || text[i] === "_")) {
+                const scriptStart = i;
+                let j = i;
+                while (j < text.length && (text[j] === "^" || text[j] === "_")) {
+                    j++;
+                    if (j < text.length && text[j] === "{") j = consumeBraceGroup(text, j);
+                    else if (j < text.length && /[A-Za-z0-9+-]/.test(text[j])) j++;
+                }
+                tokens.push({ start: wordStart, end: j });
+                i = j;
+            }
+            // else: plain word, not a math token — don't push, just continue
+            continue;
+        }
+
+        i++;
+    }
+
+    return tokens;
+}
+
 function segmentize(raw: string): Segment[] {
     if (!raw) return [];
     if (!hasMathContent(raw) && !hasKatexCommand(raw)) {
@@ -320,19 +427,18 @@ function segmentize(raw: string): Segment[] {
     }
 
     const normalized = plainTextToKatex(raw);
+    const tokens = extractMathTokens(normalized);
+    if (tokens.length === 0) return [{ type: "text", value: raw }];
+
     const segments: Segment[] = [];
     let lastIndex = 0;
-    let match: RegExpExecArray | null;
 
-    while ((match = INLINE_MATH_SNIPPET.exec(normalized)) !== null) {
-        if (match.index > lastIndex) {
-            segments.push({
-                type: "text",
-                value: normalized.slice(lastIndex, match.index),
-            });
+    for (const { start, end } of tokens) {
+        if (start > lastIndex) {
+            segments.push({ type: "text", value: normalized.slice(lastIndex, start) });
         }
-        segments.push({ type: "math", value: match[0] });
-        lastIndex = match.index + match[0].length;
+        segments.push({ type: "math", value: normalized.slice(start, end) });
+        lastIndex = end;
     }
 
     if (lastIndex < normalized.length) {
