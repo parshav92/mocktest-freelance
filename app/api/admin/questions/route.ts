@@ -15,6 +15,9 @@ import { requireAdmin, errorResponse, successResponse } from "@/lib/auth/admin";
  *   - question_type (optional – filter by question type)
  *   - difficulty (optional – filter by difficulty)
  *   - search (optional – search by question code)
+ *   - sort_order (optional – 'asc' or 'desc', default 'desc')
+ *   - code_from (optional – start of code range, inclusive)
+ *   - code_to   (optional – end of code range, inclusive)
  */
 export async function GET(request: NextRequest) {
     const auth = await requireAdmin();
@@ -40,6 +43,14 @@ export async function GET(request: NextRequest) {
         const questionType = searchParams.get("question_type");
         const difficulty = searchParams.get("difficulty");
         const search = searchParams.get("search");
+
+        // Sort order
+        const sortOrder = searchParams.get("sort_order");
+        const ascending = sortOrder === "asc";
+
+        // Code range search
+        const codeFrom = searchParams.get("code_from");
+        const codeTo = searchParams.get("code_to");
 
         const supabase = await createClient();
 
@@ -68,7 +79,7 @@ export async function GET(request: NextRequest) {
                 `,
                 { count: "exact" }
             )
-            .order("created_at", { ascending: false });
+            .order("code", { ascending });
 
         // Apply filters
         if (subjectId) {
@@ -82,6 +93,12 @@ export async function GET(request: NextRequest) {
         }
         if (search) {
             query = query.ilike("code", `%${search}%`);
+        }
+        if (codeFrom) {
+            query = query.gte("code", codeFrom.toUpperCase());
+        }
+        if (codeTo) {
+            query = query.lte("code", codeTo.toUpperCase());
         }
 
         // Apply pagination
@@ -111,12 +128,14 @@ export async function GET(request: NextRequest) {
  *
  * Partial update for a question. Supports:
  *   - content        (question content object)
+ *   - correct_answer (correct answer object)
  *   - solution_text  (solution string)
  *   - difficulty     (easy | medium | hard)
  *   - marks          (number)
  *   - is_active      (boolean)
  *
  * Body: { id: string, ...fields }
+ * OR for bulk toggle: { ids: string[], is_active: boolean }
  */
 export async function PATCH(request: NextRequest) {
     const auth = await requireAdmin();
@@ -126,9 +145,33 @@ export async function PATCH(request: NextRequest) {
 
     try {
         const body = await request.json();
+
+        // ── Bulk toggle: { ids: string[], is_active: boolean } ──
+        if (Array.isArray(body.ids)) {
+            const { ids, is_active } = body as { ids: string[]; is_active: boolean };
+            if (!ids.length || typeof is_active !== "boolean") {
+                return errorResponse("ids (array) and is_active (boolean) are required", 400);
+            }
+
+            const supabase = await createClient();
+            const { error } = await supabase
+                .from("questions")
+                .update({ is_active, updated_at: new Date().toISOString() })
+                .in("id", ids);
+
+            if (error) {
+                console.error("Failed to bulk update questions:", error);
+                return errorResponse("Failed to bulk update questions", 500);
+            }
+
+            return successResponse({ updated: ids.length });
+        }
+
+        // ── Single question update ──
         const { id, ...updates } = body as {
             id: string;
             content?: Record<string, unknown>;
+            correct_answer?: Record<string, unknown>;
             solution_text?: string | null;
             difficulty?: string;
             marks?: number;
@@ -139,9 +182,10 @@ export async function PATCH(request: NextRequest) {
             return errorResponse("Question id is required", 400);
         }
 
-        // Only allow safe fields – never allow correct_answer or question_type to be changed here
+        // Only allow safe fields
         const allowed: Record<string, unknown> = {};
         if ("content" in updates) allowed.content = updates.content;
+        if ("correct_answer" in updates) allowed.correct_answer = updates.correct_answer;
         if ("solution_text" in updates) allowed.solution_text = updates.solution_text;
         if ("difficulty" in updates) allowed.difficulty = updates.difficulty;
         if ("marks" in updates) allowed.marks = updates.marks;
