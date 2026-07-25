@@ -24,7 +24,8 @@ export async function getPricingPlans() {
             features,
             availability,
             buttonText,
-            popular
+            popular,
+            stripePriceId
         }`
     );
 }

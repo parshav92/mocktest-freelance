@@ -62,6 +62,13 @@ export const pricingPlan = defineType({
             initialValue: false,
         }),
         defineField({
+            name: "stripePriceId",
+            title: "Stripe Price ID",
+            type: "string",
+            description:
+                "Stripe Price ID for this plan (e.g. 'price_1ABC...'). Found in Stripe Dashboard → Products.",
+        }),
+        defineField({
             name: "order",
             title: "Display Order",
             type: "number",

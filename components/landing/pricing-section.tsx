@@ -1,8 +1,11 @@
 "use client";
 
 import { Check, ArrowRight, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { STRIPE_PLANS, type StripePlan } from "@/lib/stripe-plans";
 
-interface PricingPlan {
+// Sanity CMS plan shape (may override defaults when loaded from CMS)
+interface SanityPricingPlan {
     _id?: string;
     name: string;
     description: string;
@@ -12,64 +15,46 @@ interface PricingPlan {
     availability?: string;
     buttonText?: string;
     popular: boolean;
+    stripePriceId?: string;
 }
 
 interface PricingSectionProps {
-    plans?: PricingPlan[];
+    plans?: SanityPricingPlan[];
 }
 
-const DEFAULT_PLANS: PricingPlan[] = [
-    {
-        name: "Silver",
-        description: "Perfect for getting started",
-        price: "$30",
-        period: "1 month",
-        features: [
-            "5 full sized mock exams",
-            "2027 Selective Simulation Platform",
-            "Detailed solution for review",
-        ],
-        availability: "1 month plan with renewal option",
-        buttonText: "Get Started",
-        popular: false,
-    },
-    {
-        name: "Gold",
-        description: "Best value for serious learners",
-        price: "$55",
-        period: "3 months",
-        features: [
-            "2027 Selective Simulation Platform",
-            "Unlimited full sized mock exams",
-            "Timed score testing for each exam",
-            "Test Performance analysis",
-        ],
-        availability: "3 months plan with renewal option",
-        buttonText: "Most Popular",
-        popular: true,
-    },
-    {
-        name: "Platinum",
-        description: "Ideal to Ace May 2027 Selective Exam",
-        price: "$105",
-        period: "12 months",
-        features: [
-            "2027 Selective Simulation Platform",
-            "Unlimited full sized mock exams",
-            "Timed score testing for each exam",
-            "Detailed Performance analysis",
-            "Topic-wise marks distribution",
-            "Peer group comparative analysis",
-            "Periodic Tips and Tricks",
-        ],
-        availability: "Valid till Selective Exam 2027",
-        buttonText: "Best Value",
-        popular: false,
-    },
-];
+// Build display plans: prefer Sanity CMS data, fall back to STRIPE_PLANS defaults.
+// We match by name (case-insensitive) to merge CMS content with plan IDs.
+function buildDisplayPlans(sanityPlans?: SanityPricingPlan[]): StripePlan[] {
+    if (!sanityPlans || sanityPlans.length === 0) return STRIPE_PLANS;
+
+    return STRIPE_PLANS.map((basePlan) => {
+        const cms = sanityPlans.find(
+            (p) => p.name.toLowerCase() === basePlan.name.toLowerCase()
+        );
+        if (!cms) return basePlan;
+        return {
+            ...basePlan,
+            description: cms.description ?? basePlan.description,
+            price: cms.price ?? basePlan.price,
+            period: cms.period ?? basePlan.period,
+            features: cms.features?.length ? cms.features : basePlan.features,
+            availability: cms.availability ?? basePlan.availability,
+            buttonText: cms.buttonText ?? basePlan.buttonText,
+            popular: cms.popular ?? basePlan.popular,
+        };
+    });
+}
 
 const PricingSection = ({ plans }: PricingSectionProps) => {
-    const activePlans = plans && plans.length > 0 ? plans : DEFAULT_PLANS;
+    const router = useRouter();
+    const displayPlans = buildDisplayPlans(plans);
+
+    const handleGetStarted = (planId: string) => {
+        // Always redirect to auth first; after login the user lands on subscribe with the plan pre-selected
+        router.push(
+            `/auth?redirect=${encodeURIComponent(`/dashboard/subscribe?plan=${planId}`)}`
+        );
+    };
 
     return (
         <section id="pricing" className="w-full bg-slate-50 py-24 px-6">
@@ -94,9 +79,9 @@ const PricingSection = ({ plans }: PricingSectionProps) => {
 
                 {/* Pricing Grid - 3 columns */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
-                    {activePlans.map((plan, index) => (
+                    {displayPlans.map((plan) => (
                         <div
-                            key={index}
+                            key={plan.id}
                             className={`relative ${plan.popular ? "md:-mt-4 md:mb-4" : ""}`}
                         >
                             {/* Animated Glow Border for Popular Plan */}
@@ -169,7 +154,7 @@ const PricingSection = ({ plans }: PricingSectionProps) => {
                                                 </div>
                                                 {feature}
                                             </li>
-                                        ),
+                                        )
                                     )}
                                 </ul>
 
@@ -180,6 +165,8 @@ const PricingSection = ({ plans }: PricingSectionProps) => {
 
                                 {/* CTA Button */}
                                 <button
+                                    id={`pricing-cta-${plan.id}`}
+                                    onClick={() => handleGetStarted(plan.id)}
                                     className={`w-full group flex items-center justify-center gap-2 rounded-full py-3.5 px-6 font-medium transition-all duration-300 ${
                                         plan.popular
                                             ? "bg-zinc-900 text-white hover:bg-zinc-800"
