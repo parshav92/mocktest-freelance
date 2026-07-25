@@ -76,8 +76,46 @@ export interface SubjectTemplate {
     medium_count: number;
     hard_count: number;
     passing_score: number | null;
+    type_quotas: TypeQuotas | null;
     created_at: string;
     type_quotas: TypeQuotas | null;
+}
+
+// ============================================
+// TYPE QUOTA TYPES (template-based question selection)
+// ============================================
+
+/**
+ * Defines per-question-type quotas for a test template.
+ * When present on a SubjectTemplate, the test uses template-based selection
+ * (per-type quotas with adaptive difficulty applied within each type).
+ * When null, the test uses the legacy difficulty-only adaptive algorithm.
+ */
+export interface TypeQuotas {
+    /** Passage-linked question groups (e.g., extract passages, poems) */
+    passage_groups: PassageGroupQuota[];
+    /** Standalone question types (e.g., fill_blank_dropdown) */
+    standalone_types: StandaloneTypeQuota[];
+    /** Which standalone type absorbs overflow when passage quota can't be met */
+    fallback_type: string;
+}
+
+export interface PassageGroupQuota {
+    /** Matches passages.passage_type (e.g., "extract", "poem") */
+    passage_type: string;
+    /** Matches questions.question_type (e.g., "passage_mcq", "poem_mcq") */
+    question_type: string;
+    /** How many passages to select */
+    passage_count: number;
+    /** Total questions across all selected passages */
+    total_questions: number;
+}
+
+export interface StandaloneTypeQuota {
+    /** Matches questions.question_type (e.g., "fill_blank_dropdown") */
+    question_type: string;
+    /** How many questions of this type */
+    count: number;
 }
 
 export interface Passage {

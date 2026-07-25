@@ -35,6 +35,10 @@ import {
     ToggleLeft,
     ToggleRight,
     AlertTriangle,
+    ArrowUpDown,
+    CheckSquare,
+    Square,
+    MinusSquare,
 } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -181,13 +185,9 @@ function getCorrectAnswerDisplay(
 /** Returns the editable text key inside content for a given question type */
 function getContentTextField(questionType: string): string {
     if (questionType === "essay") return "prompt";
-    if (
-        questionType === "fill_blank_dropdown" ||
-        questionType === "fill_missing_sentence"
-    )
-        return "passage_with_gaps";
-    if (questionType === "passage_mcq" || questionType === "poem_mcq")
-        return "passage_text";
+    if (questionType === "fill_missing_sentence") return "passage_with_gaps";
+    if (questionType === "fill_blank_dropdown") return "passage_text";
+    // mcq, passage_mcq, poem_mcq all use "question"
     return "question";
 }
 
@@ -204,9 +204,18 @@ export default function AdminQuestionsPage() {
     const [difficulty, setDifficulty] = useState<string>("");
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+    const [codeFrom, setCodeFrom] = useState("");
+    const [codeTo, setCodeTo] = useState("");
+    const [codeFromInput, setCodeFromInput] = useState("");
+    const [codeToInput, setCodeToInput] = useState("");
 
     // Pagination
     const [page, setPage] = useState(0);
+
+    // Bulk selection
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [bulkLoading, setBulkLoading] = useState(false);
 
     // Loading / Error
     const [isLoading, setIsLoading] = useState(true);
@@ -231,6 +240,7 @@ export default function AdminQuestionsPage() {
     const [editSolution, setEditSolution] = useState("");
     const [editDifficulty, setEditDifficulty] = useState("");
     const [editMarks, setEditMarks] = useState<number>(1);
+    const [editCorrectAnswer, setEditCorrectAnswer] = useState<string>("");
     const [editSaving, setEditSaving] = useState(false);
     const [editError, setEditError] = useState<string | null>(null);
 
@@ -245,6 +255,13 @@ export default function AdminQuestionsPage() {
         setEditSolution(q.solution_text ?? "");
         setEditDifficulty(q.difficulty);
         setEditMarks(q.marks);
+        // Initialize correct answer for MCQ types
+        const isMcq = ["mcq", "passage_mcq", "poem_mcq"].includes(q.question_type);
+        setEditCorrectAnswer(
+            isMcq && q.correct_answer
+                ? ((q.correct_answer as { label?: string }).label?.toUpperCase() ?? "")
+                : ""
+        );
         setEditError(null);
     };
 
@@ -261,6 +278,12 @@ export default function AdminQuestionsPage() {
         const textKey = getContentTextField(editQuestion.question_type);
         const updatedContent = { ...editQuestion.content, [textKey]: editText };
 
+        // Build correct_answer update for MCQ types
+        const isMcq = ["mcq", "passage_mcq", "poem_mcq"].includes(editQuestion.question_type);
+        const updatedCorrectAnswer = isMcq && editCorrectAnswer
+            ? { label: editCorrectAnswer.toUpperCase() }
+            : editQuestion.correct_answer;
+
         try {
             const res = await fetch("/api/admin/questions", {
                 method: "PATCH",
@@ -268,6 +291,7 @@ export default function AdminQuestionsPage() {
                 body: JSON.stringify({
                     id: editQuestion.id,
                     content: updatedContent,
+                    correct_answer: updatedCorrectAnswer,
                     solution_text: editSolution || null,
                     difficulty: editDifficulty,
                     marks: editMarks,
@@ -282,6 +306,7 @@ export default function AdminQuestionsPage() {
                         ? {
                               ...q,
                               content: updatedContent,
+                              correct_answer: updatedCorrectAnswer,
                               solution_text: editSolution || null,
                               difficulty: editDifficulty,
                               marks: editMarks,
@@ -389,15 +414,19 @@ export default function AdminQuestionsPage() {
     const fetchQuestions = useCallback(async () => {
         setIsLoading(true);
         setError(null);
+        setSelectedIds(new Set());
 
         try {
             const params = new URLSearchParams();
             params.set("limit", String(PAGE_SIZE));
             params.set("offset", String(page * PAGE_SIZE));
+            params.set("sort_order", sortOrder);
             if (subjectId) params.set("subject_id", subjectId);
             if (questionType) params.set("question_type", questionType);
             if (difficulty) params.set("difficulty", difficulty);
             if (search) params.set("search", search);
+            if (codeFrom) params.set("code_from", codeFrom);
+            if (codeTo) params.set("code_to", codeTo);
 
             const res = await fetch(`/api/admin/questions?${params.toString()}`);
             const data: FetchResponse = await res.json();
@@ -418,7 +447,7 @@ export default function AdminQuestionsPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [page, subjectId, questionType, difficulty, search]);
+    }, [page, subjectId, questionType, difficulty, search, sortOrder, codeFrom, codeTo]);
 
     useEffect(() => {
         fetchQuestions();
@@ -426,7 +455,7 @@ export default function AdminQuestionsPage() {
 
     // ─── Derived ────────────────────────────────────────────────────
     const totalPages = Math.ceil(total / PAGE_SIZE);
-    const hasFilters = !!(subjectId || questionType || difficulty || search);
+    const hasFilters = !!(subjectId || questionType || difficulty || search || codeFrom || codeTo);
 
     const clearFilters = () => {
         setSubjectId("");
@@ -434,12 +463,62 @@ export default function AdminQuestionsPage() {
         setDifficulty("");
         setSearch("");
         setSearchInput("");
+        setCodeFrom("");
+        setCodeTo("");
+        setCodeFromInput("");
+        setCodeToInput("");
         setPage(0);
     };
 
     const handleSearch = () => {
         setSearch(searchInput.trim());
+        setCodeFrom(codeFromInput.trim());
+        setCodeTo(codeToInput.trim());
         setPage(0);
+    };
+
+    // ─── Bulk selection helpers ──────────────────────────────────────
+    const allSelected = questions.length > 0 && questions.every((q) => selectedIds.has(q.id));
+    const someSelected = questions.some((q) => selectedIds.has(q.id));
+
+    const toggleSelectAll = () => {
+        if (allSelected) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(questions.map((q) => q.id)));
+        }
+    };
+
+    const toggleSelect = (id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
+        });
+    };
+
+    const bulkToggleActive = async (newActive: boolean) => {
+        if (selectedIds.size === 0) return;
+        setBulkLoading(true);
+        try {
+            const res = await fetch("/api/admin/questions", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ids: Array.from(selectedIds), is_active: newActive }),
+            });
+            if (!res.ok) throw new Error("Failed to bulk update");
+            setQuestions((prev) =>
+                prev.map((q) =>
+                    selectedIds.has(q.id) ? { ...q, is_active: newActive } : q
+                )
+            );
+            setSelectedIds(new Set());
+        } catch {
+            // Silently ignore – user can retry
+        } finally {
+            setBulkLoading(false);
+        }
     };
 
     // ─── Render ─────────────────────────────────────────────────────
@@ -458,8 +537,7 @@ export default function AdminQuestionsPage() {
                             )}
                         </DialogTitle>
                         <DialogDescription className="text-xs text-zinc-500">
-                            You can edit the question text, solution, difficulty and marks.
-                            Correct answers cannot be changed here.
+                            You can edit the question text, correct answer, solution, difficulty and marks.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -478,25 +556,24 @@ export default function AdminQuestionsPage() {
                                 />
                             </div>
 
-                            {/* Options preview (read-only) */}
+                            {/* Options — click to change correct answer */}
                             {getOptions(editQuestion.content) && (
                                 <div className="space-y-1.5">
-                                    <label className="text-xs font-medium text-zinc-400">
-                                        Options (read-only — correct answer locked)
+                                    <label className="text-xs font-medium text-zinc-600">
+                                        Options <span className="text-zinc-400 font-normal">— click to set correct answer</span>
                                     </label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                                         {getOptions(editQuestion.content)!.map((opt) => {
-                                            const isCorrect =
-                                                editQuestion.correct_answer &&
-                                                (editQuestion.correct_answer as { label?: string }).label?.toUpperCase() ===
-                                                    opt.label.toUpperCase();
+                                            const isCorrect = editCorrectAnswer === opt.label.toUpperCase();
                                             return (
-                                                <div
+                                                <button
                                                     key={opt.label}
-                                                    className={`flex items-start gap-2 rounded-lg px-3 py-1.5 text-xs ${
+                                                    type="button"
+                                                    onClick={() => setEditCorrectAnswer(opt.label.toUpperCase())}
+                                                    className={`flex items-start gap-2 rounded-lg px-3 py-1.5 text-xs text-left transition-colors ${
                                                         isCorrect
-                                                            ? "bg-emerald-50 text-emerald-800 font-medium border border-emerald-200"
-                                                            : "bg-zinc-50 text-zinc-500 border border-zinc-100"
+                                                            ? "bg-emerald-50 text-emerald-800 font-medium border-2 border-emerald-400 ring-1 ring-emerald-200"
+                                                            : "bg-zinc-50 text-zinc-500 border border-zinc-100 hover:border-zinc-300 hover:bg-zinc-100"
                                                     }`}
                                                 >
                                                     <span className="font-semibold shrink-0">
@@ -508,7 +585,7 @@ export default function AdminQuestionsPage() {
                                                             ✓ Correct
                                                         </span>
                                                     )}
-                                                </div>
+                                                </button>
                                             );
                                         })}
                                     </div>
@@ -694,6 +771,17 @@ export default function AdminQuestionsPage() {
                     <div className="flex items-center gap-2 mb-4">
                         <Filter className="h-4 w-4 text-zinc-500" />
                         <span className="text-sm font-medium text-zinc-700">Filters</span>
+
+                        {/* Sort toggle */}
+                        <button
+                            onClick={() => setSortOrder((o) => o === "asc" ? "desc" : "asc")}
+                            className="ml-2 inline-flex items-center gap-1 text-xs text-zinc-500 hover:text-zinc-700 transition-colors rounded-lg border border-zinc-200 px-2.5 py-1 hover:bg-zinc-50"
+                            title={`Sort by code: ${sortOrder === "asc" ? "A → Z" : "Z → A"}`}
+                        >
+                            <ArrowUpDown className="h-3 w-3" />
+                            Code {sortOrder === "asc" ? "A→Z" : "Z→A"}
+                        </button>
+
                         {hasFilters && (
                             <button
                                 onClick={clearFilters}
@@ -790,15 +878,83 @@ export default function AdminQuestionsPage() {
                             </Button>
                         </div>
                     </div>
+
+                    {/* Code range search row */}
+                    <div className="mt-3 flex items-center gap-2">
+                        <span className="text-xs text-zinc-500 shrink-0">Code range:</span>
+                        <Input
+                            placeholder="From (e.g. MR_MCQ_0001)"
+                            value={codeFromInput}
+                            onChange={(e) => setCodeFromInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+                            className="flex-1 text-xs h-8"
+                        />
+                        <span className="text-xs text-zinc-400">→</span>
+                        <Input
+                            placeholder="To (e.g. MR_MCQ_0050)"
+                            value={codeToInput}
+                            onChange={(e) => setCodeToInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
+                            className="flex-1 text-xs h-8"
+                        />
+                        <Button variant="outline" size="sm" onClick={handleSearch} className="shrink-0 h-8 text-xs">
+                            Apply
+                        </Button>
+                    </div>
                 </div>
 
-                {/* ── Stats bar ───────────────────────────────────────── */}
+                {/* ── Stats bar + bulk actions ─────────────────────────── */}
                 <div className="flex items-center justify-between text-sm text-zinc-500">
-                    <span>
-                        {isLoading
-                            ? "Loading…"
-                            : `${total} question${total !== 1 ? "s" : ""} found`}
-                    </span>
+                    <div className="flex items-center gap-3">
+                        {/* Select all checkbox */}
+                        {questions.length > 0 && (
+                            <button
+                                onClick={toggleSelectAll}
+                                className="p-0.5 rounded hover:bg-zinc-100 transition-colors"
+                                title={allSelected ? "Deselect all" : "Select all on page"}
+                            >
+                                {allSelected ? (
+                                    <CheckSquare className="h-4 w-4 text-emerald-600" />
+                                ) : someSelected ? (
+                                    <MinusSquare className="h-4 w-4 text-zinc-400" />
+                                ) : (
+                                    <Square className="h-4 w-4 text-zinc-300" />
+                                )}
+                            </button>
+                        )}
+                        <span>
+                            {isLoading
+                                ? "Loading…"
+                                : selectedIds.size > 0
+                                ? `${selectedIds.size} selected`
+                                : `${total} question${total !== 1 ? "s" : ""} found`}
+                        </span>
+                        {/* Bulk action buttons */}
+                        {selectedIds.size > 0 && (
+                            <div className="flex items-center gap-1.5 ml-1">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={bulkLoading}
+                                    onClick={() => bulkToggleActive(false)}
+                                    className="h-7 text-xs gap-1"
+                                >
+                                    {bulkLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ToggleLeft className="h-3 w-3" />}
+                                    Disable
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={bulkLoading}
+                                    onClick={() => bulkToggleActive(true)}
+                                    className="h-7 text-xs gap-1"
+                                >
+                                    {bulkLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <ToggleRight className="h-3 w-3" />}
+                                    Enable
+                                </Button>
+                            </div>
+                        )}
+                    </div>
                     {totalPages > 1 && (
                         <span>
                             Page {page + 1} of {totalPages}
@@ -862,6 +1018,17 @@ export default function AdminQuestionsPage() {
                                 >
                                     {/* Meta bar */}
                                     <div className="flex flex-wrap items-center gap-2 px-5 pt-4 pb-2">
+                                        {/* Selection checkbox */}
+                                        <button
+                                            onClick={() => toggleSelect(q.id)}
+                                            className="p-0.5 rounded hover:bg-zinc-100 transition-colors shrink-0"
+                                        >
+                                            {selectedIds.has(q.id) ? (
+                                                <CheckSquare className="h-4 w-4 text-emerald-600" />
+                                            ) : (
+                                                <Square className="h-4 w-4 text-zinc-300" />
+                                            )}
+                                        </button>
                                         <span className="text-xs font-mono text-zinc-400">
                                             {q.code}
                                         </span>

@@ -20,51 +20,49 @@ interface PricingSectionProps {
 
 const DEFAULT_PLANS: PricingPlan[] = [
     {
-        name: "Silver Subscription",
+        name: "Silver",
         description: "Perfect for getting started",
         price: "$30",
         period: "1 month",
         features: [
             "5 full sized mock exams",
-            "Reading practice tests",
-            "Writing practice tests",
-            "Mathematics practice tests",
-            "Thinking Skill practice tests",
+            "2027 Selective Simulation Platform",
+            "Detailed solution for review",
         ],
-        availability: "Available for 1 month",
+        availability: "1 month plan with renewal option",
         buttonText: "Get Started",
         popular: false,
     },
     {
-        name: "Gold Subscription",
+        name: "Gold",
         description: "Best value for serious learners",
         price: "$55",
         period: "3 months",
         features: [
+            "2027 Selective Simulation Platform",
             "Unlimited full sized mock exams",
-            "Reading practice tests",
-            "Writing practice tests",
-            "Mathematics practice tests",
-            "Thinking Skill practice tests",
+            "Timed score testing for each exam",
+            "Test Performance analysis",
         ],
-        availability: "Available for 3 months",
+        availability: "3 months plan with renewal option",
         buttonText: "Most Popular",
         popular: true,
     },
     {
-        name: "Platinum Subscription",
-        description: "Complete preparation package",
+        name: "Platinum",
+        description: "Ideal to Ace May 2027 Selective Exam",
         price: "$105",
-        period: "6 months",
+        period: "12 months",
         features: [
+            "2027 Selective Simulation Platform",
             "Unlimited full sized mock exams",
-            "Reading practice tests",
-            "Writing practice tests",
-            "Mathematics practice tests",
-            "Thinking Skill practice tests",
-            "Weekly Tips and Tricks",
+            "Timed score testing for each exam",
+            "Detailed Performance analysis",
+            "Topic-wise marks distribution",
+            "Peer group comparative analysis",
+            "Periodic Tips and Tricks",
         ],
-        availability: "Available for 6 months",
+        availability: "Valid till Selective Exam 2027",
         buttonText: "Best Value",
         popular: false,
     },
@@ -106,7 +104,7 @@ const PricingSection = ({ plans }: PricingSectionProps) => {
                                 <div className="absolute -inset-0.75 rounded-[1.6rem] overflow-hidden">
                                     <div className="absolute inset-0 animate-glow-drift">
                                         <div
-                                            className="absolute inset-[-100%] bg-[conic-gradient(from_0deg,transparent_0deg,transparent_30deg,rgba(254,202,202,0.7)_60deg,rgba(254,240,138,0.7)_100deg,rgba(167,243,208,0.65)_140deg,rgba(191,219,254,0.65)_180deg,rgba(221,214,254,0.7)_220deg,rgba(251,207,232,0.7)_260deg,transparent_300deg,transparent_360deg)]"
+                                            className="absolute -inset-full bg-[conic-gradient(from_0deg,transparent_0deg,transparent_30deg,rgba(254,202,202,0.7)_60deg,rgba(254,240,138,0.7)_100deg,rgba(167,243,208,0.65)_140deg,rgba(191,219,254,0.65)_180deg,rgba(221,214,254,0.7)_220deg,rgba(251,207,232,0.7)_260deg,transparent_300deg,transparent_360deg)]"
                                             style={{
                                                 filter: "blur(12px)",
                                             }}
@@ -135,10 +133,10 @@ const PricingSection = ({ plans }: PricingSectionProps) => {
 
                                 {/* Plan Name */}
                                 <div className="mb-6">
-                                    <h3 className="text-xl font-bold text-zinc-900 mb-1">
+                                    <h3 className="text-xl text-center font-bold text-zinc-900 mb-1">
                                         {plan.name}
                                     </h3>
-                                    <p className="text-zinc-500 text-sm">
+                                    <p className="text-zinc-500 text-center text-sm">
                                         {plan.description}
                                     </p>
                                 </div>
