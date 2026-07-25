@@ -14,7 +14,7 @@ export default async function proxy(request: NextRequest) {
     return response;
   }
 
-  if (!pathname.startsWith("/admin")) {
+  if (!pathname.startsWith("/admin") && !pathname.startsWith("/katex")) {
     timer.stop(response.status);
     return response;
   }
