@@ -10,6 +10,8 @@ interface Props {
     planPeriod: string;
     subscriptionId: string;
     customerEmail: string;
+    renewed?: boolean;
+    studentName?: string | null;
 }
 
 export default function SuccessClient({
@@ -18,6 +20,8 @@ export default function SuccessClient({
     planPeriod,
     subscriptionId,
     customerEmail,
+    renewed = false,
+    studentName = null,
 }: Props) {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center p-4">
@@ -48,11 +52,32 @@ export default function SuccessClient({
                     Payment Successful!
                 </h1>
                 <p className="text-slate-500 mb-8">
-                    Your{" "}
-                    <span className="font-semibold text-slate-700">
-                        {planName}
-                    </span>{" "}
-                    plan is now active.
+                    {renewed ? (
+                        <>
+                            {studentName ? (
+                                <>
+                                    <span className="font-semibold text-slate-700">
+                                        {studentName}
+                                    </span>
+                                    {"'s "}
+                                </>
+                            ) : (
+                                "The student's "
+                            )}
+                            <span className="font-semibold text-slate-700">
+                                {planName}
+                            </span>{" "}
+                            plan has been renewed.
+                        </>
+                    ) : (
+                        <>
+                            Your{" "}
+                            <span className="font-semibold text-slate-700">
+                                {planName}
+                            </span>{" "}
+                            plan is now active.
+                        </>
+                    )}
                 </p>
 
                 <div className="bg-slate-50 rounded-2xl p-5 mb-8 text-left space-y-3">
@@ -77,21 +102,34 @@ export default function SuccessClient({
                 </div>
 
                 <div className="space-y-3">
-                    <Link
-                        id="create-student-cta"
-                        href={`/dashboard/students/new?subscription=${subscriptionId}`}
-                        className="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-4 rounded-full transition-colors"
-                    >
-                        <UserPlus className="w-5 h-5" />
-                        Create Student Profile
-                        <ArrowRight className="w-4 h-4" />
-                    </Link>
-                    <Link
-                        href="/dashboard"
-                        className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3.5 rounded-full transition-colors text-sm"
-                    >
-                        Go to Dashboard
-                    </Link>
+                    {renewed ? (
+                        <Link
+                            id="renew-done-cta"
+                            href="/dashboard"
+                            className="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-4 rounded-full transition-colors"
+                        >
+                            Back to Dashboard
+                            <ArrowRight className="w-4 h-4" />
+                        </Link>
+                    ) : (
+                        <>
+                            <Link
+                                id="create-student-cta"
+                                href={`/dashboard/students/new?subscription=${subscriptionId}`}
+                                className="flex items-center justify-center gap-2 w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-4 rounded-full transition-colors"
+                            >
+                                <UserPlus className="w-5 h-5" />
+                                Create Student Profile
+                                <ArrowRight className="w-4 h-4" />
+                            </Link>
+                            <Link
+                                href="/dashboard"
+                                className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium py-3.5 rounded-full transition-colors text-sm"
+                            >
+                                Go to Dashboard
+                            </Link>
+                        </>
+                    )}
                 </div>
 
                 <p className="text-xs text-slate-400 mt-6">

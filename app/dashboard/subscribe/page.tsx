@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, Suspense } from "react";
+import { useState, useCallback, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { loadStripe } from "@stripe/stripe-js";
 import {
@@ -19,9 +19,11 @@ const isTestMode = publishableKey.startsWith("pk_test_");
 
 function CheckoutModal({
     planId,
+    studentId,
     onClose,
 }: {
     planId: PlanId;
+    studentId: string | null;
     onClose: () => void;
 }) {
     const plan = STRIPE_PLANS.find((p) => p.id === planId)!;
@@ -30,12 +32,15 @@ function CheckoutModal({
         const res = await fetch("/api/stripe/create-checkout-session", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ planId }),
+            body: JSON.stringify({
+                planId,
+                ...(studentId ? { studentId } : {}),
+            }),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Failed to start checkout");
         return data.clientSecret as string;
-    }, [planId]);
+    }, [planId, studentId]);
 
     return (
         <motion.div
@@ -101,18 +106,79 @@ function CheckoutModal({
 function SubscribePageInner() {
     const searchParams = useSearchParams();
     const initialPlan = searchParams.get("plan") as PlanId | null;
+    const renewStudentId = searchParams.get("student");
 
     const [selectedPlanId, setSelectedPlanId] = useState<PlanId | null>(
         STRIPE_PLANS.find((p) => p.id === initialPlan) ? initialPlan : null,
     );
     const [checkoutOpen, setCheckoutOpen] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [renewStudentName, setRenewStudentName] = useState<string | null>(
+        null,
+    );
+    const [renewLoading, setRenewLoading] = useState(Boolean(renewStudentId));
+    const [validatedStudentId, setValidatedStudentId] = useState<string | null>(
+        null,
+    );
+
+    useEffect(() => {
+        const urlError = searchParams.get("error");
+        if (urlError) {
+            setError(decodeURIComponent(urlError));
+        }
+    }, [searchParams]);
+
+    useEffect(() => {
+        if (!renewStudentId) {
+            setRenewLoading(false);
+            setValidatedStudentId(null);
+            setRenewStudentName(null);
+            return;
+        }
+
+        let cancelled = false;
+        (async () => {
+            setRenewLoading(true);
+            try {
+                const res = await fetch("/api/students");
+                if (!res.ok) throw new Error("Failed to load students");
+                const data = await res.json();
+                const match = (data.students as Array<{
+                    id: string;
+                    full_name: string;
+                }>)?.find((s) => s.id === renewStudentId);
+                if (cancelled) return;
+                if (!match) {
+                    setError("Student not found for renewal");
+                    setValidatedStudentId(null);
+                    setRenewStudentName(null);
+                } else {
+                    setValidatedStudentId(match.id);
+                    setRenewStudentName(match.full_name);
+                }
+            } catch {
+                if (!cancelled) {
+                    setError("Could not verify student for renewal");
+                    setValidatedStudentId(null);
+                }
+            } finally {
+                if (!cancelled) setRenewLoading(false);
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [renewStudentId]);
 
     const handleProceedToCheckout = () => {
         if (!selectedPlanId) return;
+        if (renewStudentId && !validatedStudentId) return;
         setError(null);
         setCheckoutOpen(true);
     };
+
+    const isRenew = Boolean(validatedStudentId);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
@@ -133,21 +199,38 @@ function SubscribePageInner() {
                     <div className="text-center mb-12">
                         <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 border border-sky-100 px-4 py-1.5 text-sm font-medium text-sky-700 mb-4">
                             <Sparkles className="h-3.5 w-3.5" />
-                            Add a Student
+                            {isRenew ? "Renew Plan" : "Add a Student"}
                         </span>
                         <h1
                             className="text-4xl font-bold text-slate-900 mb-3"
                             style={{ letterSpacing: "-0.03em" }}
                         >
-                            Choose Your{" "}
-                            <span className="text-sky-600">Plan</span>
+                            {isRenew ? (
+                                <>
+                                    Renew for{" "}
+                                    <span className="text-sky-600">
+                                        {renewStudentName}
+                                    </span>
+                                </>
+                            ) : (
+                                <>
+                                    Choose Your{" "}
+                                    <span className="text-sky-600">Plan</span>
+                                </>
+                            )}
                         </h1>
                         <p className="text-slate-500 max-w-lg mx-auto">
-                            Each one-time purchase gives one student platform
-                            access for the plan duration. Add more students by
-                            purchasing additional plans.
+                            {isRenew
+                                ? "Remaining access time carries over. Choose a plan to extend this student’s access."
+                                : "Each one-time purchase gives one student platform access for the plan duration. Add more students by purchasing additional plans."}
                         </p>
                     </div>
+
+                    {renewLoading && (
+                        <p className="text-center text-sm text-slate-400 mb-8">
+                            Verifying student…
+                        </p>
+                    )}
 
                     {error && (
                         <div className="mb-8 p-4 rounded-2xl bg-red-50 border border-red-200 text-red-600 text-sm text-center">
@@ -171,7 +254,11 @@ function SubscribePageInner() {
                         <button
                             id="proceed-to-checkout"
                             onClick={handleProceedToCheckout}
-                            disabled={!selectedPlanId}
+                            disabled={
+                                !selectedPlanId ||
+                                renewLoading ||
+                                Boolean(renewStudentId && !validatedStudentId)
+                            }
                             className="inline-flex items-center gap-3 bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold px-10 py-4 rounded-full transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none"
                         >
                             Proceed to Checkout
@@ -190,6 +277,7 @@ function SubscribePageInner() {
                 {checkoutOpen && selectedPlanId && (
                     <CheckoutModal
                         planId={selectedPlanId}
+                        studentId={validatedStudentId}
                         onClose={() => setCheckoutOpen(false)}
                     />
                 )}
