@@ -237,6 +237,19 @@ CREATE TABLE public.subscriptions (
   CONSTRAINT subscriptions_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.students(id),
   CONSTRAINT subscriptions_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.profiles(id)
 );
+CREATE TABLE public.plans (
+  key text NOT NULL,
+  name text NOT NULL,
+  max_full_mocks integer,
+  analytics_level text NOT NULL DEFAULT 'basic'::text,
+  peer_compare boolean NOT NULL DEFAULT false,
+  tips boolean NOT NULL DEFAULT false,
+  display_order integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT plans_pkey PRIMARY KEY (key)
+);
 CREATE TABLE public.tests (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   student_id uuid NOT NULL,

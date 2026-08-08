@@ -18,6 +18,7 @@ import {
     AlertCircle,
     Trophy,
     Activity,
+    Settings2,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, usePathname } from "next/navigation";
@@ -87,6 +88,11 @@ export function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
             href: "/dashboard/subscriptions",
             icon: CreditCard,
             label: "Subscriptions",
+        },
+        {
+            href: "/dashboard/plans",
+            icon: Settings2,
+            label: "Plan rules",
         },
         {
             href: "/dashboard/users",
