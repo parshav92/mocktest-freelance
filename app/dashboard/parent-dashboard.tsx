@@ -20,6 +20,11 @@ import {
     UserPlus,
     Clock,
 } from "lucide-react";
+import {
+    formatPlanLabel,
+    getEffectivePlanStatus,
+    type EffectivePlanStatus,
+} from "@/lib/stripe-plans";
 
 function getGreeting() {
     const h = new Date().getHours();
@@ -42,15 +47,18 @@ interface Student {
     student_id: string;
     full_name: string;
     is_active: boolean;
+    plan_key?: string | null;
+    plan_expires_at?: string | null;
     created_at: string;
 }
 
 interface Subscription {
     id: string;
-    plan: "half_yearly" | "yearly";
+    plan: string;
     status: "active" | "expired" | "grace_period";
     starts_at: string;
     expires_at: string;
+    grace_period_ends_at?: string | null;
     student: Student | null;
     created_at: string;
 }
@@ -181,22 +189,32 @@ function fmtTime(secs: number) {
     return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
 
-function statusCls(status: Subscription["status"]) {
+function statusCls(status: EffectivePlanStatus | Subscription["status"]) {
     const m: Record<string, string> = {
         active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        expiring_soon: "bg-amber-50 text-amber-700 border-amber-200",
         grace_period: "bg-amber-50 text-amber-700 border-amber-200",
         expired: "bg-red-50 text-red-600 border-red-200",
     };
     return m[status] ?? "";
 }
 
-function statusLabel(status: Subscription["status"]) {
+function statusLabel(status: EffectivePlanStatus | Subscription["status"]) {
     const m: Record<string, string> = {
         active: "Active",
+        expiring_soon: "Expiring Soon",
         grace_period: "Grace Period",
         expired: "Expired",
     };
     return m[status] ?? status;
+}
+
+function planStatusForSub(sub: Subscription): EffectivePlanStatus {
+    return getEffectivePlanStatus({
+        expiresAt: sub.expires_at,
+        gracePeriodEndsAt: sub.grace_period_ends_at,
+        status: sub.status,
+    });
 }
 
 function scoreFg(pct: number) {
@@ -266,9 +284,10 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
         ...s.student!,
         subscription: s,
     }));
-    const activeCount = subscriptions.filter(
-        (s) => s.status === "active",
-    ).length;
+    const activeCount = subscriptions.filter((s) => {
+        const st = planStatusForSub(s);
+        return st === "active" || st === "expiring_soon";
+    }).length;
 
     const updateQueryParams = useCallback(
         (next: {
@@ -753,16 +772,24 @@ function Overview({
                                         </p>
                                         <Badge
                                             variant="outline"
-                                            className={`text-[10px] leading-none px-1.5 py-0.5 border font-medium ${statusCls(s.subscription.status)}`}
+                                            className={`text-[10px] leading-none px-1.5 py-0.5 border font-medium ${statusCls(planStatusForSub(s.subscription))}`}
                                         >
-                                            {statusLabel(s.subscription.status)}
+                                            {statusLabel(
+                                                planStatusForSub(s.subscription),
+                                            )}
                                         </Badge>
+                                        {!s.is_active && (
+                                            <Badge
+                                                variant="outline"
+                                                className="text-[10px] leading-none px-1.5 py-0.5 border font-medium bg-slate-50 text-slate-600 border-slate-200"
+                                            >
+                                                Inactive
+                                            </Badge>
+                                        )}
                                     </div>
                                     <p className="text-xs text-slate-400 mt-0.5 truncate">
                                         {s.student_id} &middot;{" "}
-                                        {s.subscription.plan === "yearly"
-                                            ? "Yearly"
-                                            : "Half-Yearly"}{" "}
+                                        {formatPlanLabel(s.subscription.plan)}{" "}
                                         &middot; Expires{" "}
                                         {fmtDate(s.subscription.expires_at)}
                                     </p>
@@ -793,13 +820,19 @@ function Overview({
                             >
                                 <div>
                                     <p className="text-md font-medium text-slate-900">
-                                        {sub.plan === "yearly"
-                                            ? "Yearly"
-                                            : "Half-Yearly"}{" "}
-                                        Plan
+                                        {formatPlanLabel(sub.plan)} Plan
                                     </p>
                                     <p className="text-md text-slate-400 mt-0.5">
                                         Expires {fmtDate(sub.expires_at)}
+                                        {planStatusForSub(sub) !== "active" && (
+                                            <>
+                                                {" "}
+                                                &middot;{" "}
+                                                {statusLabel(
+                                                    planStatusForSub(sub),
+                                                )}
+                                            </>
+                                        )}
                                     </p>
                                 </div>
                                 <Link
@@ -955,17 +988,65 @@ function StudentDetail({
                         {subscription && (
                             <Badge
                                 variant="outline"
-                                className={`text-[10px] leading-none px-1.5 py-0.5 border font-medium ${statusCls(subscription.status)}`}
+                                className={`text-[10px] leading-none px-1.5 py-0.5 border font-medium ${statusCls(planStatusForSub(subscription))}`}
                             >
-                                {subscription.plan === "yearly"
-                                    ? "Yearly"
-                                    : "Half-Yearly"}{" "}
-                                &middot; {statusLabel(subscription.status)}
+                                {formatPlanLabel(subscription.plan)} &middot;{" "}
+                                {statusLabel(planStatusForSub(subscription))}
+                            </Badge>
+                        )}
+                        {student && !student.is_active && (
+                            <Badge
+                                variant="outline"
+                                className="text-[10px] leading-none px-1.5 py-0.5 border font-medium bg-slate-50 text-slate-600 border-slate-200"
+                            >
+                                Inactive
                             </Badge>
                         )}
                     </div>
                 </div>
             </div>
+
+            {subscription &&
+                (planStatusForSub(subscription) === "expiring_soon" ||
+                    planStatusForSub(subscription) === "grace_period" ||
+                    planStatusForSub(subscription) === "expired" ||
+                    !student.is_active) && (
+                    <div
+                        className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-[fade-in-up_0.4s_ease-out_both]"
+                    >
+                        <div className="flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                            <div>
+                                <p className="text-sm font-medium text-amber-900">
+                                    {planStatusForSub(subscription) ===
+                                    "expiring_soon"
+                                        ? "Plan expiring soon"
+                                        : planStatusForSub(subscription) ===
+                                            "grace_period"
+                                          ? "Plan in grace period"
+                                          : "Plan expired"}
+                                </p>
+                                <p className="text-xs text-amber-800 mt-0.5">
+                                    Access ends{" "}
+                                    {fmtDate(subscription.expires_at)}
+                                    {subscription.grace_period_ends_at
+                                        ? `; grace until ${fmtDate(subscription.grace_period_ends_at)}`
+                                        : ""}
+                                    . Purchase a new plan to restore full
+                                    access.
+                                </p>
+                            </div>
+                        </div>
+                        <Link href="/dashboard/subscribe">
+                            <Button
+                                size="sm"
+                                className="bg-slate-900 hover:bg-slate-800 text-white"
+                            >
+                                Renew plan
+                            </Button>
+                        </Link>
+                    </div>
+                )}
 
             {/* Stats row — gap-px trick creates 1px internal borders */}
             <div

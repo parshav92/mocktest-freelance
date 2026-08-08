@@ -22,14 +22,14 @@ export async function POST(request: Request) {
         if (!plan) {
             return NextResponse.json(
                 { error: "Invalid plan selected" },
-                { status: 400 }
+                { status: 400 },
             );
         }
 
         if (!plan.stripePriceId) {
             return NextResponse.json(
                 { error: "Stripe price not configured for this plan" },
-                { status: 500 }
+                { status: 500 },
             );
         }
 
@@ -44,12 +44,12 @@ export async function POST(request: Request) {
                     quantity: 1,
                 },
             ],
-            mode: "subscription",
-            return_url: `${baseUrl}/dashboard/subscribe/success?session_id={CHECKOUT_SESSION_ID}&plan=${planId}`,
+            mode: "payment",
+            return_url: `${baseUrl}/dashboard/subscribe/success?session_id={CHECKOUT_SESSION_ID}`,
             metadata: {
                 parentId: user.id,
                 planId: plan.id,
-                planDbKey: plan.dbPlan,
+                planKey: plan.planKey,
                 durationMonths: String(plan.durationMonths),
             },
             customer_email: user.email,

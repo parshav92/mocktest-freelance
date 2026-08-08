@@ -27,7 +27,6 @@ export default function SuccessClient({
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center"
             >
-                {/* Icon */}
                 <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
@@ -42,7 +41,6 @@ export default function SuccessClient({
                     <CheckCircle className="w-10 h-10 text-emerald-600" />
                 </motion.div>
 
-                {/* Heading */}
                 <h1
                     className="text-3xl font-bold text-slate-900 mb-2"
                     style={{ letterSpacing: "-0.03em" }}
@@ -54,10 +52,9 @@ export default function SuccessClient({
                     <span className="font-semibold text-slate-700">
                         {planName}
                     </span>{" "}
-                    subscription is now active.
+                    plan is now active.
                 </p>
 
-                {/* Plan summary card */}
                 <div className="bg-slate-50 rounded-2xl p-5 mb-8 text-left space-y-3">
                     <div className="flex justify-between text-sm">
                         <span className="text-slate-500">Plan</span>
@@ -79,7 +76,6 @@ export default function SuccessClient({
                     </div>
                 </div>
 
-                {/* Next step CTA */}
                 <div className="space-y-3">
                     <Link
                         id="create-student-cta"
@@ -99,8 +95,10 @@ export default function SuccessClient({
                 </div>
 
                 <p className="text-xs text-slate-400 mt-6">
-                    Subscription ID:{" "}
-                    <code className="font-mono">{subscriptionId.slice(0, 8)}…</code>
+                    Reference:{" "}
+                    <code className="font-mono">
+                        {subscriptionId.slice(0, 8)}…
+                    </code>
                 </p>
             </motion.div>
         </div>
