@@ -59,6 +59,17 @@ export default async function SubscribeSuccessPage({ searchParams }: PageProps) 
         user.email ??
         "";
 
+    let studentName: string | null = null;
+    if (result.renewed && result.studentId) {
+        const { data: student } = await supabase
+            .from("students")
+            .select("full_name")
+            .eq("id", result.studentId)
+            .eq("parent_id", user.id)
+            .maybeSingle();
+        studentName = student?.full_name ?? null;
+    }
+
     return (
         <SuccessClient
             planName={planDetails.name}
@@ -66,6 +77,8 @@ export default async function SubscribeSuccessPage({ searchParams }: PageProps) 
             planPeriod={planDetails.period}
             subscriptionId={result.subscriptionId}
             customerEmail={customerEmail}
+            renewed={result.renewed}
+            studentName={studentName}
         />
     );
 }

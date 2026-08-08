@@ -1037,7 +1037,7 @@ function StudentDetail({
                                 </p>
                             </div>
                         </div>
-                        <Link href="/dashboard/subscribe">
+                        <Link href={`/dashboard/subscribe?student=${student.id}`}>
                             <Button
                                 size="sm"
                                 className="bg-slate-900 hover:bg-slate-800 text-white"
