@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireMinAnalyticsLevel } from "@/lib/plans/entitlements";
+import { featureLockedErrorResponse } from "@/lib/api/responses";
 
 /**
  * GET /api/students/[id]/report
@@ -11,6 +13,7 @@ import { createClient } from "@/lib/supabase/server";
  *  - comparative_grade: A–F rating based on percentile
  *
  * Accessible by the student's parent (ownership check) or admin.
+ * Parents need analytics_level = full. Peer fields stripped without peer_compare.
  *
  * Query params:
  *   days   – lookback window (default 90, "all" = no limit)
@@ -50,8 +53,9 @@ export async function GET(
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    let peerCompareAllowed = true;
+
     if (profile.role === "parent") {
-        // Verify ownership
         const { data: owned } = await supabase
             .from("students")
             .select("id")
@@ -61,6 +65,12 @@ export async function GET(
         if (!owned) {
             return NextResponse.json({ error: "Student not found" }, { status: 404 });
         }
+
+        const gate = await requireMinAnalyticsLevel(studentId, supabase, "full");
+        if (!gate.ok) {
+            return featureLockedErrorResponse(gate.error, gate.feature);
+        }
+        peerCompareAllowed = gate.entitlements.peerCompare;
     } else if (profile.role !== "admin") {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -469,20 +479,52 @@ export async function GET(
 
     topicRows.sort((a, b) => b.total_answered - a.total_answered);
 
+    const opportunitiesOut = peerCompareAllowed
+        ? opportunities.slice(0, 10)
+        : opportunities.slice(0, 10).map((o) => ({
+              ...o,
+              peer_accuracy: 0,
+              advantage: 0,
+          }));
+    const threatsOut = peerCompareAllowed
+        ? threats.slice(0, 10)
+        : threats.slice(0, 10).map((t) => ({
+              ...t,
+              peer_accuracy: 0,
+              gap: 0,
+          }));
+
+    const speedOut = peerCompareAllowed
+        ? speedReport
+        : speedReport.map((r) => ({ ...r, peer_avg_secs: 0 }));
+
+    const comparativeOut = peerCompareAllowed
+        ? comparativeGrade
+        : {
+              ...comparativeGrade,
+              peer_avg: 0,
+              percentile_rank: 0,
+              peer_count: 0,
+              delta: 0,
+          };
+
     return NextResponse.json({
-        speed_report: speedReport,
+        speed_report: speedOut,
         discipline: {
             tests: disciplineList,
             total_tests: disciplineList.length,
-            avg_tests_per_student: avgTestsPerStudent,
+            avg_tests_per_student: peerCompareAllowed
+                ? avgTestsPerStudent
+                : 0,
         },
         swot: {
             strengths: strengths.slice(0, 10),
             weaknesses: weaknesses.slice(0, 10),
-            opportunities: opportunities.slice(0, 10),
-            threats: threats.slice(0, 10),
+            opportunities: opportunitiesOut,
+            threats: threatsOut,
         },
-        comparative: comparativeGrade,
+        comparative: comparativeOut,
         topic_analysis: topicRows,
+        peer_compare: peerCompareAllowed,
     });
 }
