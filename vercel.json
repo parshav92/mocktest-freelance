@@ -2,7 +2,11 @@
   "crons": [
     {
       "path": "/api/essays/evaluate",
-      "schedule": "0 9 * * *" 
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/expire-plans",
+      "schedule": "0 0 * * *"
     }
   ]
 }
