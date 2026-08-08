@@ -210,3 +210,188 @@ export async function checkMockExamLimit(
 
     return { allowed: true, used, limit };
 }
+
+const ANALYTICS_RANK: Record<AnalyticsLevel, number> = {
+    none: 0,
+    basic: 1,
+    full: 2,
+};
+
+export type EntitlementGateOk = {
+    ok: true;
+    planKey: string;
+    entitlements: PlanEntitlements;
+};
+
+export type EntitlementGateFail = {
+    ok: false;
+    error: string;
+    code: "NO_PLAN" | "UNKNOWN_PLAN" | "INACTIVE_PLAN" | "FEATURE_LOCKED";
+    status: number;
+    feature?: string;
+};
+
+/**
+ * Require student's plan analytics_level to be at least `minimum`.
+ * basic = overview/stats; full = performance analytics / SWOT / reports.
+ */
+export async function requireMinAnalyticsLevel(
+    studentId: string,
+    supabase: SupabaseClient,
+    minimum: Exclude<AnalyticsLevel, "none">,
+): Promise<EntitlementGateOk | EntitlementGateFail> {
+    const resolved = await getStudentEntitlements(studentId, supabase);
+    if (!resolved.ok) {
+        return {
+            ok: false,
+            error: resolved.error,
+            code: resolved.code,
+            status: 403,
+        };
+    }
+
+    const level = resolved.entitlements.analyticsLevel;
+    if (ANALYTICS_RANK[level] < ANALYTICS_RANK[minimum]) {
+        const needed =
+            minimum === "full"
+                ? "Gold or Platinum (full analytics)"
+                : "an active plan with analytics";
+        return {
+            ok: false,
+            error: `Your ${resolved.entitlements.name} plan does not include this feature. Upgrade to ${needed}.`,
+            code: "FEATURE_LOCKED",
+            status: 403,
+            feature: minimum === "full" ? "analytics_full" : "analytics_basic",
+        };
+    }
+
+    return {
+        ok: true,
+        planKey: resolved.planKey,
+        entitlements: resolved.entitlements,
+    };
+}
+
+export async function requirePeerCompare(
+    studentId: string,
+    supabase: SupabaseClient,
+): Promise<EntitlementGateOk | EntitlementGateFail> {
+    const resolved = await getStudentEntitlements(studentId, supabase);
+    if (!resolved.ok) {
+        return {
+            ok: false,
+            error: resolved.error,
+            code: resolved.code,
+            status: 403,
+        };
+    }
+    if (!resolved.entitlements.peerCompare) {
+        return {
+            ok: false,
+            error: `Peer comparison is not included in your ${resolved.entitlements.name} plan. Upgrade to Platinum.`,
+            code: "FEATURE_LOCKED",
+            status: 403,
+            feature: "peer_compare",
+        };
+    }
+    return {
+        ok: true,
+        planKey: resolved.planKey,
+        entitlements: resolved.entitlements,
+    };
+}
+
+export async function requireTips(
+    studentId: string,
+    supabase: SupabaseClient,
+): Promise<EntitlementGateOk | EntitlementGateFail> {
+    const resolved = await getStudentEntitlements(studentId, supabase);
+    if (!resolved.ok) {
+        return {
+            ok: false,
+            error: resolved.error,
+            code: resolved.code,
+            status: 403,
+        };
+    }
+    if (!resolved.entitlements.tips) {
+        return {
+            ok: false,
+            error: `Tips & tricks are not included in your ${resolved.entitlements.name} plan. Upgrade to Platinum.`,
+            code: "FEATURE_LOCKED",
+            status: 403,
+            feature: "tips",
+        };
+    }
+    return {
+        ok: true,
+        planKey: resolved.planKey,
+        entitlements: resolved.entitlements,
+    };
+}
+
+/** Remove peer benchmark fields from analytics payload when plan lacks peer_compare. */
+export function stripPeerFromAnalytics<T extends Record<string, unknown>>(
+    payload: T,
+): T {
+    const subjectComparison = Array.isArray(payload.subject_comparison)
+        ? payload.subject_comparison.map((row: Record<string, unknown>) => ({
+              ...row,
+              peer_avg_percentage: 0,
+              delta_percentage: 0,
+              peer_tests_count: 0,
+          }))
+        : payload.subject_comparison;
+
+    return {
+        ...payload,
+        peer_overall: {
+            student_avg_percentage:
+                (payload.peer_overall as { student_avg_percentage?: number })
+                    ?.student_avg_percentage ?? 0,
+            peer_avg_percentage: 0,
+            delta_percentage: 0,
+            percentile_rank: 0,
+            peer_student_count: 0,
+        },
+        subject_comparison: subjectComparison,
+    };
+}
+
+/** Remove peer fields from SWOT when plan lacks peer_compare. */
+export function stripPeerFromSwot<T extends Record<string, unknown>>(
+    payload: T,
+): T {
+    const zeroPeerTopics = (rows: unknown) =>
+        Array.isArray(rows)
+            ? rows.map((row: Record<string, unknown>) => ({
+                  ...row,
+                  peer_accuracy: 0,
+                  delta: 0,
+              }))
+            : rows;
+
+    const subjectSwot = Array.isArray(payload.subject_swot)
+        ? payload.subject_swot.map((row: Record<string, unknown>) => ({
+              ...row,
+              peer_avg: 0,
+              delta: 0,
+          }))
+        : payload.subject_swot;
+
+    const meta = (payload.meta as Record<string, unknown>) ?? {};
+
+    return {
+        ...payload,
+        strengths: zeroPeerTopics(payload.strengths),
+        weaknesses: zeroPeerTopics(payload.weaknesses),
+        opportunities: zeroPeerTopics(payload.opportunities),
+        threats: zeroPeerTopics(payload.threats),
+        subject_swot: subjectSwot,
+        meta: {
+            ...meta,
+            peer_overall_accuracy: 0,
+        },
+    };
+}
+

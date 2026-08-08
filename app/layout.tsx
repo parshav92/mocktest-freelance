@@ -1,69 +1,17 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 
-const plusJakarta = localFont({
-    src: [
-        {
-            path: "./fonts/plus-jakarta-sans-latin-300-normal.woff2",
-            weight: "300",
-            style: "normal",
-        },
-        {
-            path: "./fonts/plus-jakarta-sans-latin-400-normal.woff2",
-            weight: "400",
-            style: "normal",
-        },
-        {
-            path: "./fonts/plus-jakarta-sans-latin-500-normal.woff2",
-            weight: "500",
-            style: "normal",
-        },
-        {
-            path: "./fonts/plus-jakarta-sans-latin-600-normal.woff2",
-            weight: "600",
-            style: "normal",
-        },
-        {
-            path: "./fonts/plus-jakarta-sans-latin-700-normal.woff2",
-            weight: "700",
-            style: "normal",
-        },
-    ],
+const plusJakarta = Plus_Jakarta_Sans({
+    subsets: ["latin"],
+    weight: ["300", "400", "500", "600", "700"],
     variable: "--font-plus-jakarta-sans",
-    display: "swap",
 });
 
-const inter = localFont({
-    src: [
-        {
-            path: "./fonts/inter-latin-300-normal.woff2",
-            weight: "300",
-            style: "normal",
-        },
-        {
-            path: "./fonts/inter-latin-400-normal.woff2",
-            weight: "400",
-            style: "normal",
-        },
-        {
-            path: "./fonts/inter-latin-500-normal.woff2",
-            weight: "500",
-            style: "normal",
-        },
-        {
-            path: "./fonts/inter-latin-600-normal.woff2",
-            weight: "600",
-            style: "normal",
-        },
-        {
-            path: "./fonts/inter-latin-700-normal.woff2",
-            weight: "700",
-            style: "normal",
-        },
-    ],
+const inter = Inter({
+    subsets: ["latin"],
+    weight: ["300", "400", "500", "600", "700"],
     variable: "--font-inter",
-    display: "swap",
 });
 
 export const metadata: Metadata = {

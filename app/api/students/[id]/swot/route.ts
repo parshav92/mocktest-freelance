@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { StudentSwot } from "@/types/parent-analytics";
+import {
+    requireMinAnalyticsLevel,
+    stripPeerFromSwot,
+} from "@/lib/plans/entitlements";
+import { featureLockedErrorResponse } from "@/lib/api/responses";
 
 interface SwotRpcResponse {
     strengths?: StudentSwot["strengths"];
@@ -83,6 +88,11 @@ export async function GET(
         return NextResponse.json({ error: "Student not found" }, { status: 404 });
     }
 
+    const gate = await requireMinAnalyticsLevel(studentId, supabase, "full");
+    if (!gate.ok) {
+        return featureLockedErrorResponse(gate.error, gate.feature);
+    }
+
     const { data, error } = await supabase.rpc("get_student_swot", {
         p_parent_id: user.id,
         p_student_id: studentId,
@@ -100,12 +110,24 @@ export async function GET(
 
     const payload = (data || {}) as SwotRpcResponse;
 
-    return NextResponse.json({
+    let response = {
         strengths: payload.strengths ?? [],
         weaknesses: payload.weaknesses ?? [],
         opportunities: payload.opportunities ?? [],
         threats: payload.threats ?? [],
         subject_swot: payload.subject_swot ?? [],
         meta: payload.meta ?? EMPTY_META,
-    } satisfies StudentSwot);
+        peer_compare: gate.entitlements.peerCompare,
+    };
+
+    if (!gate.entitlements.peerCompare) {
+        response = {
+            ...(stripPeerFromSwot(
+                response as unknown as Record<string, unknown>,
+            ) as typeof response),
+            peer_compare: false,
+        };
+    }
+
+    return NextResponse.json(response satisfies StudentSwot & { peer_compare: boolean });
 }

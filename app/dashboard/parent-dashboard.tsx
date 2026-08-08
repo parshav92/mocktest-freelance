@@ -108,6 +108,16 @@ interface StudentStats {
         bestScore: number;
         totalTimeSpent: number;
     };
+    entitlements?: StudentEntitlements | null;
+}
+
+interface StudentEntitlements {
+    planKey: string;
+    name: string;
+    maxFullMocks: number | null;
+    analyticsLevel: "none" | "basic" | "full";
+    peerCompare: boolean;
+    tips: boolean;
 }
 
 const EMPTY_ANALYTICS: ParentStudentAnalytics = {
@@ -249,12 +259,19 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
     const [view, setView] = useState<View>("overview");
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [stats, setStats] = useState<StudentStats | null>(null);
+    const [statsError, setStatsError] = useState<string | null>(null);
     const [analytics, setAnalytics] =
         useState<ParentStudentAnalytics>(EMPTY_ANALYTICS);
     const [loading, setLoading] = useState(false);
     const [analyticsLoading, setAnalyticsLoading] = useState(false);
     const [swot, setSwot] = useState<StudentSwot>(EMPTY_SWOT);
     const [swotLoading, setSwotLoading] = useState(false);
+    const [entitlements, setEntitlements] =
+        useState<StudentEntitlements | null>(null);
+    const [tips, setTips] = useState<
+        Array<{ id: string; title: string; body: string }>
+    >([]);
+    const [tipsLoading, setTipsLoading] = useState(false);
     const [analyticsDays, setAnalyticsDays] = useState<AnalyticsDaysFilter>("90");
     const [analyticsSubjectId, setAnalyticsSubjectId] = useState<string>("all");
     const [topicPage, setTopicPage] = useState(1);
@@ -325,17 +342,51 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
 
     const fetchStats = useCallback(async (id: string) => {
         setLoading(true);
+        setEntitlements(null);
+        setTips([]);
+        setStatsError(null);
         try {
             const statsRes = await fetch(`/api/students/${id}/stats`);
             if (statsRes.ok) {
-                setStats(await statsRes.json());
+                const data = await statsRes.json();
+                setStats(data);
+                if (data.entitlements) {
+                    setEntitlements(data.entitlements as StudentEntitlements);
+                } else {
+                    setEntitlements(null);
+                }
             } else {
+                const body = await statsRes.json().catch(() => ({}));
                 setStats(null);
+                setEntitlements(null);
+                setStatsError(
+                    (body.error as string) ||
+                        "Could not load student data.",
+                );
             }
         } catch {
             setStats(null);
+            setEntitlements(null);
+            setStatsError("Could not load student data.");
         } finally {
             setLoading(false);
+        }
+    }, []);
+
+    const fetchTips = useCallback(async (id: string) => {
+        setTipsLoading(true);
+        try {
+            const res = await fetch(`/api/students/${id}/tips`);
+            if (res.ok) {
+                const data = await res.json();
+                setTips(data.tips ?? []);
+            } else {
+                setTips([]);
+            }
+        } catch {
+            setTips([]);
+        } finally {
+            setTipsLoading(false);
         }
     }, []);
 
@@ -483,6 +534,13 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
 
     useEffect(() => {
         if (!queryInitialized || view !== "student-stats" || !selectedId) return;
+        if (entitlements?.analyticsLevel !== "full") {
+            setAnalytics(EMPTY_ANALYTICS);
+            setSwot(EMPTY_SWOT);
+            setAnalyticsLoading(false);
+            setSwotLoading(false);
+            return;
+        }
         void fetchAnalytics(selectedId, {
             days: analyticsDays,
             subjectId: analyticsSubjectId,
@@ -501,6 +559,22 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
         fetchAnalytics,
         fetchSwot,
         queryInitialized,
+        entitlements?.analyticsLevel,
+    ]);
+
+    useEffect(() => {
+        if (!queryInitialized || view !== "student-stats" || !selectedId) return;
+        if (entitlements?.tips) {
+            void fetchTips(selectedId);
+        } else {
+            setTips([]);
+        }
+    }, [
+        view,
+        selectedId,
+        entitlements?.tips,
+        fetchTips,
+        queryInitialized,
     ]);
 
     const openStats = (id: string) => {
@@ -515,6 +589,8 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
         setTopicPage(1);
         setAnalytics(EMPTY_ANALYTICS);
         setSwot(EMPTY_SWOT);
+        setEntitlements(null);
+        setTips([]);
         fetchStats(id);
         updateQueryParams({
             student: id,
@@ -532,6 +608,9 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
         setView("overview");
         setSelectedId(null);
         setStats(null);
+        setStatsError(null);
+        setEntitlements(null);
+        setTips([]);
         setAnalytics(EMPTY_ANALYTICS);
         setSwot(EMPTY_SWOT);
         setAnalyticsDays("90");
@@ -585,10 +664,15 @@ export function ParentDashboard({ user, subscriptions }: ParentDashboardProps) {
                 ) : (
                     <StudentDetail
                         stats={stats}
+                        statsError={statsError}
+                        selectedId={selectedId}
                         analytics={analytics}
                         analyticsLoading={analyticsLoading}
                         swot={swot}
                         swotLoading={swotLoading}
+                        entitlements={entitlements}
+                        tips={tips}
+                        tipsLoading={tipsLoading}
                         analyticsDays={analyticsDays}
                         analyticsSubjectId={analyticsSubjectId}
                         topicPage={topicPage}
@@ -864,10 +948,15 @@ const TESTS_PER_PAGE = 10;
 
 function StudentDetail({
     stats,
+    statsError,
+    selectedId,
     analytics,
     analyticsLoading,
     swot,
     swotLoading,
+    entitlements,
+    tips,
+    tipsLoading,
     analyticsDays,
     analyticsSubjectId,
     topicPage,
@@ -879,10 +968,15 @@ function StudentDetail({
     onBack,
 }: {
     stats: StudentStats | null;
+    statsError: string | null;
+    selectedId: string | null;
     analytics: ParentStudentAnalytics;
     analyticsLoading: boolean;
     swot: StudentSwot;
     swotLoading: boolean;
+    entitlements: StudentEntitlements | null;
+    tips: Array<{ id: string; title: string; body: string }>;
+    tipsLoading: boolean;
     analyticsDays: AnalyticsDaysFilter;
     analyticsSubjectId: string;
     topicPage: number;
@@ -894,6 +988,9 @@ function StudentDetail({
     onBack: () => void;
 }) {
     const [testPage, setTestPage] = useState(1);
+    const hasFullAnalytics = entitlements?.analyticsLevel === "full";
+    const showPeer = Boolean(entitlements?.peerCompare);
+    const showTips = Boolean(entitlements?.tips);
 
     if (loading) {
         return (
@@ -906,14 +1003,31 @@ function StudentDetail({
 
     if (!stats) {
         return (
-            <div className="text-center py-32">
-                <p className="text-md text-slate-400 mb-4">
-                    Could not load student data.
+            <div className="text-center py-32 max-w-md mx-auto">
+                <p className="text-sm font-medium text-slate-800 mb-2">
+                    Analytics unavailable
                 </p>
-                <Button variant="outline" size="sm" onClick={onBack}>
-                    <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
-                    Go back
-                </Button>
+                <p className="text-md text-slate-400 mb-4">
+                    {statsError ?? "Could not load student data."}
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                    <Button variant="outline" size="sm" onClick={onBack}>
+                        <ArrowLeft className="h-3.5 w-3.5 mr-1.5" />
+                        Go back
+                    </Button>
+                    {selectedId && (
+                        <Link
+                            href={`/dashboard/subscribe?student=${selectedId}`}
+                        >
+                            <Button
+                                size="sm"
+                                className="bg-slate-900 hover:bg-slate-800 text-white"
+                            >
+                                Choose a plan
+                            </Button>
+                        </Link>
+                    )}
+                </div>
             </div>
         );
     }
@@ -973,15 +1087,16 @@ function StudentDetail({
             </button>
 
             {/* Student identity */}
-            <div className="flex items-center gap-3 mb-6 animate-[fade-in-up_0.4s_ease-out_both]">
+            <div className="flex items-center justify-between gap-3 mb-6 animate-[fade-in-up_0.4s_ease-out_both]">
+                <div className="flex items-center gap-3 min-w-0">
                 <div className="w-10 h-10 rounded-full bg-[#1a2744] flex items-center justify-center text-white text-sm font-semibold shrink-0">
                     {student.full_name.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                    <h1 className="text-lg font-semibold text-[#1a2744]">
+                <div className="min-w-0">
+                    <h1 className="text-lg font-semibold text-[#1a2744] truncate">
                         {student.full_name}
                     </h1>
-                    <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <span className="text-md text-slate-400 font-mono">
                             {student.student_id}
                         </span>
@@ -1004,6 +1119,15 @@ function StudentDetail({
                         )}
                     </div>
                 </div>
+                </div>
+                {hasFullAnalytics && (
+                    <Link
+                        href={`/dashboard/students/${student.id}/report?studentId=${student.id}&name=${encodeURIComponent(student.full_name)}`}
+                        className="shrink-0 text-xs font-medium text-sky-600 hover:underline"
+                    >
+                        Full report
+                    </Link>
+                )}
             </div>
 
             {subscription &&
@@ -1300,70 +1424,131 @@ function StudentDetail({
                 )}
             </section>
 
-            <section
-                className="animate-[fade-in-up_0.4s_ease-out_both]"
-                style={{ animationDelay: "250ms" }}
-            >
-                <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-3">
-                    <h2 className="text-sm font-medium text-slate-900">
-                        Advanced Analytics
+            {hasFullAnalytics ? (
+                <>
+                    <section
+                        className="animate-[fade-in-up_0.4s_ease-out_both]"
+                        style={{ animationDelay: "250ms" }}
+                    >
+                        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-3">
+                            <h2 className="text-sm font-medium text-slate-900">
+                                Advanced Analytics
+                            </h2>
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                <label className="text-xs text-slate-500">
+                                    Date Range
+                                    <select
+                                        value={analyticsDays}
+                                        onChange={(e) =>
+                                            onAnalyticsDaysChange(
+                                                e.target
+                                                    .value as AnalyticsDaysFilter,
+                                            )
+                                        }
+                                        className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700"
+                                    >
+                                        <option value="30">Last 30 days</option>
+                                        <option value="90">Last 90 days</option>
+                                        <option value="180">
+                                            Last 180 days
+                                        </option>
+                                        <option value="all">All time</option>
+                                    </select>
+                                </label>
+                                <label className="text-xs text-slate-500">
+                                    Subject
+                                    <select
+                                        value={analyticsSubjectId}
+                                        onChange={(e) =>
+                                            onAnalyticsSubjectChange(
+                                                e.target.value,
+                                            )
+                                        }
+                                        className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700"
+                                    >
+                                        <option value="all">All subjects</option>
+                                        {subjectFilterOptions.map((s) => (
+                                            <option key={s.id} value={s.id}>
+                                                {s.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+
+                        <StudentAnalyticsPanel
+                            analytics={analytics}
+                            analyticsLoading={analyticsLoading}
+                            topicPage={topicPage}
+                            onTopicPageChange={onTopicPageChange}
+                            showPeer={showPeer}
+                        />
+                    </section>
+
+                    <section
+                        className="mb-6 animate-[fade-in-up_0.4s_ease-out_both]"
+                        style={{ animationDelay: "300ms" }}
+                    >
+                        <StudentSwotPanel
+                            swot={swot}
+                            swotLoading={swotLoading}
+                            peerCompareEnabled={showPeer}
+                        />
+                    </section>
+                </>
+            ) : (
+                <section className="mb-6 rounded-xl border border-slate-200 bg-white px-4 py-5">
+                    <p className="text-sm font-medium text-slate-900">
+                        Advanced analytics locked
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
+                        Full performance analytics and SWOT require Gold or
+                        Platinum
+                        {entitlements
+                            ? ` (current plan: ${entitlements.name})`
+                            : ""}
+                        .{" "}
+                        <Link
+                            href={`/dashboard/subscribe?student=${student.id}`}
+                            className="text-sky-600 hover:underline"
+                        >
+                            Upgrade plan
+                        </Link>
+                    </p>
+                </section>
+            )}
+
+            {showTips && (
+                <section className="mb-6 rounded-xl border border-slate-200 bg-white px-4 py-5">
+                    <h2 className="text-sm font-medium text-slate-900 mb-3">
+                        Tips &amp; tricks
                     </h2>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <label className="text-xs text-slate-500">
-                            Date Range
-                            <select
-                                value={analyticsDays}
-                                onChange={(e) =>
-                                    onAnalyticsDaysChange(
-                                        e.target.value as AnalyticsDaysFilter,
-                                    )
-                                }
-                                className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700"
-                            >
-                                <option value="30">Last 30 days</option>
-                                <option value="90">Last 90 days</option>
-                                <option value="180">Last 180 days</option>
-                                <option value="all">All time</option>
-                            </select>
-                        </label>
-                        <label className="text-xs text-slate-500">
-                            Subject
-                            <select
-                                value={analyticsSubjectId}
-                                onChange={(e) =>
-                                    onAnalyticsSubjectChange(e.target.value)
-                                }
-                                className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700"
-                            >
-                                <option value="all">All subjects</option>
-                                {subjectFilterOptions.map((s) => (
-                                    <option key={s.id} value={s.id}>
-                                        {s.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </label>
-                    </div>
-                </div>
-
-                <StudentAnalyticsPanel
-                    analytics={analytics}
-                    analyticsLoading={analyticsLoading}
-                    topicPage={topicPage}
-                    onTopicPageChange={onTopicPageChange}
-                />
-            </section>
-
-            {/* SWOT Analysis */}
-            <section
-                className="mb-6 animate-[fade-in-up_0.4s_ease-out_both]"
-                style={{ animationDelay: "300ms" }}
-            >
-                <StudentSwotPanel
-                    swot={swot}
-                    swotLoading={swotLoading}
-                />
-            </section>
+                    {tipsLoading ? (
+                        <p className="text-xs text-slate-400">Loading tips…</p>
+                    ) : tips.length === 0 ? (
+                        <p className="text-xs text-slate-400">
+                            No tips available right now.
+                        </p>
+                    ) : (
+                        <ul className="space-y-3">
+                            {tips.map((tip) => (
+                                <li
+                                    key={tip.id}
+                                    className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5"
+                                >
+                                    <p className="text-sm font-medium text-slate-800">
+                                        {tip.title}
+                                    </p>
+                                    <p className="text-xs text-slate-500 mt-1">
+                                        {tip.body}
+                                    </p>
+                                </li>
+                            ))}
+                        </ul>
+                    )}
+                </section>
+            )}
         </>
     );
 }

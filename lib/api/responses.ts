@@ -31,3 +31,17 @@ export function planLimitErrorResponse(
     { status: 403 },
   );
 }
+
+export function featureLockedErrorResponse(
+  message: string,
+  feature?: string,
+) {
+  return NextResponse.json(
+    {
+      error: message,
+      code: "FEATURE_LOCKED",
+      feature,
+    },
+    { status: 403 },
+  );
+}
