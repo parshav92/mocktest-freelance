@@ -17,3 +17,17 @@ export function subscriptionErrorResponse(message: string) {
     { status: 403 }
   );
 }
+
+export function planLimitErrorResponse(
+  message: string,
+  extra?: { used?: number; limit?: number | null },
+) {
+  return NextResponse.json(
+    {
+      error: message,
+      code: "PLAN_LIMIT",
+      ...extra,
+    },
+    { status: 403 },
+  );
+}
