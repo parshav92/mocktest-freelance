@@ -53,7 +53,7 @@ const DEFAULT_STUDENTS: StudentCredential[] = [
 
 const args = process.argv.slice(2);
 const BASE_URL =
-    getArgValue("--base-url") || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    getArgValue("--base-url") || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const TESTS_PER_STUDENT = Number.parseInt(
     getArgValue("--tests-per-student") || "8",
     10,

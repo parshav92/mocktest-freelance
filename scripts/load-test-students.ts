@@ -20,7 +20,7 @@ config();
 
 // ─── Configuration ──────────────────────────────────────────────────────────
 
-const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 const JWT_SECRET = new TextEncoder().encode(process.env.STUDENT_JWT_SECRET);
 
 const args = process.argv.slice(2);
