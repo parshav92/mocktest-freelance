@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import type { ParentStudentAnalytics } from "@/types/parent-analytics";
+import {
+    requireMinAnalyticsLevel,
+    stripPeerFromAnalytics,
+} from "@/lib/plans/entitlements";
+import { featureLockedErrorResponse } from "@/lib/api/responses";
 
 interface AnalyticsRpcResponse {
     summary?: ParentStudentAnalytics["summary"];
@@ -103,6 +108,11 @@ export async function GET(
         return NextResponse.json({ error: "Student not found" }, { status: 404 });
     }
 
+    const gate = await requireMinAnalyticsLevel(studentId, supabase, "full");
+    if (!gate.ok) {
+        return featureLockedErrorResponse(gate.error, gate.feature);
+    }
+
     const { data, error } = await supabase.rpc("get_parent_student_analytics", {
         p_parent_id: user.id,
         p_student_id: studentId,
@@ -122,7 +132,7 @@ export async function GET(
 
     const payload = (data || {}) as AnalyticsRpcResponse;
 
-    return NextResponse.json({
+    let response = {
         summary: payload.summary ?? {
             total_tests: 0,
             avg_percentage: 0,
@@ -160,5 +170,17 @@ export async function GET(
             daily: [],
             weekly: [],
         },
-    } satisfies ParentStudentAnalytics);
+        peer_compare: gate.entitlements.peerCompare,
+    } satisfies ParentStudentAnalytics & { peer_compare: boolean };
+
+    if (!gate.entitlements.peerCompare) {
+        response = {
+            ...(stripPeerFromAnalytics(
+                response as unknown as Record<string, unknown>,
+            ) as typeof response),
+            peer_compare: false,
+        };
+    }
+
+    return NextResponse.json(response);
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,13 +15,13 @@ import {
     Award,
     TrendingUp,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 type Role = "student" | "parent" | null;
 type AuthMode = "signin" | "signup";
 
-export default function AuthPage() {
+function AuthPageInner() {
     const [selectedRole, setSelectedRole] = useState<Role>(null);
     const [authMode, setAuthMode] = useState<AuthMode>("signin");
     const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +30,8 @@ export default function AuthPage() {
     const [checking, setChecking] = useState(true);
 
     const router = useRouter();
+    const searchParams = useSearchParams();
+    const redirectTo = searchParams.get("redirect") || "/dashboard";
     const supabase = createClient();
 
     // Redirect if already authenticated
@@ -40,7 +42,7 @@ export default function AuthPage() {
                     data: { user },
                 } = await supabase.auth.getUser();
                 if (user) {
-                    router.replace("/dashboard");
+                    router.replace(redirectTo);
                     return;
                 }
 
@@ -60,7 +62,7 @@ export default function AuthPage() {
         };
 
         checkAuth();
-    }, [router, supabase]);
+    }, [router, supabase, redirectTo]);
 
     if (checking) {
         return (
@@ -113,7 +115,7 @@ export default function AuthPage() {
             if (error) {
                 setError(error.message);
             } else {
-                window.location.href = "/dashboard";
+                window.location.href = redirectTo;
             }
         }
 
@@ -124,10 +126,16 @@ export default function AuthPage() {
         setIsLoading(true);
         setError(null);
 
+        const callbackBase = `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`;
+        const callbackUrl =
+            redirectTo !== "/dashboard"
+                ? `${callbackBase}?redirect=${encodeURIComponent(redirectTo)}`
+                : callbackBase;
+
         const { error } = await supabase.auth.signInWithOAuth({
             provider: "google",
             options: {
-                redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/auth/callback`,
+                redirectTo: callbackUrl,
                 queryParams: {
                     access_type: "offline",
                     prompt: "consent",
@@ -662,5 +670,25 @@ export default function AuthPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function AuthPage() {
+    return (
+        <Suspense
+            fallback={
+                <div
+                    className="min-h-screen flex items-center justify-center"
+                    style={{
+                        background:
+                            "linear-gradient(135deg, #7DD3FC 0%, #BAE6FD 50%, #E0F2FE 100%)",
+                    }}
+                >
+                    <Loader2 className="h-8 w-8 animate-spin text-slate-600" />
+                </div>
+            }
+        >
+            <AuthPageInner />
+        </Suspense>
     );
 }

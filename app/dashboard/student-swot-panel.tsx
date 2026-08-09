@@ -5,6 +5,7 @@ import type { StudentSwot, SwotTopicRow, SwotSubjectRow } from "@/types/parent-a
 interface StudentSwotPanelProps {
     swot: StudentSwot;
     swotLoading: boolean;
+    peerCompareEnabled?: boolean;
 }
 
 // ── Helpers ────────────────────────────────────────────
@@ -241,8 +242,16 @@ function quadrantBadge(q: SwotSubjectRow["quadrant"]) {
 
 // ── Subject bar helper ─────────────────────────────────
 
-function SubjectBar({ student, peer }: { student: number; peer: number }) {
-    const max = Math.max(student, peer, 1);
+function SubjectBar({
+    student,
+    peer,
+    showPeer = true,
+}: {
+    student: number;
+    peer: number;
+    showPeer?: boolean;
+}) {
+    const max = Math.max(student, showPeer ? peer : 0, 1);
     return (
         <div className="flex flex-col gap-1 w-28">
             <div className="flex items-center gap-1.5">
@@ -252,17 +261,23 @@ function SubjectBar({ student, peer }: { student: number; peer: number }) {
                         style={{ width: `${(student / max) * 100}%` }}
                     />
                 </div>
-                <span className="text-[10px] text-slate-500 tabular-nums w-7 text-right">{Math.round(student)}%</span>
+                <span className="text-[10px] text-slate-500 tabular-nums w-7 text-right">
+                    {Math.round(student)}%
+                </span>
             </div>
-            <div className="flex items-center gap-1.5">
-                <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                        className="h-full rounded-full bg-slate-300 transition-all duration-700"
-                        style={{ width: `${(peer / max) * 100}%` }}
-                    />
+            {showPeer && (
+                <div className="flex items-center gap-1.5">
+                    <div className="flex-1 h-1 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                            className="h-full rounded-full bg-slate-300 transition-all duration-700"
+                            style={{ width: `${(peer / max) * 100}%` }}
+                        />
+                    </div>
+                    <span className="text-[10px] text-slate-400 tabular-nums w-7 text-right">
+                        {Math.round(peer)}%
+                    </span>
                 </div>
-                <span className="text-[10px] text-slate-400 tabular-nums w-7 text-right">{Math.round(peer)}%</span>
-            </div>
+            )}
         </div>
     );
 }
@@ -317,7 +332,11 @@ function SwotLoadingSkeleton() {
 
 // ── Main component ─────────────────────────────────────
 
-export function StudentSwotPanel({ swot, swotLoading }: StudentSwotPanelProps) {
+export function StudentSwotPanel({
+    swot,
+    swotLoading,
+    peerCompareEnabled = true,
+}: StudentSwotPanelProps) {
     if (swotLoading) {
         return <SwotLoadingSkeleton />;
     }
@@ -354,25 +373,33 @@ export function StudentSwotPanel({ swot, swotLoading }: StudentSwotPanelProps) {
                 <h3 className="text-sm font-medium text-slate-900 mb-3">
                     SWOT Analysis
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div
+                    className={`grid grid-cols-2 gap-4 ${peerCompareEnabled ? "md:grid-cols-4" : "md:grid-cols-2"}`}
+                >
                     <div>
                         <p className="text-xs text-slate-500 mb-0.5">Your accuracy</p>
                         <p className="text-xl font-bold text-slate-900 tabular-nums">
                             {fmtPct(meta.student_overall_accuracy)}
                         </p>
                     </div>
-                    <div>
-                        <p className="text-xs text-slate-500 mb-0.5">Peer accuracy</p>
-                        <p className="text-xl font-bold text-slate-900 tabular-nums">
-                            {fmtPct(meta.peer_overall_accuracy)}
-                        </p>
-                    </div>
-                    <div>
-                        <p className="text-xs text-slate-500 mb-0.5">vs Peers</p>
-                        <p className={`text-xl font-bold tabular-nums ${getDeltaClass(delta)}`}>
-                            {fmtSignedPct(delta)}
-                        </p>
-                    </div>
+                    {peerCompareEnabled && (
+                        <>
+                            <div>
+                                <p className="text-xs text-slate-500 mb-0.5">Peer accuracy</p>
+                                <p className="text-xl font-bold text-slate-900 tabular-nums">
+                                    {fmtPct(meta.peer_overall_accuracy)}
+                                </p>
+                            </div>
+                            <div>
+                                <p className="text-xs text-slate-500 mb-0.5">vs Peers</p>
+                                <p
+                                    className={`text-xl font-bold tabular-nums ${getDeltaClass(delta)}`}
+                                >
+                                    {fmtSignedPct(delta)}
+                                </p>
+                            </div>
+                        </>
+                    )}
                     <div>
                         <p className="text-xs text-slate-500 mb-0.5">Topics analysed</p>
                         <p className="text-xl font-bold text-slate-900 tabular-nums">
@@ -382,12 +409,20 @@ export function StudentSwotPanel({ swot, swotLoading }: StudentSwotPanelProps) {
                 </div>
             </div>
 
-            {/* ── 2×2 SWOT quadrant grid ── */}
+            {/* ── SWOT quadrant grid ── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <QuadrantCard quadrant="strengths" topics={strengths} showPeer={false} />
                 <QuadrantCard quadrant="weaknesses" topics={weaknesses} showPeer={false} />
-                <QuadrantCard quadrant="opportunities" topics={opportunities} showPeer={true} />
-                <QuadrantCard quadrant="threats" topics={threats} showPeer={true} />
+                {peerCompareEnabled && (
+                    <>
+                        <QuadrantCard
+                            quadrant="opportunities"
+                            topics={opportunities}
+                            showPeer
+                        />
+                        <QuadrantCard quadrant="threats" topics={threats} showPeer />
+                    </>
+                )}
             </div>
 
             {/* ── Subject-level overview ── */}
@@ -411,29 +446,38 @@ export function StudentSwotPanel({ swot, swotLoading }: StudentSwotPanelProps) {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-4 shrink-0">
-                                    <SubjectBar student={row.student_avg} peer={row.peer_avg} />
-                                    <div className="text-right w-14">
-                                        <p
-                                            className={`text-sm font-bold tabular-nums ${getDeltaClass(row.delta)}`}
-                                        >
-                                            {fmtSignedPct(row.delta)}
-                                        </p>
-                                        <p className="text-[10px] text-slate-400">vs peers</p>
-                                    </div>
+                                    <SubjectBar
+                                        student={row.student_avg}
+                                        peer={peerCompareEnabled ? row.peer_avg : 0}
+                                        showPeer={peerCompareEnabled}
+                                    />
+                                    {peerCompareEnabled && (
+                                        <div className="text-right w-14">
+                                            <p
+                                                className={`text-sm font-bold tabular-nums ${getDeltaClass(row.delta)}`}
+                                            >
+                                                {fmtSignedPct(row.delta)}
+                                            </p>
+                                            <p className="text-[10px] text-slate-400">
+                                                vs peers
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
                     </div>
-                    {/* Legend */}
                     <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100">
                         <div className="flex items-center gap-1.5">
                             <div className="w-3 h-1.5 rounded-full bg-[#1a2744]" />
                             <span className="text-[11px] text-slate-500">Your score</span>
                         </div>
-                        <div className="flex items-center gap-1.5">
-                            <div className="w-3 h-1 rounded-full bg-slate-300" />
-                            <span className="text-[11px] text-slate-400">Peer avg</span>
-                        </div>
+                        {peerCompareEnabled && (
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-1 rounded-full bg-slate-300" />
+                                <span className="text-[11px] text-slate-400">Peer avg</span>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAdminAccess } from "@/lib/auth/rbac";
+import { formatPlanLabel } from "@/lib/stripe-plans";
 
 const formatDateTime = (value?: string | null) => {
     if (!value) return "—";
@@ -84,7 +85,7 @@ export default async function AdminSubscriptionDetailPage({
                             <div className="flex justify-between">
                                 <span>Plan</span>
                                 <span className="text-zinc-900 capitalize">
-                                    {subscription.plan.replace("_", " ")}
+                                    {formatPlanLabel(subscription.plan)}
                                 </span>
                             </div>
                             <div className="flex justify-between">

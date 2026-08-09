@@ -108,6 +108,7 @@ interface ReportData {
     };
     comparative: ComparativeData;
     topic_analysis: TopicRow[];
+    peer_compare?: boolean;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
@@ -191,11 +192,17 @@ const TABS: { id: Tab; label: string; Icon: React.ElementType }[] = [
 
 // ── Speed & Accuracy Tab ───────────────────────────────────────────────────────
 
-function SpeedTab({ data }: { data: SpeedRow[] }) {
+function SpeedTab({
+    data,
+    showPeer,
+}: {
+    data: SpeedRow[];
+    showPeer: boolean;
+}) {
     const chartData = data.map((r) => ({
         name: r.difficulty.charAt(0).toUpperCase() + r.difficulty.slice(1),
         "Your Avg (s)": r.student_avg_secs,
-        "Peer Avg (s)": r.peer_avg_secs,
+        ...(showPeer ? { "Peer Avg (s)": r.peer_avg_secs } : {}),
     }));
 
     return (
@@ -211,12 +218,16 @@ function SpeedTab({ data }: { data: SpeedRow[] }) {
                                 <th className="pb-2 pr-4 font-medium text-slate-600">
                                     Your Avg Time
                                 </th>
-                                <th className="pb-2 pr-4 font-medium text-slate-600">
-                                    Peer Avg Time
-                                </th>
-                                <th className="pb-2 pr-4 font-medium text-slate-600">
-                                    Comparison
-                                </th>
+                                {showPeer && (
+                                    <>
+                                        <th className="pb-2 pr-4 font-medium text-slate-600">
+                                            Peer Avg Time
+                                        </th>
+                                        <th className="pb-2 pr-4 font-medium text-slate-600">
+                                            Comparison
+                                        </th>
+                                    </>
+                                )}
                                 <th className="pb-2 font-medium text-slate-600">
                                     Questions
                                 </th>
@@ -241,35 +252,39 @@ function SpeedTab({ data }: { data: SpeedRow[] }) {
                                         <td className="py-2.5 pr-4 tabular-nums text-slate-700">
                                             {fmtSecs(row.student_avg_secs)}
                                         </td>
-                                        <td className="py-2.5 pr-4 tabular-nums text-slate-500">
-                                            {row.peer_avg_secs > 0
-                                                ? fmtSecs(row.peer_avg_secs)
-                                                : "—"}
-                                        </td>
-                                        <td className="py-2.5 pr-4">
-                                            {neutral ? (
-                                                <span className="text-slate-400 text-xs">
-                                                    —
-                                                </span>
-                                            ) : faster ? (
-                                                <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
-                                                    <TrendingDown className="h-3 w-3" />
-                                                    {fmtSecs(Math.abs(diff))}{" "}
-                                                    faster
-                                                </span>
-                                            ) : diff > 0 ? (
-                                                <span className="inline-flex items-center gap-1 text-xs text-red-600">
-                                                    <TrendingUp className="h-3 w-3" />
-                                                    {fmtSecs(diff)} slower
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1 text-xs text-slate-500">
-                                                    <Minus className="h-3 w-3" />{" "}
-                                                    On par
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="py-2.5 tabular-nums text-slate-600">
+                                        {showPeer && (
+                                            <>
+                                                <td className="py-2.5 pr-4 tabular-nums text-slate-500">
+                                                    {row.peer_avg_secs > 0
+                                                        ? fmtSecs(
+                                                              row.peer_avg_secs,
+                                                          )
+                                                        : "—"}
+                                                </td>
+                                                <td className="py-2.5 pr-4">
+                                                    {neutral ? (
+                                                        <span className="text-slate-400 text-xs">
+                                                            —
+                                                        </span>
+                                                    ) : faster ? (
+                                                        <span className="inline-flex items-center gap-1 text-xs text-emerald-700">
+                                                            <TrendingDown className="h-3 w-3" />
+                                                            {fmtSecs(
+                                                                Math.abs(diff),
+                                                            )}{" "}
+                                                            faster
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 text-xs text-red-600">
+                                                            <TrendingUp className="h-3 w-3" />
+                                                            {fmtSecs(diff)}{" "}
+                                                            slower
+                                                        </span>
+                                                    )}
+                                                </td>
+                                            </>
+                                        )}
+                                        <td className="py-2.5 tabular-nums text-slate-500">
                                             {row.questions_attempted}
                                         </td>
                                     </tr>
@@ -279,7 +294,11 @@ function SpeedTab({ data }: { data: SpeedRow[] }) {
                     </table>
                 </div>
                 {chartData.some(
-                    (d) => d["Your Avg (s)"] > 0 || d["Peer Avg (s)"] > 0,
+                    (d) =>
+                        (d["Your Avg (s)"] as number) > 0 ||
+                        (showPeer &&
+                            ((d["Peer Avg (s)"] as number | undefined) ?? 0) >
+                                0),
                 ) && (
                     <div className="mt-4 h-52">
                         <ResponsiveContainer width="100%" height="100%">
@@ -305,11 +324,13 @@ function SpeedTab({ data }: { data: SpeedRow[] }) {
                                     fill="#1a2744"
                                     radius={[3, 3, 0, 0]}
                                 />
-                                <Bar
-                                    dataKey="Peer Avg (s)"
-                                    fill="#94a3b8"
-                                    radius={[3, 3, 0, 0]}
-                                />
+                                {showPeer && (
+                                    <Bar
+                                        dataKey="Peer Avg (s)"
+                                        fill="#94a3b8"
+                                        radius={[3, 3, 0, 0]}
+                                    />
+                                )}
                             </BarChart>
                         </ResponsiveContainer>
                     </div>
@@ -703,6 +724,7 @@ function ComparativeTab({ data }: { data: ComparativeData }) {
 
 function SwotTab({
     data,
+    showPeer,
 }: {
     data: {
         strengths: SwotItem[];
@@ -710,6 +732,7 @@ function SwotTab({
         opportunities: OpportunityItem[];
         threats: ThreatItem[];
     };
+    showPeer: boolean;
 }) {
     const quadrants = [
         {
@@ -762,68 +785,77 @@ function SwotTab({
                 </div>
             ),
         },
-        {
-            key: "opportunities",
-            title: "Opportunities",
-            color: "border-sky-300 bg-sky-50",
-            headerColor: "text-sky-700",
-            Icon: TrendingUp,
-            description: "Topics where you outperform peers by > 5%",
-            items: data.opportunities,
-            renderItem: (item: OpportunityItem) => (
-                <div
-                    key={item.topic}
-                    className="py-1.5 border-b border-sky-100 last:border-0"
-                >
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm font-medium text-slate-800">
-                                {item.topic}
-                            </p>
-                            <p className="text-xs text-slate-500">{item.subject}</p>
-                        </div>
-                        <span className="text-xs font-semibold text-sky-700 bg-sky-100 px-1.5 py-0.5 rounded">
-                            +{item.advantage}% vs peers
-                        </span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                        You: {item.student_accuracy}% · Peers:{" "}
-                        {item.peer_accuracy}%
-                    </p>
-                </div>
-            ),
-        },
-        {
-            key: "threats",
-            title: "Threats",
-            color: "border-orange-300 bg-orange-50",
-            headerColor: "text-orange-700",
-            Icon: TrendingDown,
-            description: "Topics where peers outperform you by > 5%",
-            items: data.threats,
-            renderItem: (item: ThreatItem) => (
-                <div
-                    key={item.topic}
-                    className="py-1.5 border-b border-orange-100 last:border-0"
-                >
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <p className="text-sm font-medium text-slate-800">
-                                {item.topic}
-                            </p>
-                            <p className="text-xs text-slate-500">{item.subject}</p>
-                        </div>
-                        <span className="text-xs font-semibold text-orange-700 bg-orange-100 px-1.5 py-0.5 rounded">
-                            -{item.gap}% vs peers
-                        </span>
-                    </div>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                        You: {item.student_accuracy}% · Peers:{" "}
-                        {item.peer_accuracy}%
-                    </p>
-                </div>
-            ),
-        },
+        ...(showPeer
+            ? [
+                  {
+                      key: "opportunities",
+                      title: "Opportunities",
+                      color: "border-sky-300 bg-sky-50",
+                      headerColor: "text-sky-700",
+                      Icon: TrendingUp,
+                      description:
+                          "Topics where you outperform peers by > 5%",
+                      items: data.opportunities,
+                      renderItem: (item: OpportunityItem) => (
+                          <div
+                              key={item.topic}
+                              className="py-1.5 border-b border-sky-100 last:border-0"
+                          >
+                              <div className="flex justify-between items-start">
+                                  <div>
+                                      <p className="text-sm font-medium text-slate-800">
+                                          {item.topic}
+                                      </p>
+                                      <p className="text-xs text-slate-500">
+                                          {item.subject}
+                                      </p>
+                                  </div>
+                                  <span className="text-xs font-semibold text-sky-700 bg-sky-100 px-1.5 py-0.5 rounded">
+                                      +{item.advantage}% vs peers
+                                  </span>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                  You: {item.student_accuracy}% · Peers:{" "}
+                                  {item.peer_accuracy}%
+                              </p>
+                          </div>
+                      ),
+                  },
+                  {
+                      key: "threats",
+                      title: "Threats",
+                      color: "border-amber-300 bg-amber-50",
+                      headerColor: "text-amber-700",
+                      Icon: TrendingDown,
+                      description: "Topics where peers outperform you by > 5%",
+                      items: data.threats,
+                      renderItem: (item: ThreatItem) => (
+                          <div
+                              key={item.topic}
+                              className="py-1.5 border-b border-amber-100 last:border-0"
+                          >
+                              <div className="flex justify-between items-start">
+                                  <div>
+                                      <p className="text-sm font-medium text-slate-800">
+                                          {item.topic}
+                                      </p>
+                                      <p className="text-xs text-slate-500">
+                                          {item.subject}
+                                      </p>
+                                  </div>
+                                  <span className="text-xs font-semibold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                                      −{item.gap}% vs peers
+                                  </span>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-0.5">
+                                  You: {item.student_accuracy}% · Peers:{" "}
+                                  {item.peer_accuracy}%
+                              </p>
+                          </div>
+                      ),
+                  },
+              ]
+            : []),
     ];
 
     return (
@@ -889,12 +921,14 @@ export default function StudentReportPage() {
     const [subjectId, setSubjectId] = useState<string>("all");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [featureLocked, setFeatureLocked] = useState(false);
     const [data, setData] = useState<ReportData | null>(null);
 
     const fetchReport = useCallback(async () => {
         if (!studentId) return;
         setLoading(true);
         setError(null);
+        setFeatureLocked(false);
         try {
             const params = new URLSearchParams({ days });
             if (subjectId !== "all") params.set("subjectId", subjectId);
@@ -903,12 +937,17 @@ export default function StudentReportPage() {
             );
             if (!res.ok) {
                 const body = await res.json().catch(() => ({}));
+                if (body.code === "FEATURE_LOCKED") {
+                    setFeatureLocked(true);
+                }
                 setError(body.error ?? "Failed to load report");
+                setData(null);
                 return;
             }
             setData(await res.json());
         } catch {
             setError("Network error");
+            setData(null);
         } finally {
             setLoading(false);
         }
@@ -917,6 +956,15 @@ export default function StudentReportPage() {
     useEffect(() => {
         void fetchReport();
     }, [fetchReport]);
+
+    useEffect(() => {
+        if (
+            data?.peer_compare === false &&
+            activeTab === "comparative"
+        ) {
+            setActiveTab("speed");
+        }
+    }, [data?.peer_compare, activeTab]);
 
     if (!studentId) {
         return (
@@ -953,6 +1001,7 @@ export default function StudentReportPage() {
 
             <main className="max-w-5xl mx-auto px-4 py-6 space-y-5">
                 {/* Filters */}
+                {!featureLocked && (
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-slate-400" />
@@ -978,10 +1027,16 @@ export default function StudentReportPage() {
                         </select>
                     </div>
                 </div>
+                )}
 
                 {/* Tabs */}
+                {!featureLocked && data && (
                 <div className="flex gap-1 overflow-x-auto pb-1">
-                    {TABS.map(({ id, label, Icon }) => (
+                    {TABS.filter(
+                        (t) =>
+                            t.id !== "comparative" ||
+                            data.peer_compare !== false,
+                    ).map(({ id, label, Icon }) => (
                         <button
                             key={id}
                             onClick={() => setActiveTab(id)}
@@ -996,11 +1051,28 @@ export default function StudentReportPage() {
                         </button>
                     ))}
                 </div>
+                )}
 
                 {/* Content */}
                 {loading ? (
                     <div className="flex items-center justify-center py-20">
                         <Loader2 className="h-6 w-6 text-slate-400 animate-spin" />
+                    </div>
+                ) : featureLocked ? (
+                    <div className="bg-white border border-slate-200 rounded-xl p-6 text-center space-y-3">
+                        <p className="text-sm font-medium text-slate-900">
+                            Report locked on your plan
+                        </p>
+                        <p className="text-xs text-slate-500 max-w-md mx-auto">
+                            {error ??
+                                "Full student reports require Gold or Platinum."}
+                        </p>
+                        <a
+                            href={`/dashboard/subscribe?student=${studentId}`}
+                            className="inline-flex text-sm text-sky-600 hover:underline"
+                        >
+                            Upgrade plan
+                        </a>
                     </div>
                 ) : error ? (
                     <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
@@ -1009,7 +1081,10 @@ export default function StudentReportPage() {
                 ) : data ? (
                     <>
                         {activeTab === "speed" && (
-                            <SpeedTab data={data.speed_report} />
+                            <SpeedTab
+                                data={data.speed_report}
+                                showPeer={data.peer_compare !== false}
+                            />
                         )}
                         {activeTab === "topic" && (
                             <TopicTab data={data.topic_analysis} />
@@ -1017,11 +1092,15 @@ export default function StudentReportPage() {
                         {activeTab === "discipline" && (
                             <DisciplineTab data={data.discipline} />
                         )}
-                        {activeTab === "comparative" && (
+                        {activeTab === "comparative" &&
+                            data.peer_compare !== false && (
                             <ComparativeTab data={data.comparative} />
                         )}
                         {activeTab === "swot" && (
-                            <SwotTab data={data.swot} />
+                            <SwotTab
+                                data={data.swot}
+                                showPeer={data.peer_compare !== false}
+                            />
                         )}
                     </>
                 ) : null}

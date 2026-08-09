@@ -22,6 +22,7 @@ interface StudentAnalyticsPanelProps {
     analyticsLoading: boolean;
     topicPage: number;
     onTopicPageChange: (page: number) => void;
+    showPeer?: boolean;
 }
 
 const CHART_GRID = "#e2e8f0";
@@ -126,6 +127,7 @@ export function StudentAnalyticsPanel({
     analyticsLoading,
     topicPage,
     onTopicPageChange,
+    showPeer = true,
 }: StudentAnalyticsPanelProps) {
     if (analyticsLoading) {
         return <AnalyticsLoadingSkeleton />;
@@ -215,6 +217,7 @@ export function StudentAnalyticsPanel({
 
     return (
         <div className="space-y-6">
+            {showPeer && (
             <section className="bg-white border border-slate-200 rounded-xl p-4">
                 <h3 className="text-sm font-medium text-slate-900 mb-3">
                     Peer Benchmark
@@ -310,6 +313,7 @@ export function StudentAnalyticsPanel({
                     </div>
                 ) : null}
             </section>
+            )}
 
             <section className="bg-white border border-slate-200 rounded-xl p-4">
                 <h3 className="text-sm font-medium text-slate-900 mb-3">
@@ -599,7 +603,7 @@ export function StudentAnalyticsPanel({
 
             <section className="bg-white border border-slate-200 rounded-xl p-4">
                 <h3 className="text-sm font-medium text-slate-900 mb-3">
-                    Subject vs Peers
+                    {showPeer ? "Subject vs Peers" : "By Subject"}
                 </h3>
                 {analytics.subject_comparison.length === 0 ? (
                     <p className="text-sm text-slate-500">
@@ -650,13 +654,15 @@ export function StudentAnalyticsPanel({
                                         radius={[4, 4, 0, 0]}
                                         maxBarSize={36}
                                     />
-                                    <Bar
-                                        dataKey="peer"
-                                        name="All students (avg)"
-                                        fill={COLOR_PEER}
-                                        radius={[4, 4, 0, 0]}
-                                        maxBarSize={36}
-                                    />
+                                    {showPeer && (
+                                        <Bar
+                                            dataKey="peer"
+                                            name="All students (avg)"
+                                            fill={COLOR_PEER}
+                                            radius={[4, 4, 0, 0]}
+                                            maxBarSize={36}
+                                        />
+                                    )}
                                 </BarChart>
                             </ResponsiveContainer>
                         </div>
@@ -671,22 +677,34 @@ export function StudentAnalyticsPanel({
                                             {row.subject_name}
                                         </p>
                                         <p className="text-xs text-slate-500">
-                                            {row.tests_taken} tests ·{" "}
-                                            {row.peer_tests_count} peer tests
+                                            {row.tests_taken} tests
+                                            {showPeer
+                                                ? ` · ${row.peer_tests_count} peer tests`
+                                                : ""}
                                         </p>
                                     </div>
                                     <div className="text-right">
                                         <p className="text-sm text-slate-600 tabular-nums">
-                                            You{" "}
-                                            {fmtPct(row.student_avg_percentage)}{" "}
-                                            · Peers{" "}
-                                            {fmtPct(row.peer_avg_percentage)}
+                                            {fmtPct(row.student_avg_percentage)}
+                                            {showPeer && (
+                                                <>
+                                                    {" "}
+                                                    · Peers{" "}
+                                                    {fmtPct(
+                                                        row.peer_avg_percentage,
+                                                    )}
+                                                </>
+                                            )}
                                         </p>
-                                        <p
-                                            className={`text-xs font-semibold tabular-nums ${getDeltaClass(row.delta_percentage)}`}
-                                        >
-                                            {fmtSignedPct(row.delta_percentage)}
-                                        </p>
+                                        {showPeer && (
+                                            <p
+                                                className={`text-xs font-semibold tabular-nums ${getDeltaClass(row.delta_percentage)}`}
+                                            >
+                                                {fmtSignedPct(
+                                                    row.delta_percentage,
+                                                )}
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             ))}

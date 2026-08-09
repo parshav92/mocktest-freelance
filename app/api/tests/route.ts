@@ -7,7 +7,9 @@ import {
   successResponse,
   subscriptionErrorResponse,
 } from "@/lib/auth/student";
+import { planLimitErrorResponse } from "@/lib/api/responses";
 import { TestService } from "@/lib/services/test.service";
+import { checkMockExamLimit } from "@/lib/plans/entitlements";
 import type { TestStatus } from "@/types/test";
 
 /**
@@ -115,6 +117,17 @@ export async function POST(request: NextRequest) {
       return subscriptionErrorResponse(
         "You need an active subscription to start new tests."
       );
+    }
+
+    const mockLimit = await checkMockExamLimit(
+      auth.session.student_id,
+      supabase,
+    );
+    if (!mockLimit.allowed) {
+      return planLimitErrorResponse(mockLimit.error, {
+        used: mockLimit.used,
+        limit: mockLimit.limit,
+      });
     }
 
     // Create the test

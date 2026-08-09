@@ -140,19 +140,32 @@ export async function POST(request: Request) {
             );
         }
 
-        // Link student to subscription
+        // Link student to subscription and denormalize plan onto student
         const { error: linkError } = await supabase
             .from("subscriptions")
             .update({ student_id: student.id })
             .eq("id", subscriptionId);
 
         if (linkError) {
-            // Rollback student creation if linking fails
             await supabase.from("students").delete().eq("id", student.id);
             return NextResponse.json(
                 { error: "Failed to link student to subscription" },
                 { status: 500 },
             );
+        }
+
+        const { error: planSyncError } = await supabase
+            .from("students")
+            .update({
+                plan_key: subscription.plan,
+                plan_expires_at: subscription.expires_at,
+                is_active: true,
+            })
+            .eq("id", student.id);
+
+        if (planSyncError) {
+            console.error("Failed to sync student plan_key:", planSyncError);
+            // Subscription is linked; plan_key can be repaired by cron/backfill
         }
 
         return NextResponse.json({

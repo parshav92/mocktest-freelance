@@ -182,6 +182,8 @@ CREATE TABLE public.students (
   full_name text NOT NULL,
   parent_id uuid NOT NULL,
   is_active boolean NOT NULL DEFAULT true,
+  plan_key text,
+  plan_expires_at timestamp with time zone,
   created_at timestamp with time zone NOT NULL DEFAULT now(),
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   CONSTRAINT students_pkey PRIMARY KEY (id),
@@ -221,7 +223,7 @@ CREATE TABLE public.subscriptions (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   student_id uuid UNIQUE,
   parent_id uuid NOT NULL,
-  plan USER-DEFINED NOT NULL,
+  plan text NOT NULL,
   status USER-DEFINED NOT NULL DEFAULT 'active'::subscription_status,
   starts_at timestamp with time zone NOT NULL DEFAULT now(),
   expires_at timestamp with time zone NOT NULL,
@@ -230,9 +232,23 @@ CREATE TABLE public.subscriptions (
   updated_at timestamp with time zone NOT NULL DEFAULT now(),
   stripe_subscription_id text,
   stripe_customer_id text,
+  stripe_checkout_session_id text,
   CONSTRAINT subscriptions_pkey PRIMARY KEY (id),
   CONSTRAINT subscriptions_student_id_fkey FOREIGN KEY (student_id) REFERENCES public.students(id),
   CONSTRAINT subscriptions_parent_id_fkey FOREIGN KEY (parent_id) REFERENCES public.profiles(id)
+);
+CREATE TABLE public.plans (
+  key text NOT NULL,
+  name text NOT NULL,
+  max_full_mocks integer,
+  analytics_level text NOT NULL DEFAULT 'basic'::text,
+  peer_compare boolean NOT NULL DEFAULT false,
+  tips boolean NOT NULL DEFAULT false,
+  display_order integer NOT NULL DEFAULT 0,
+  is_active boolean NOT NULL DEFAULT true,
+  created_at timestamp with time zone NOT NULL DEFAULT now(),
+  updated_at timestamp with time zone NOT NULL DEFAULT now(),
+  CONSTRAINT plans_pkey PRIMARY KEY (key)
 );
 CREATE TABLE public.tests (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
