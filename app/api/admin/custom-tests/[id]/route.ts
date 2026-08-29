@@ -148,8 +148,13 @@ export async function PATCH(
             updated_at: new Date().toISOString(),
         };
 
-        if (name !== undefined) updates.name = name.trim();
-        if (description !== undefined) updates.description = description.trim() || null;
+        if (name !== undefined) {
+            updates.name = typeof name === "string" ? name.trim() : name;
+        }
+        if (description !== undefined) {
+            updates.description =
+                typeof description === "string" ? description.trim() || null : null;
+        }
         if (is_active !== undefined) updates.is_active = is_active;
         if (display_order !== undefined) updates.display_order = display_order;
         if (available_from !== undefined) updates.available_from = available_from || null;
@@ -203,51 +208,60 @@ export async function PATCH(
 
         // Replace questions if provided
         if (question_ids !== undefined) {
-            if (!Array.isArray(question_ids) || question_ids.length === 0) {
-                return errorResponse("At least one question is required", 400);
+            if (!Array.isArray(question_ids)) {
+                return errorResponse("question_ids must be an array", 400);
             }
 
-            // Verify all question IDs exist
-            const { data: validQuestions, error: qError } = await supabase
-                .from("questions")
-                .select("id")
-                .in("id", question_ids);
+            if (question_ids.length === 0) {
+                const { error: deleteErr } = await supabase
+                    .from("custom_test_questions")
+                    .delete()
+                    .eq("custom_test_id", id);
 
-            if (qError) {
-                return errorResponse("Failed to validate questions", 500);
-            }
+                if (deleteErr) {
+                    console.error("Failed to clear question assignments:", deleteErr);
+                    return errorResponse("Failed to clear questions", 500);
+                }
+            } else {
+                const { data: validQuestions, error: qError } = await supabase
+                    .from("questions")
+                    .select("id")
+                    .in("id", question_ids);
 
-            const validIds = new Set((validQuestions || []).map((q) => q.id));
-            const invalid = question_ids.filter((qid) => !validIds.has(qid));
-            if (invalid.length > 0) {
-                return errorResponse(`Invalid question IDs: ${invalid.join(", ")}`, 400);
-            }
+                if (qError) {
+                    return errorResponse("Failed to validate questions", 500);
+                }
 
-            // Delete existing assignments
-            const { error: deleteErr } = await supabase
-                .from("custom_test_questions")
-                .delete()
-                .eq("custom_test_id", id);
+                const validIds = new Set((validQuestions || []).map((q) => q.id));
+                const invalid = question_ids.filter((qid) => !validIds.has(qid));
+                if (invalid.length > 0) {
+                    return errorResponse(`Invalid question IDs: ${invalid.join(", ")}`, 400);
+                }
 
-            if (deleteErr) {
-                console.error("Failed to delete old question assignments:", deleteErr);
-                return errorResponse("Failed to replace questions", 500);
-            }
+                const { error: deleteErr } = await supabase
+                    .from("custom_test_questions")
+                    .delete()
+                    .eq("custom_test_id", id);
 
-            // Insert new assignments
-            const assignments = question_ids.map((qid, idx) => ({
-                custom_test_id: id,
-                question_id: qid,
-                sort_order: idx + 1,
-            }));
+                if (deleteErr) {
+                    console.error("Failed to delete old question assignments:", deleteErr);
+                    return errorResponse("Failed to replace questions", 500);
+                }
 
-            const { error: insertErr } = await supabase
-                .from("custom_test_questions")
-                .insert(assignments);
+                const assignments = question_ids.map((qid, idx) => ({
+                    custom_test_id: id,
+                    question_id: qid,
+                    sort_order: idx + 1,
+                }));
 
-            if (insertErr) {
-                console.error("Failed to insert question assignments:", insertErr);
-                return errorResponse("Failed to assign questions", 500);
+                const { error: insertErr } = await supabase
+                    .from("custom_test_questions")
+                    .insert(assignments);
+
+                if (insertErr) {
+                    console.error("Failed to insert question assignments:", insertErr);
+                    return errorResponse("Failed to assign questions", 500);
+                }
             }
         }
 

@@ -252,6 +252,7 @@ interface PreSubmitSummaryProps {
     answeredSet: Set<string>;
     flaggedSet: Set<string>;
     questionsOrder: string[];
+    testName?: string;
     hasDualEssay?: boolean;
     essayQuestionIds?: string[];
     onGoBack: () => void;
@@ -264,6 +265,7 @@ export function PreSubmitSummary({
     answeredSet,
     flaggedSet,
     questionsOrder,
+    testName,
     hasDualEssay = false,
     essayQuestionIds = [],
     onGoBack,
@@ -293,39 +295,42 @@ export function PreSubmitSummary({
     const flaggedCount = flaggedSet.size;
 
     return (
-        <div className="min-h-screen bg-[#e8eef3] flex flex-col font-[family-name:var(--font-inter)]">
+        <div className="min-h-screen bg-slate-50 flex flex-col">
+            <div className="h-1 bg-[#1a2744]" />
             <div className="bg-[#1a2744] text-white py-4 px-6">
-                <h1 className="text-lg font-semibold">Test Summary</h1>
+                <h1 className="text-lg font-semibold">
+                    {testName ? `${testName} — Test Summary` : "Test Summary"}
+                </h1>
             </div>
 
             <div className="flex-1 flex items-center justify-center p-6">
-                <div className="w-full max-w-lg bg-white rounded-xl shadow-sm border p-8 space-y-6">
+                <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-slate-200/80 p-8 space-y-6">
                     <h2 className="text-2xl font-bold text-[#1a2744] text-center">
                         Ready to Submit?
                     </h2>
 
                     {hasDualEssay && (
-                        <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-sm text-blue-800">
-                            <span className="font-semibold">Note:</span> This test has 2 essay questions you only need to attempt <span className="font-semibold">1</span>. You will be asked to select which essay to submit for evaluation.
+                        <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
+                            <span className="font-semibold">Note:</span> This test has 2 essay questions — you only need to attempt <span className="font-semibold">1</span>.
                         </div>
                     )}
 
-                    <div className="space-y-4">
+                    <div className="space-y-1">
                         <SummaryRow
                             label="Total Questions"
                             value={displayTotal}
-                            color="text-neutral-800"
+                            color="text-slate-800"
                         />
                         <SummaryRow
                             label="Answered"
                             value={displayAnswered}
-                            color="text-blue-600"
+                            color="text-emerald-600"
                         />
                         {unanswered > 0 && (
                             <SummaryRow
                                 label="Unanswered"
                                 value={unanswered}
-                                color="text-gray-500"
+                                color="text-slate-500"
                             />
                         )}
                         {flaggedCount > 0 && (
@@ -338,7 +343,7 @@ export function PreSubmitSummary({
                     </div>
 
                     {(unanswered > 0 || flaggedCount > 0) && (
-                        <div className="p-4 rounded-lg bg-amber-50 border border-amber-200">
+                        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
                             <p className="text-sm text-amber-800">
                                 {unanswered > 0 &&
                                     `You have ${unanswered} unanswered question${unanswered > 1 ? "s" : ""}. `}
@@ -349,9 +354,8 @@ export function PreSubmitSummary({
                         </div>
                     )}
 
-                    {/* Question grid mini-view */}
-                    <div className="border-t pt-4">
-                        <h3 className="text-sm font-semibold text-gray-600 mb-3">
+                    <div className="border-t border-slate-100 pt-4">
+                        <h3 className="text-sm font-semibold text-slate-600 mb-3">
                             Question Overview
                         </h3>
                         <div className="grid grid-cols-10 gap-1.5">
@@ -367,8 +371,8 @@ export function PreSubmitSummary({
                                                 ? "Essay (attempt any 1 of 2)"
                                                 : undefined
                                         }
-                                        className={`relative w-full aspect-square rounded flex items-center justify-center text-xs font-medium
-                      ${isAnswered ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700"}
+                                        className={`relative w-full aspect-square rounded-lg flex items-center justify-center text-xs font-semibold transition-colors
+                      ${isAnswered ? "bg-emerald-500 text-white" : "bg-slate-100 text-slate-600"}
                       ${hasDualEssay && isEssay ? "ring-2 ring-amber-400" : ""}
                     `}
                                     >
@@ -382,8 +386,7 @@ export function PreSubmitSummary({
                         </div>
                         {hasDualEssay && (
                             <p className="text-xs text-amber-700 mt-2">
-                                <span className="inline-block w-3 h-3 rounded border-2 border-amber-400 mr-1 align-middle" />
-                                Question marked in blue is answered.
+                                Ring indicates essay — answer any one of the two.
                             </p>
                         )}
                     </div>
@@ -392,14 +395,14 @@ export function PreSubmitSummary({
                         <Button
                             variant="outline"
                             onClick={onGoBack}
-                            className="flex-1"
+                            className="flex-1 border-slate-200 text-slate-600 hover:bg-slate-50"
                             disabled={isSubmitting}
                         >
                             Go Back
                         </Button>
                         <Button
                             onClick={onSubmit}
-                            className="flex-1 bg-[#1a2744] hover:bg-[#1a2744]/90"
+                            className="flex-1 bg-[#1a2744] hover:bg-[#1a2744]/90 text-white"
                             disabled={isSubmitting}
                         >
                             {isSubmitting ? "Submitting..." : "Submit Test"}
@@ -421,9 +424,9 @@ function SummaryRow({
     color: string;
 }) {
     return (
-        <div className="flex items-center justify-between py-2 border-b border-gray-100">
-            <span className="text-gray-600">{label}</span>
-            <span className={`text-lg font-semibold ${color}`}>{value}</span>
+        <div className="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
+            <span className="text-sm text-slate-600">{label}</span>
+            <span className={`text-lg font-semibold tabular-nums ${color}`}>{value}</span>
         </div>
     );
 }

@@ -40,6 +40,14 @@ import {
     Square,
     MinusSquare,
 } from "lucide-react";
+import {
+    getContentTextField,
+    getMcqCorrectLabel,
+    getOptions,
+    getQuestionText,
+    isMcqType,
+    parseQuestionContent,
+} from "@/lib/utils/question-content";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 interface SubjectInfo {
@@ -118,23 +126,6 @@ function formatDate(iso: string) {
     });
 }
 
-function getQuestionText(content: Record<string, unknown>): string {
-    if (typeof content.question === "string") return content.question;
-    if (typeof content.passage_text === "string") return content.passage_text;
-    if (typeof content.passage_with_gaps === "string") return content.passage_with_gaps;
-    if (typeof content.prompt === "string") return content.prompt;
-    return "—";
-}
-
-function getOptions(
-    content: Record<string, unknown>
-): Array<{ label: string; text?: string }> | null {
-    if (Array.isArray(content.options)) {
-        return content.options as Array<{ label: string; text?: string }>;
-    }
-    return null;
-}
-
 function getCorrectAnswerDisplay(
     questionType: string,
     correctAnswer: Record<string, unknown> | null,
@@ -182,15 +173,6 @@ function getCorrectAnswerDisplay(
     return "—";
 }
 
-/** Returns the editable text key inside content for a given question type */
-function getContentTextField(questionType: string): string {
-    if (questionType === "essay") return "prompt";
-    if (questionType === "fill_missing_sentence") return "passage_with_gaps";
-    if (questionType === "fill_blank_dropdown") return "passage_text";
-    // mcq, passage_mcq, poem_mcq all use "question"
-    return "question";
-}
-
 // ─── Component ──────────────────────────────────────────────────────────
 export default function AdminQuestionsPage() {
     // Data
@@ -218,7 +200,7 @@ export default function AdminQuestionsPage() {
     const [bulkLoading, setBulkLoading] = useState(false);
 
     // Loading / Error
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Solution visibility
@@ -245,22 +227,21 @@ export default function AdminQuestionsPage() {
     const [editError, setEditError] = useState<string | null>(null);
 
     const openEdit = (q: Question) => {
+        const parsedContent = parseQuestionContent(q.content);
         const textKey = getContentTextField(q.question_type);
-        setEditQuestion(q);
+        setEditQuestion({ ...q, content: parsedContent });
         setEditText(
-            typeof q.content[textKey] === "string"
-                ? (q.content[textKey] as string)
-                : ""
+            typeof parsedContent[textKey] === "string"
+                ? (parsedContent[textKey] as string)
+                : getQuestionText(parsedContent),
         );
         setEditSolution(q.solution_text ?? "");
         setEditDifficulty(q.difficulty);
         setEditMarks(q.marks);
-        // Initialize correct answer for MCQ types
-        const isMcq = ["mcq", "passage_mcq", "poem_mcq"].includes(q.question_type);
         setEditCorrectAnswer(
-            isMcq && q.correct_answer
-                ? ((q.correct_answer as { label?: string }).label?.toUpperCase() ?? "")
-                : ""
+            isMcqType(q.question_type)
+                ? getMcqCorrectLabel(q.correct_answer)
+                : "",
         );
         setEditError(null);
     };
@@ -279,10 +260,10 @@ export default function AdminQuestionsPage() {
         const updatedContent = { ...editQuestion.content, [textKey]: editText };
 
         // Build correct_answer update for MCQ types
-        const isMcq = ["mcq", "passage_mcq", "poem_mcq"].includes(editQuestion.question_type);
-        const updatedCorrectAnswer = isMcq && editCorrectAnswer
-            ? { label: editCorrectAnswer.toUpperCase() }
-            : editQuestion.correct_answer;
+        const updatedCorrectAnswer =
+            isMcqType(editQuestion.question_type) && editCorrectAnswer
+                ? { label: editCorrectAnswer.toUpperCase() }
+                : editQuestion.correct_answer;
 
         try {
             const res = await fetch("/api/admin/questions", {
@@ -412,9 +393,16 @@ export default function AdminQuestionsPage() {
 
     // ─── Fetch questions ────────────────────────────────────────────
     const fetchQuestions = useCallback(async () => {
+        if (!subjectId) {
+            setQuestions([]);
+            setTotal(0);
+            setIsLoading(false);
+            setError(null);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
-        setSelectedIds(new Set());
 
         try {
             const params = new URLSearchParams();
@@ -455,10 +443,9 @@ export default function AdminQuestionsPage() {
 
     // ─── Derived ────────────────────────────────────────────────────
     const totalPages = Math.ceil(total / PAGE_SIZE);
-    const hasFilters = !!(subjectId || questionType || difficulty || search || codeFrom || codeTo);
+    const hasFilters = !!(questionType || difficulty || search || codeFrom || codeTo);
 
     const clearFilters = () => {
-        setSubjectId("");
         setQuestionType("");
         setDifficulty("");
         setSearch("");
@@ -564,12 +551,13 @@ export default function AdminQuestionsPage() {
                                     </label>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                                         {getOptions(editQuestion.content)!.map((opt) => {
-                                            const isCorrect = editCorrectAnswer === opt.label.toUpperCase();
+                                            const optLabel = opt.label.toUpperCase();
+                                            const isCorrect = editCorrectAnswer === optLabel;
                                             return (
                                                 <button
-                                                    key={opt.label}
+                                                    key={optLabel}
                                                     type="button"
-                                                    onClick={() => setEditCorrectAnswer(opt.label.toUpperCase())}
+                                                    onClick={() => setEditCorrectAnswer(optLabel)}
                                                     className={`flex items-start gap-2 rounded-lg px-3 py-1.5 text-xs text-left transition-colors ${
                                                         isCorrect
                                                             ? "bg-emerald-50 text-emerald-800 font-medium border-2 border-emerald-400 ring-1 ring-emerald-200"
@@ -796,17 +784,17 @@ export default function AdminQuestionsPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {/* Subject */}
                         <Select
-                            value={subjectId}
+                            value={subjectId || undefined}
                             onValueChange={(v) => {
-                                setSubjectId(v === "all" ? "" : v);
+                                setSubjectId(v);
                                 setPage(0);
+                                setSelectedIds(new Set());
                             }}
                         >
                             <SelectTrigger className="w-full">
-                                <SelectValue placeholder="All Subjects" />
+                                <SelectValue placeholder="Select One" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Subjects</SelectItem>
                                 {subjects.map((s) => (
                                     <SelectItem key={s.id} value={s.id}>
                                         {s.name}
@@ -979,13 +967,20 @@ export default function AdminQuestionsPage() {
                             Retry
                         </Button>
                     </div>
+                ) : !subjectId ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center">
+                        <FileQuestion className="h-10 w-10 mx-auto text-zinc-300 mb-3" />
+                        <p className="text-zinc-500 text-sm">
+                            Select a subject to view questions.
+                        </p>
+                    </div>
                 ) : questions.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center">
                         <FileQuestion className="h-10 w-10 mx-auto text-zinc-300 mb-3" />
                         <p className="text-zinc-500 text-sm">
                             {hasFilters
                                 ? "No questions match the current filters."
-                                : "No questions uploaded yet."}
+                                : "No questions found for this subject."}
                         </p>
                         {hasFilters && (
                             <button

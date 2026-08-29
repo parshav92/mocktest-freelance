@@ -5,7 +5,6 @@ import { useRouter, useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn, stripHtmlToText } from "@/lib/utils";
 import {
     ArrowLeft,
@@ -30,7 +29,7 @@ import {
     AntiCheatWarning,
 } from "@/components/test/confirmation-modal";
 import { PostSubmitResult } from "@/components/test/post-submit-result";
-import { MathText } from "@/components/ui/math-text";
+import { PassagePanel } from "@/components/test/passage-panel";
 import { useTimer } from "@/hooks/use-timer";
 import { useAntiCheat } from "@/hooks/use-anti-cheat";
 import type {
@@ -1025,103 +1024,13 @@ export default function TestEnvironmentPage() {
             {/* ============================================ */}
             {/* SPLIT PANEL CONTENT */}
             {/* ============================================ */}
-            <div className="flex-1 flex overflow-hidden">
-                {/* LEFT PANEL: Passage(s) (if applicable) */}
-                {hasPassage && (
-                    <div className="w-1/2 border-r bg-white flex flex-col overflow-y-auto h-full">
-                        {passages.length === 1 ? (
-                            /* Single passage - no tabs needed */
-                            <>
-                                <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
-                                    <span className="text-sm font-medium text-[#1a2744]">
-                                        {passages[0].passage_type === "poem"
-                                            ? "Poem"
-                                            : passages[0].title || "Extract"}
-                                    </span>
-                                </div>
-                                <ScrollArea className="flex-1">
-                                    <div className="p-6 md:p-8">
-                                        {passages[0].title && (
-                                            <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                {passages[0].title}
-                                            </h3>
-                                        )}
-                                        {passages[0].image_url && (
-                                            <div className="mb-4">
-                                                <img
-                                                    src={passages[0].image_url}
-                                                    alt={passages[0].title || "Passage image"}
-                                                    className="max-w-full rounded-lg"
-                                                />
-                                            </div>
-                                        )}
-                                        <div
-                                            className={`leading-relaxed text-gray-800 whitespace-pre-line${passages[0].passage_type === "poem" ? " italic" : ""}`}
-                                        >
-                                            <MathText content={passages[0].content} block />
-                                        </div>
-                                    </div>
-                                </ScrollArea>
-                            </>
-                        ) : (
-                            /* Multiple passages - show tabs */
-                            <Tabs defaultValue={`passage-0`} className="flex flex-col h-full">
-                                <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
-                                    <TabsList className="bg-transparent h-auto p-0 gap-0">
-                                        {passages.map((p, idx) => (
-                                            <TabsTrigger
-                                                key={p.id}
-                                                value={`passage-${idx}`}
-                                                className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
-                                            >
-                                                {p.passage_type === "poem"
-                                                    ? `Poem ${idx + 1}`
-                                                    : p.title || `Extract ${idx + 1}`}
-                                            </TabsTrigger>
-                                        ))}
-                                    </TabsList>
-                                </div>
-                                {passages.map((p, idx) => (
-                                    <TabsContent
-                                        key={p.id}
-                                        value={`passage-${idx}`}
-                                        className="flex-1 m-0 data-[state=inactive]:hidden"
-                                    >
-                                        <ScrollArea className="h-full">
-                                            <div className="p-6 md:p-8">
-                                                {p.title && (
-                                                    <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                        {p.title}
-                                                    </h3>
-                                                )}
-                                                {p.image_url && (
-                                                    <div className="mb-4">
-                                                        <img
-                                                            src={p.image_url}
-                                                            alt={p.title || "Passage image"}
-                                                            className="max-w-full rounded-lg"
-                                                        />
-                                                    </div>
-                                                )}
-                                                <div
-                                                    className={`leading-relaxed text-gray-800 whitespace-pre-line${p.passage_type === "poem" ? " italic" : ""}`}
-                                                >
-                                                    <MathText content={p.content} block />
-                                                </div>
-                                            </div>
-                                        </ScrollArea>
-                                    </TabsContent>
-                                ))}
-                            </Tabs>
-                        )}
-                    </div>
-                )}
+            <div className="flex-1 flex overflow-hidden min-h-0">
+                {hasPassage && <PassagePanel passages={passages} />}
 
-                {/* RIGHT PANEL (or full width): Question + Options */}
                 <div
-                    className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white h-full`}
+                    className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white min-h-0 overflow-hidden`}
                 >
-                    <div className="flex-1  ">
+                    <ScrollArea className="flex-1 min-h-0">
                         <div
                             className={cn(
                                 "p-6 md:p-8",
@@ -1129,7 +1038,6 @@ export default function TestEnvironmentPage() {
                                 "max-w-3xl mx-auto",
                             )}
                         >
-                            {/* Question number */}
                             <div className="flex items-center justify-between mb-6 ">
                                 <div className="flex items-center gap-3">
                                     <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
@@ -1138,7 +1046,6 @@ export default function TestEnvironmentPage() {
                                 </div>
                             </div>
 
-                            {/* Question content */}
                             <QuestionRenderer
                                 question={currentQuestion}
                                 answer={currentAnswer}
@@ -1146,7 +1053,7 @@ export default function TestEnvironmentPage() {
                                 layout={questionLayout}
                             />
                         </div>
-                    </div>
+                    </ScrollArea>
                 </div>
             </div>
 

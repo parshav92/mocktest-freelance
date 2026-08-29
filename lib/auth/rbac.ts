@@ -94,6 +94,59 @@ export async function requireParentAccess() {
 }
 
 /**
+ * Secure middleware for routes accessible by parents or admins.
+ * Admins must have a valid MFA session (same as requireAdminAccess).
+ *
+ * @returns Supabase client, user, profile, and role
+ * @throws Redirect to /auth, /admin-login, or /unauthorized
+ */
+export async function requireParentOrAdminAccess() {
+    const supabase = await createClient();
+
+    const {
+        data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+        redirect("/auth");
+    }
+
+    const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("role, full_name")
+        .eq("id", user.id)
+        .single();
+
+    if (error || !profile) {
+        redirect("/auth");
+    }
+
+    if (profile.role === "parent") {
+        return { supabase, user, profile, role: "parent" as const };
+    }
+
+    if (profile.role === "admin") {
+        const { data: mfaSession } = await supabase
+            .from("admin_mfa_sessions")
+            .select("mfa_expires_at")
+            .eq("admin_id", user.id)
+            .single();
+
+        const expiresAt = mfaSession?.mfa_expires_at
+            ? new Date(mfaSession.mfa_expires_at)
+            : null;
+
+        if (!expiresAt || expiresAt <= new Date()) {
+            redirect("/admin-login?reason=mfa");
+        }
+
+        return { supabase, user, profile, role: "admin" as const };
+    }
+
+    redirect("/unauthorized");
+}
+
+/**
  * Get authenticated supabase client for use in pages where layout
  * has already validated access. Use when you need the client but
  * don't need to re-validate permissions.
