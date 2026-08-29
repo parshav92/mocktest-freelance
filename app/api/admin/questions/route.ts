@@ -71,6 +71,7 @@ export async function GET(request: NextRequest) {
                 solution_text,
                 marks,
                 is_active,
+                passage_ids,
                 times_shown,
                 times_correct,
                 created_at,

@@ -14,6 +14,9 @@
     "seed-analytics": "npx tsx scripts/generate-analytics-data.ts"
   },
   "dependencies": {
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.2.2",
     "@sanity/image-url": "^2.1.1",
     "@sanity/vision": "^5.23.0",
     "@stripe/react-stripe-js": "^6.8.0",

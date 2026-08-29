@@ -23,7 +23,17 @@ import {
     X,
     ChevronDown,
     ChevronUp,
+    Pencil,
 } from "lucide-react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    DialogDescription,
+} from "@/components/ui/dialog";
+import { isPoem } from "@/lib/utils/passage";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 interface SubjectInfo {
@@ -104,8 +114,61 @@ export default function AdminPassagesPage() {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
     // Loading / Error
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const [editPassage, setEditPassage] = useState<Passage | null>(null);
+    const [editTitle, setEditTitle] = useState("");
+    const [editContent, setEditContent] = useState("");
+    const [editType, setEditType] = useState<string>("extract");
+    const [editSaving, setEditSaving] = useState(false);
+    const [editError, setEditError] = useState<string | null>(null);
+
+    const openEdit = (p: Passage) => {
+        setEditPassage(p);
+        setEditTitle(p.title ?? "");
+        setEditContent(p.content);
+        setEditType(p.passage_type);
+        setEditError(null);
+    };
+
+    const closeEdit = () => {
+        setEditPassage(null);
+        setEditError(null);
+    };
+
+    const saveEdit = async () => {
+        if (!editPassage) return;
+        setEditSaving(true);
+        setEditError(null);
+        try {
+            const res = await fetch("/api/admin/passage", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: editPassage.id,
+                    title: editTitle.trim() || null,
+                    content: editContent,
+                    passage_type: editType,
+                }),
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to save");
+
+            setPassages((prev) =>
+                prev.map((p) =>
+                    p.id === editPassage.id ? { ...p, ...data.passage } : p,
+                ),
+            );
+            closeEdit();
+        } catch (err) {
+            setEditError(
+                err instanceof Error ? err.message : "Failed to save changes",
+            );
+        } finally {
+            setEditSaving(false);
+        }
+    };
 
     // ─── Toggle expand ──────────────────────────────────────────────────
     const toggleExpand = (id: string) => {
@@ -148,6 +211,14 @@ export default function AdminPassagesPage() {
 
     // ─── Fetch passages ─────────────────────────────────────────────────
     const fetchPassages = useCallback(async () => {
+        if (!subjectId) {
+            setPassages([]);
+            setTotal(0);
+            setIsLoading(false);
+            setError(null);
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
 
@@ -190,10 +261,9 @@ export default function AdminPassagesPage() {
 
     // ─── Derived ────────────────────────────────────────────────────────
     const totalPages = Math.ceil(total / PAGE_SIZE);
-    const hasFilters = !!(subjectId || passageType || search);
+    const hasFilters = !!(passageType || search);
 
     const clearFilters = () => {
-        setSubjectId("");
         setPassageType("");
         setSearch("");
         setSearchInput("");
@@ -208,6 +278,95 @@ export default function AdminPassagesPage() {
     // ─── Render ─────────────────────────────────────────────────────────
     return (
         <div className="min-h-screen bg-zinc-50">
+            <Dialog open={!!editPassage} onOpenChange={(open) => !open && closeEdit()}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle className="text-base font-semibold">
+                            Edit Passage
+                            {editPassage && (
+                                <span className="ml-2 text-xs font-mono text-zinc-400">
+                                    {editPassage.code}
+                                </span>
+                            )}
+                        </DialogTitle>
+                        <DialogDescription className="text-xs text-zinc-500">
+                            Update the passage title, type, and content.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {editPassage && (
+                        <div className="space-y-4 py-2">
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-zinc-600">
+                                    Title
+                                </label>
+                                <Input
+                                    value={editTitle}
+                                    onChange={(e) => setEditTitle(e.target.value)}
+                                    placeholder="Optional title"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-zinc-600">
+                                    Type
+                                </label>
+                                <Select value={editType} onValueChange={setEditType}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {PASSAGE_TYPES.map((pt) => (
+                                            <SelectItem key={pt.value} value={pt.value}>
+                                                {pt.label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-xs font-medium text-zinc-600">
+                                    Content
+                                </label>
+                                <textarea
+                                    value={editContent}
+                                    onChange={(e) => setEditContent(e.target.value)}
+                                    rows={12}
+                                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-emerald-400 resize-y whitespace-pre-line"
+                                />
+                            </div>
+
+                            {editError && (
+                                <p className="text-xs text-red-500 bg-red-50 rounded-lg px-3 py-2">
+                                    {editError}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={closeEdit} disabled={editSaving}>
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={saveEdit}
+                            disabled={editSaving || !editContent.trim()}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                            {editSaving ? (
+                                <>
+                                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                                    Saving…
+                                </>
+                            ) : (
+                                "Save Changes"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
             {/* Header */}
             <div className="bg-white border-b">
                 <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -259,19 +418,16 @@ export default function AdminPassagesPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {/* Subject */}
                         <Select
-                            value={subjectId}
+                            value={subjectId || undefined}
                             onValueChange={(v) => {
-                                setSubjectId(v === "all" ? "" : v);
+                                setSubjectId(v);
                                 setPage(0);
                             }}
                         >
                             <SelectTrigger className="w-full">
-                                <SelectValue placeholder="All Subjects" />
+                                <SelectValue placeholder="Select One" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">
-                                    All Subjects
-                                </SelectItem>
                                 {subjects.map((s) => (
                                     <SelectItem key={s.id} value={s.id}>
                                         {s.name}
@@ -360,13 +516,20 @@ export default function AdminPassagesPage() {
                             Retry
                         </Button>
                     </div>
+                ) : !subjectId ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center">
+                        <BookText className="h-10 w-10 mx-auto text-zinc-300 mb-3" />
+                        <p className="text-zinc-500 text-sm">
+                            Select a subject to view passages.
+                        </p>
+                    </div>
                 ) : passages.length === 0 ? (
                     <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center">
                         <BookText className="h-10 w-10 mx-auto text-zinc-300 mb-3" />
                         <p className="text-zinc-500 text-sm">
                             {hasFilters
                                 ? "No passages match the current filters."
-                                : "No passages uploaded yet."}
+                                : "No passages found for this subject."}
                         </p>
                         {hasFilters && (
                             <button
@@ -413,6 +576,13 @@ export default function AdminPassagesPage() {
                                         <span className="text-xs text-zinc-400 ml-auto">
                                             {formatDate(p.created_at)}
                                         </span>
+                                        <button
+                                            title="Edit passage"
+                                            onClick={() => openEdit(p)}
+                                            className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                                        >
+                                            <Pencil className="h-4 w-4" />
+                                        </button>
                                     </div>
 
                                     {/* Title */}
@@ -428,9 +598,7 @@ export default function AdminPassagesPage() {
                                     <div className="px-5 pb-3">
                                         <p
                                             className={`text-sm text-zinc-700 whitespace-pre-line ${
-                                                p.passage_type === "poem"
-                                                    ? "italic"
-                                                    : ""
+                                                isPoem(p.passage_type) ? "italic" : ""
                                             }`}
                                         >
                                             {isExpanded

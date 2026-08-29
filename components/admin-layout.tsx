@@ -15,7 +15,6 @@ import {
     ClipboardList,
     Library,
     BarChart2,
-    AlertCircle,
     Trophy,
     Activity,
     Settings2,
@@ -94,21 +93,16 @@ export function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
             icon: Settings2,
             label: "Plan rules",
         },
-        {
-            href: "/dashboard/users",
-            icon: Users,
-            label: "Manage Users (TBD)",
-        },
+        // {
+        //     href: "/dashboard/users",
+        //     icon: Users,
+        //     label: "Manage Users (TBD)",
+        // },
         // ── Reports ──────────────────────────────────────────────────────
         {
             href: "/dashboard/reports/subscribers",
             icon: BarChart2,
-            label: "Subscriber Report",
-        },
-        {
-            href: "/dashboard/reports/expiring",
-            icon: AlertCircle,
-            label: "Expiring Soon",
+            label: "Subscription Report",
         },
         {
             href: "/dashboard/reports/top-students",
@@ -183,7 +177,7 @@ export function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
                     </div>
                 </div>
 
-                <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+                <nav className="flex-1 p-4 space-y-1 overflow-y-auto sidebar-scrollbar">
                     {navItems.map((item) => {
                         const Icon = item.icon;
                         const active = isActive(item.href);

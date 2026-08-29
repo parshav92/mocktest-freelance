@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StudentAnalyticsPanel } from "./student-analytics-panel";
 import { StudentSwotPanel } from "./student-swot-panel";
+import { OverviewCharts } from "./student-overview-charts";
 import type { ParentStudentAnalytics, StudentSwot } from "@/types/parent-analytics";
 import {
     LogOut,
@@ -18,7 +19,6 @@ import {
     Loader2,
     AlertTriangle,
     UserPlus,
-    Clock,
 } from "lucide-react";
 import {
     formatPlanLabel,
@@ -231,22 +231,6 @@ function scoreFg(pct: number) {
     if (pct >= 70) return "text-emerald-700";
     if (pct >= 50) return "text-amber-700";
     return "text-red-600";
-}
-
-function progressBg(pct: number) {
-    if (pct >= 70) return "bg-emerald-500";
-    if (pct >= 50) return "bg-amber-500";
-    return "bg-red-500";
-}
-
-function accentBorder(pct: number) {
-    if (pct >= 70) return "border-l-emerald-500";
-    if (pct >= 50) return "border-l-amber-500";
-    return "border-l-red-400";
-}
-
-function pct(correct: number, total: number) {
-    return total > 0 ? Math.round((correct / total) * 100) : 0;
 }
 
 // ── Main Component ─────────────────────────────────────
@@ -994,9 +978,17 @@ function StudentDetail({
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-32">
-                <Loader2 className="h-6 w-6 animate-spin text-slate-400 mb-3" />
-                <p className="text-md text-slate-400">Loading&hellip;</p>
+            <div className="space-y-4 animate-pulse">
+                <div className="h-8 w-48 bg-slate-200 rounded" />
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-px bg-slate-200 rounded-lg overflow-hidden">
+                    {[0, 1, 2, 3].map((i) => (
+                        <div key={i} className="h-20 bg-white" />
+                    ))}
+                </div>
+                <div className="grid lg:grid-cols-2 gap-4">
+                    <div className="h-64 bg-white border border-slate-200 rounded-lg" />
+                    <div className="h-64 bg-white border border-slate-200 rounded-lg" />
+                </div>
             </div>
         );
     }
@@ -1075,41 +1067,42 @@ function StudentDetail({
                 : summary.totalTimeSpent,
     };
 
+    const peerPercentile =
+        hasFullAnalytics && showPeer
+            ? Math.round(analytics.peer_overall.percentile_rank)
+            : null;
+    const testsPerWeek =
+        hasFullAnalytics && analytics.summary.total_tests > 0
+            ? analytics.engagement.avg_tests_per_week.toFixed(1)
+            : null;
+
     return (
         <>
-            {/* Back */}
             <button
                 onClick={onBack}
-                className="flex items-center gap-1.5 text-md text-slate-400 hover:text-slate-700 transition-colors mb-5"
+                className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 mb-4"
             >
                 <ArrowLeft className="h-3.5 w-3.5" />
-                Dashboard
+                Back to dashboard
             </button>
 
-            {/* Student identity */}
-            <div className="flex items-center justify-between gap-3 mb-6 animate-[fade-in-up_0.4s_ease-out_both]">
-                <div className="flex items-center gap-3 min-w-0">
-                <div className="w-10 h-10 rounded-full bg-[#1a2744] flex items-center justify-center text-white text-sm font-semibold shrink-0">
-                    {student.full_name.charAt(0).toUpperCase()}
-                </div>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-6 pb-6 border-b border-slate-200">
                 <div className="min-w-0">
-                    <h1 className="text-lg font-semibold text-[#1a2744] truncate">
+                    <h1 className="text-xl font-semibold text-slate-900 tracking-tight truncate">
                         {student.full_name}
                     </h1>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        <span className="text-md text-slate-400 font-mono">
-                            {student.student_id}
-                        </span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-sm text-slate-500">
+                        <span className="font-mono text-xs">{student.student_id}</span>
                         {subscription && (
                             <Badge
                                 variant="outline"
                                 className={`text-[10px] leading-none px-1.5 py-0.5 border font-medium ${statusCls(planStatusForSub(subscription))}`}
                             >
-                                {formatPlanLabel(subscription.plan)} &middot;{" "}
+                                {formatPlanLabel(subscription.plan)} ·{" "}
                                 {statusLabel(planStatusForSub(subscription))}
                             </Badge>
                         )}
-                        {student && !student.is_active && (
+                        {!student.is_active && (
                             <Badge
                                 variant="outline"
                                 className="text-[10px] leading-none px-1.5 py-0.5 border font-medium bg-slate-50 text-slate-600 border-slate-200"
@@ -1119,15 +1112,14 @@ function StudentDetail({
                         )}
                     </div>
                 </div>
-                </div>
-                {hasFullAnalytics && (
+                {/* {hasFullAnalytics && (
                     <Link
                         href={`/dashboard/students/${student.id}/report?studentId=${student.id}&name=${encodeURIComponent(student.full_name)}`}
-                        className="shrink-0 text-xs font-medium text-sky-600 hover:underline"
+                        className="text-sm text-slate-600 hover:text-slate-900 underline underline-offset-2 shrink-0"
                     >
-                        Full report
+                        View full report
                     </Link>
-                )}
+                )} */}
             </div>
 
             {subscription &&
@@ -1135,285 +1127,158 @@ function StudentDetail({
                     planStatusForSub(subscription) === "grace_period" ||
                     planStatusForSub(subscription) === "expired" ||
                     !student.is_active) && (
-                    <div
-                        className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-[fade-in-up_0.4s_ease-out_both]"
-                    >
-                        <div className="flex items-start gap-2">
+                    <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div className="flex items-start gap-2 text-sm">
                             <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
                             <div>
-                                <p className="text-sm font-medium text-amber-900">
-                                    {planStatusForSub(subscription) ===
-                                    "expiring_soon"
+                                <p className="font-medium text-amber-900">
+                                    {planStatusForSub(subscription) === "expiring_soon"
                                         ? "Plan expiring soon"
-                                        : planStatusForSub(subscription) ===
-                                            "grace_period"
+                                        : planStatusForSub(subscription) === "grace_period"
                                           ? "Plan in grace period"
                                           : "Plan expired"}
                                 </p>
                                 <p className="text-xs text-amber-800 mt-0.5">
-                                    Access ends{" "}
-                                    {fmtDate(subscription.expires_at)}
+                                    Access ends {fmtDate(subscription.expires_at)}
                                     {subscription.grace_period_ends_at
-                                        ? `; grace until ${fmtDate(subscription.grace_period_ends_at)}`
+                                        ? ` · grace until ${fmtDate(subscription.grace_period_ends_at)}`
                                         : ""}
-                                    . Purchase a new plan to restore full
-                                    access.
                                 </p>
                             </div>
                         </div>
                         <Link href={`/dashboard/subscribe?student=${student.id}`}>
-                            <Button
-                                size="sm"
-                                className="bg-slate-900 hover:bg-slate-800 text-white"
-                            >
+                            <Button size="sm" variant="outline" className="border-amber-300">
                                 Renew plan
                             </Button>
                         </Link>
                     </div>
                 )}
 
-            {/* Stats row — gap-px trick creates 1px internal borders */}
-            <div
-                className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-slate-200 rounded-xl overflow-hidden mb-6 animate-[fade-in-up_0.4s_ease-out_both]"
-                style={{ animationDelay: "100ms" }}
-            >
-                <div className="bg-white p-4">
-                    <p className="text-2xl font-bold text-[#1a2744] tabular-nums">
-                        {summaryView.totalTests}
-                    </p>
-                    <p className="text-md text-slate-400 mt-0.5">Tests taken</p>
-                </div>
-                <div className="bg-white p-4">
-                    <p
-                        className={`text-2xl font-bold tabular-nums ${scoreFg(summaryView.avgPercentage)}`}
-                    >
-                        {summaryView.avgPercentage}
-                        <span className="text-md font-normal text-slate-400">
-                            %
-                        </span>
-                    </p>
-                    <p className="text-md text-slate-400 mt-0.5">Avg. score</p>
-                </div>
-                <div className="bg-white p-4">
-                    <p
-                        className={`text-2xl font-bold tabular-nums ${scoreFg(summaryView.bestScore)}`}
-                    >
-                        {summaryView.bestScore}
-                        <span className="text-md font-normal text-slate-400">
-                            %
-                        </span>
-                    </p>
-                    <p className="text-md text-slate-400 mt-0.5">Best score</p>
-                </div>
-                <div className="bg-white p-4">
-                    <p className="text-2xl font-bold text-[#1a2744] tabular-nums">
-                        {fmtTime(summaryView.totalTimeSpent)}
-                    </p>
-                    <p className="text-md text-slate-400 mt-0.5">
-                        Practice time
-                    </p>
-                </div>
-            </div>
-
-            {/* Subject performance */}
-            {subjectStats.length > 0 && (
-                <section
-                    className="mb-6 animate-[fade-in-up_0.4s_ease-out_both]"
-                    style={{ animationDelay: "150ms" }}
-                >
-                    <h2 className="text-sm font-medium text-slate-900 mb-3">
-                        Subjects
-                    </h2>
-                    <div className="grid gap-3 md:grid-cols-2">
-                        {subjectStats.map((s) => {
-                            const acc = Math.round(s.overall_accuracy);
-                            return (
-                                <div
-                                    key={s.id}
-                                    className="bg-white border border-slate-200 rounded-xl p-4 hover:shadow-sm transition-shadow duration-200"
-                                >
-                                    {/* Header row */}
-                                    <div className="flex items-center justify-between mb-3">
-                                        <div>
-                                            <p className="text-md font-medium text-slate-900">
-                                                {s.subject.name}
-                                            </p>
-                                            <p className="text-md text-slate-400">
-                                                {s.tests_taken} test
-                                                {s.tests_taken !== 1 ? "s" : ""}
-                                            </p>
-                                        </div>
-                                        <Badge
-                                            variant="outline"
-                                            className="text-[10px] capitalize border-slate-200 text-slate-500"
-                                        >
-                                            {s.current_level}
-                                        </Badge>
-                                    </div>
-
-                                    {/* Accuracy bar */}
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                            <div
-                                                className={`h-full rounded-full transition-all duration-500 ${progressBg(acc)}`}
-                                                style={{
-                                                    width: `${Math.min(acc, 100)}%`,
-                                                }}
-                                            />
-                                        </div>
-                                        <span
-                                            className={`text-md font-semibold tabular-nums w-9 text-right ${scoreFg(acc)}`}
-                                        >
-                                            {acc}%
-                                        </span>
-                                    </div>
-
-                                    {/* Difficulty split — inline text, no colored boxes */}
-                                    <div className="flex items-center gap-4 text-md text-slate-400">
-                                        <span>
-                                            Easy{" "}
-                                            <span className="font-medium text-slate-600">
-                                                {pct(
-                                                    s.easy_correct,
-                                                    s.easy_attempted,
-                                                )}
-                                                %
-                                            </span>
-                                        </span>
-                                        <span>
-                                            Med{" "}
-                                            <span className="font-medium text-slate-600">
-                                                {pct(
-                                                    s.medium_correct,
-                                                    s.medium_attempted,
-                                                )}
-                                                %
-                                            </span>
-                                        </span>
-                                        <span>
-                                            Hard{" "}
-                                            <span className="font-medium text-slate-600">
-                                                {pct(
-                                                    s.hard_correct,
-                                                    s.hard_attempted,
-                                                )}
-                                                %
-                                            </span>
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </section>
-            )}
-
-            {/* Recent tests */}
-            <section
-                className="mb-6 animate-[fade-in-up_0.4s_ease-out_both]"
-                style={{ animationDelay: "200ms" }}
-            >
-                <h2 className="text-sm font-medium text-slate-900 mb-3">
-                    Recent Tests
-                </h2>
-
-                {recentTests.length === 0 ? (
-                    <div className="bg-white border border-slate-200 rounded-xl py-12 text-center">
-                        <p className="text-sm text-slate-400">
-                            No tests completed yet
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-px bg-slate-200 rounded-lg overflow-hidden mb-6">
+                {[
+                    { label: "Tests", value: String(summaryView.totalTests) },
+                    {
+                        label: "Avg score",
+                        value: `${summaryView.avgPercentage}%`,
+                        cls: scoreFg(summaryView.avgPercentage),
+                    },
+                    {
+                        label: "Best score",
+                        value: `${summaryView.bestScore}%`,
+                        cls: scoreFg(summaryView.bestScore),
+                    },
+                    { label: "Practice time", value: fmtTime(summaryView.totalTimeSpent) },
+                    ...(peerPercentile != null
+                        ? [{ label: "Percentile", value: `${peerPercentile}%` }]
+                        : []),
+                    ...(testsPerWeek != null
+                        ? [{ label: "Tests / week", value: testsPerWeek }]
+                        : []),
+                ].map((m) => (
+                    <div key={m.label} className="bg-white px-4 py-3">
+                        <p className="text-xs text-slate-500">{m.label}</p>
+                        <p
+                            className={`text-lg font-semibold tabular-nums mt-0.5 text-slate-900 ${"cls" in m ? m.cls : ""}`}
+                        >
+                            {m.value}
                         </p>
                     </div>
+                ))}
+            </div>
+
+            <OverviewCharts
+                recentTests={recentTests}
+                subjectStats={subjectStats}
+            />
+
+            <section className="mb-6">
+                <h2 className="text-sm font-medium text-slate-900 mb-3">
+                    Recent tests
+                </h2>
+                {recentTests.length === 0 ? (
+                    <p className="text-sm text-slate-500 py-8 text-center border border-dashed border-slate-200 rounded-lg">
+                        No completed tests yet.
+                    </p>
                 ) : (
                     <>
-                        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
-                            {recentTests
-                                .slice(
-                                    (testPage - 1) * TESTS_PER_PAGE,
-                                    testPage * TESTS_PER_PAGE,
-                                )
-                                .map((t) => {
-                                    const p = Math.round(t.percentage || 0);
-                                    return (
-                                        <div
-                                            key={t.id}
-                                            className={`flex items-center gap-4 px-4 py-3 border-l-[3px] ${accentBorder(p)}`}
-                                        >
-                                            {/* Subject + date */}
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-slate-900 truncate">
-                                                    {t.subject?.name || "Test"}
-                                                </p>
-                                                <p className="text-xs text-slate-400 mt-0.5">
-                                                    {fmtDate(t.created_at)}
-                                                </p>
-                                            </div>
-
-                                            {/* Score + marks */}
-                                            <div className="text-right shrink-0">
-                                                <p
-                                                    className={`text-sm font-semibold tabular-nums ${scoreFg(p)}`}
+                        <div className="rounded-lg border border-slate-200 overflow-hidden">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-200 text-xs text-slate-500">
+                                        <th className="text-left py-2.5 px-4 font-medium">Date</th>
+                                        <th className="text-left py-2.5 px-3 font-medium">Subject</th>
+                                        <th className="text-right py-2.5 px-3 font-medium">Score</th>
+                                        <th className="text-right py-2.5 px-3 font-medium">Marks</th>
+                                        <th className="text-right py-2.5 px-4 font-medium">Time</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {recentTests
+                                        .slice(
+                                            (testPage - 1) * TESTS_PER_PAGE,
+                                            testPage * TESTS_PER_PAGE,
+                                        )
+                                        .map((t) => {
+                                            const p = Math.round(t.percentage || 0);
+                                            return (
+                                                <tr
+                                                    key={t.id}
+                                                    className="border-b border-slate-100 last:border-0 hover:bg-slate-50/80"
                                                 >
-                                                    {p}%
-                                                </p>
-                                                <p className="text-[11px] text-slate-400">
-                                                    {t.marks_obtained}/
-                                                    {t.total_marks}
-                                                </p>
-                                            </div>
-
-                                            {/* Time */}
-                                            <div className="flex items-center gap-1 text-xs text-slate-400 shrink-0 w-14 justify-end">
-                                                <Clock className="h-3 w-3" />
-                                                {fmtTime(t.time_spent_secs)}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                                    <td className="py-2.5 px-4 text-slate-500 text-xs whitespace-nowrap">
+                                                        {fmtDate(t.created_at)}
+                                                    </td>
+                                                    <td className="py-2.5 px-3 text-slate-900">
+                                                        {t.subject?.name || "Test"}
+                                                    </td>
+                                                    <td
+                                                        className={`py-2.5 px-3 text-right tabular-nums font-medium ${scoreFg(p)}`}
+                                                    >
+                                                        {p}%
+                                                    </td>
+                                                    <td className="py-2.5 px-3 text-right tabular-nums text-slate-600">
+                                                        {t.marks_obtained}/{t.total_marks}
+                                                    </td>
+                                                    <td className="py-2.5 px-4 text-right tabular-nums text-slate-500 text-xs">
+                                                        {fmtTime(t.time_spent_secs)}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                </tbody>
+                            </table>
                         </div>
-
-                        {/* Pagination */}
                         {recentTests.length > TESTS_PER_PAGE && (
-                            <div className="flex items-center justify-between mt-3">
-                                <p className="text-xs text-slate-400 tabular-nums">
-                                    {(testPage - 1) * TESTS_PER_PAGE + 1}&ndash;
-                                    {Math.min(
-                                        testPage * TESTS_PER_PAGE,
-                                        recentTests.length,
-                                    )}{" "}
+                            <div className="flex items-center justify-between mt-3 text-xs text-slate-500">
+                                <span className="tabular-nums">
+                                    {(testPage - 1) * TESTS_PER_PAGE + 1}–
+                                    {Math.min(testPage * TESTS_PER_PAGE, recentTests.length)}{" "}
                                     of {recentTests.length}
-                                </p>
-                                <div className="flex items-center gap-1">
+                                </span>
+                                <div className="flex gap-1">
                                     <button
-                                        onClick={() =>
-                                            setTestPage((p) =>
-                                                Math.max(1, p - 1),
-                                            )
-                                        }
+                                        type="button"
+                                        onClick={() => setTestPage((p) => Math.max(1, p - 1))}
                                         disabled={testPage === 1}
-                                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                        className="rounded border border-slate-200 p-1.5 disabled:opacity-30"
                                     >
                                         <ChevronLeft className="h-3.5 w-3.5" />
                                     </button>
                                     <button
+                                        type="button"
                                         onClick={() =>
                                             setTestPage((p) =>
                                                 Math.min(
-                                                    Math.ceil(
-                                                        recentTests.length /
-                                                            TESTS_PER_PAGE,
-                                                    ),
+                                                    Math.ceil(recentTests.length / TESTS_PER_PAGE),
                                                     p + 1,
                                                 ),
                                             )
                                         }
                                         disabled={
                                             testPage >=
-                                            Math.ceil(
-                                                recentTests.length /
-                                                    TESTS_PER_PAGE,
-                                            )
+                                            Math.ceil(recentTests.length / TESTS_PER_PAGE)
                                         }
-                                        className="p-1.5 rounded-lg border border-slate-200 text-slate-400 hover:text-slate-700 hover:border-slate-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                                        className="rounded border border-slate-200 p-1.5 disabled:opacity-30"
                                     >
                                         <ChevronRight className="h-3.5 w-3.5" />
                                     </button>
@@ -1426,32 +1291,31 @@ function StudentDetail({
 
             {hasFullAnalytics ? (
                 <>
-                    <section
-                        className="animate-[fade-in-up_0.4s_ease-out_both]"
-                        style={{ animationDelay: "250ms" }}
-                    >
-                        <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between mb-3">
-                            <h2 className="text-sm font-medium text-slate-900">
-                                Advanced Analytics
-                            </h2>
-                            <div className="flex flex-col sm:flex-row gap-2">
+                    <section className="mb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+                            <div>
+                                <h2 className="text-sm font-medium text-slate-900">
+                                    Performance analytics
+                                </h2>
+                                <p className="text-xs text-slate-500 mt-0.5">
+                                    Filtered view — adjust period and subject
+                                </p>
+                            </div>
+                            <div className="flex flex-wrap gap-3">
                                 <label className="text-xs text-slate-500">
-                                    Date Range
+                                    Period
                                     <select
                                         value={analyticsDays}
                                         onChange={(e) =>
                                             onAnalyticsDaysChange(
-                                                e.target
-                                                    .value as AnalyticsDaysFilter,
+                                                e.target.value as AnalyticsDaysFilter,
                                             )
                                         }
-                                        className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700"
+                                        className="mt-1 block rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700"
                                     >
-                                        <option value="30">Last 30 days</option>
-                                        <option value="90">Last 90 days</option>
-                                        <option value="180">
-                                            Last 180 days
-                                        </option>
+                                        <option value="30">30 days</option>
+                                        <option value="90">90 days</option>
+                                        <option value="180">180 days</option>
                                         <option value="all">All time</option>
                                     </select>
                                 </label>
@@ -1460,11 +1324,9 @@ function StudentDetail({
                                     <select
                                         value={analyticsSubjectId}
                                         onChange={(e) =>
-                                            onAnalyticsSubjectChange(
-                                                e.target.value,
-                                            )
+                                            onAnalyticsSubjectChange(e.target.value)
                                         }
-                                        className="mt-1 block w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700"
+                                        className="mt-1 block rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700 min-w-[140px]"
                                     >
                                         <option value="all">All subjects</option>
                                         {subjectFilterOptions.map((s) => (
@@ -1476,7 +1338,6 @@ function StudentDetail({
                                 </label>
                             </div>
                         </div>
-
                         <StudentAnalyticsPanel
                             analytics={analytics}
                             analyticsLoading={analyticsLoading}
@@ -1486,10 +1347,10 @@ function StudentDetail({
                         />
                     </section>
 
-                    <section
-                        className="mb-6 animate-[fade-in-up_0.4s_ease-out_both]"
-                        style={{ animationDelay: "300ms" }}
-                    >
+                    <section className="mb-6">
+                        <h2 className="text-sm font-medium text-slate-900 mb-3">
+                            SWOT analysis
+                        </h2>
                         <StudentSwotPanel
                             swot={swot}
                             swotLoading={swotLoading}
@@ -1498,51 +1359,38 @@ function StudentDetail({
                     </section>
                 </>
             ) : (
-                <section className="mb-6 rounded-xl border border-slate-200 bg-white px-4 py-5">
+                <section className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-5">
                     <p className="text-sm font-medium text-slate-900">
-                        Advanced analytics locked
+                        Performance analytics unavailable on current plan
                     </p>
                     <p className="text-xs text-slate-500 mt-1">
-                        Full performance analytics and SWOT require Gold or
-                        Platinum
-                        {entitlements
-                            ? ` (current plan: ${entitlements.name})`
-                            : ""}
-                        .{" "}
+                        Gold or Platinum required
+                        {entitlements ? ` (${entitlements.name})` : ""}.{" "}
                         <Link
                             href={`/dashboard/subscribe?student=${student.id}`}
-                            className="text-sky-600 hover:underline"
+                            className="text-slate-700 underline underline-offset-2"
                         >
-                            Upgrade plan
+                            Upgrade
                         </Link>
                     </p>
                 </section>
             )}
 
             {showTips && (
-                <section className="mb-6 rounded-xl border border-slate-200 bg-white px-4 py-5">
+                <section className="mb-6 rounded-lg border border-slate-200 bg-white px-4 py-4">
                     <h2 className="text-sm font-medium text-slate-900 mb-3">
-                        Tips &amp; tricks
+                        Study recommendations
                     </h2>
                     {tipsLoading ? (
-                        <p className="text-xs text-slate-400">Loading tips…</p>
+                        <p className="text-xs text-slate-400">Loading…</p>
                     ) : tips.length === 0 ? (
-                        <p className="text-xs text-slate-400">
-                            No tips available right now.
-                        </p>
+                        <p className="text-xs text-slate-400">No recommendations available.</p>
                     ) : (
-                        <ul className="space-y-3">
+                        <ul className="divide-y divide-slate-100">
                             {tips.map((tip) => (
-                                <li
-                                    key={tip.id}
-                                    className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2.5"
-                                >
-                                    <p className="text-sm font-medium text-slate-800">
-                                        {tip.title}
-                                    </p>
-                                    <p className="text-xs text-slate-500 mt-1">
-                                        {tip.body}
-                                    </p>
+                                <li key={tip.id} className="py-3 first:pt-0 last:pb-0">
+                                    <p className="text-sm font-medium text-slate-800">{tip.title}</p>
+                                    <p className="text-xs text-slate-500 mt-1 leading-relaxed">{tip.body}</p>
                                 </li>
                             ))}
                         </ul>

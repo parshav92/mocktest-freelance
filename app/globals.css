@@ -254,6 +254,28 @@ style="backdrop-filter: blur(20px); background-color: rgba(255, 255, 255, 0.8); 
     scrollbar-color: #cbd5e1 transparent;
 }
 
+.sidebar-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #475569;
+}
+
+.sidebar-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #334155 transparent;
+}
+
 :root {
     --radius: 0.625rem;
     --background: oklch(1 0 0);

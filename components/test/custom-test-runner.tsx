@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 import {
     ArrowLeft,
@@ -44,11 +43,7 @@ import {
 import { useTimer } from "@/hooks/use-timer";
 import { useAntiCheat } from "@/hooks/use-anti-cheat";
 import type { QuestionForTest, Passage, InstructionPage } from "@/types/test";
-
-// ── Helpers ─────────────────────────────────────────────
-
-/** Case-insensitive check for poem passage_type (guards against DB data with inconsistent casing) */
-const isPoem = (passageType?: string) => passageType?.toLowerCase() === "poem";
+import { PassagePanel } from "@/components/test/passage-panel";
 
 // ── Types ──────────────────────────────────────────────
 
@@ -459,6 +454,7 @@ export function CustomTestRunner({
                 answeredSet={answeredSet}
                 flaggedSet={flaggedSet}
                 questionsOrder={questionsOrder}
+                testName={testName}
                 onGoBack={() => setPhase("testing")}
                 onSubmit={handleSubmit}
                 isSubmitting={false}
@@ -1068,8 +1064,7 @@ export function CustomTestRunner({
 
                 {/* ── FULLSCREEN REVIEW OVERLAY ── */}
                 {openItem && reviewIndex !== null && (
-                    <div className="fixed inset-0 z-50 flex flex-col bg-[#e8eef3]">
-                        {/* Header bar (matches test env) */}
+                    <div className="fixed inset-0 z-50 flex flex-col bg-slate-50 h-dvh">
                         <header className="bg-[#1a2744] text-white px-4 py-2.5 flex items-center justify-between shrink-0">
                             <div className="flex items-center gap-4">
                                 <h3 className="text-sm font-semibold hidden md:block">
@@ -1114,141 +1109,20 @@ export function CustomTestRunner({
                             </button>
                         </header>
 
-                        {/* Split panel content */}
-                        <div className="flex-1 flex overflow-y-scroll">
-                            {/* Left: passage(s) */}
+                        <div className="flex-1 flex overflow-hidden min-h-0">
                             {openHasPassage && openItem.passages && (
-                                <div className="w-1/2 border-r bg-white flex flex-col">
-                                    {openItem.passages.length === 1 ? (
-                                        <>
-                                            <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
-                                                <span className="text-sm font-medium text-[#1a2744]">
-                                                    {isPoem(
-                                                        openItem.passages[0]
-                                                            .passage_type,
-                                                    )
-                                                        ? "Poem"
-                                                        : openItem.passages[0]
-                                                              .title ||
-                                                          "Extract"}
-                                                </span>
-                                            </div>
-                                            <ScrollArea className="flex-1">
-                                                <div className="p-6 md:p-8">
-                                                    {openItem.passages[0]
-                                                        .title && (
-                                                        <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                            {
-                                                                openItem
-                                                                    .passages[0]
-                                                                    .title
-                                                            }
-                                                        </h3>
-                                                    )}
-                                                    {openItem.passages[0]
-                                                        .image_url && (
-                                                        <div className="mb-4">
-                                                            <img
-                                                                src={
-                                                                    openItem
-                                                                        .passages[0]
-                                                                        .image_url
-                                                                }
-                                                                alt={
-                                                                    openItem
-                                                                        .passages[0]
-                                                                        .title ||
-                                                                    "Passage image"
-                                                                }
-                                                                className="max-w-full rounded-lg"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                    <div
-                                                        className={`leading-relaxed text-gray-800 whitespace-pre-line${isPoem(openItem.passages[0].passage_type) ? " italic" : ""}`}
-                                                    >
-                                                        {
-                                                            openItem.passages[0]
-                                                                .content
-                                                        }
-                                                    </div>
-                                                </div>
-                                            </ScrollArea>
-                                        </>
-                                    ) : (
-                                        <Tabs
-                                            defaultValue="passage-0"
-                                            className="flex flex-col h-full"
-                                        >
-                                            <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
-                                                <TabsList className="bg-transparent h-auto p-0 gap-0">
-                                                    {openItem.passages.map(
-                                                        (p, idx) => (
-                                                            <TabsTrigger
-                                                                key={p.id}
-                                                                value={`passage-${idx}`}
-                                                                className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
-                                                            >
-                                                                {p.passage_type ===
-                                                                "poem"
-                                                                    ? `Poem ${idx + 1}`
-                                                                    : p.title ||
-                                                                      `Extract ${idx + 1}`}
-                                                            </TabsTrigger>
-                                                        ),
-                                                    )}
-                                                </TabsList>
-                                            </div>
-                                            {openItem.passages.map((p, idx) => (
-                                                <TabsContent
-                                                    key={p.id}
-                                                    value={`passage-${idx}`}
-                                                    className="flex-1 m-0 data-[state=inactive]:hidden"
-                                                >
-                                                    <ScrollArea className="h-full">
-                                                        <div className="p-6 md:p-8">
-                                                            {p.title && (
-                                                                <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                                    {p.title}
-                                                                </h3>
-                                                            )}
-                                                            {p.image_url && (
-                                                                <div className="mb-4">
-                                                                    <img
-                                                                        src={
-                                                                            p.image_url
-                                                                        }
-                                                                        alt={
-                                                                            p.title ||
-                                                                            "Passage image"
-                                                                        }
-                                                                        className="max-w-full rounded-lg"
-                                                                    />
-                                                                </div>
-                                                            )}
-                                                            <div
-                                                                className={`leading-relaxed text-gray-800 whitespace-pre-line${isPoem(p.passage_type) ? " italic" : ""}`}
-                                                            >
-                                                                {p.content}
-                                                            </div>
-                                                        </div>
-                                                    </ScrollArea>
-                                                </TabsContent>
-                                            ))}
-                                        </Tabs>
-                                    )}
-                                </div>
+                                <PassagePanel passages={openItem.passages} />
                             )}
 
-                            {/* Right: question + answers */}
                             <div
-                                className={`${openHasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white`}
+                                className={`${openHasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white min-h-0 overflow-hidden`}
                             >
-                                <ScrollArea className="flex-1 overflow-y-auto">
+                                <ScrollArea className="flex-1 min-h-0">
                                     <ReviewQuestionDisplay
                                         question={openItem}
                                         questionNumber={reviewIndex + 1}
                                         showSolution={showSolution}
+                                        hasExternalPassage={openHasPassage}
                                         onToggleSolution={() =>
                                             setShowSolution(!showSolution)
                                         }
@@ -1257,7 +1131,6 @@ export function CustomTestRunner({
                             </div>
                         </div>
 
-                        {/* Bottom nav bar (matches test env) */}
                         <footer className="border-t bg-white px-4 py-3 flex items-center justify-between shrink-0">
                             <Button
                                 variant="outline"
@@ -1415,111 +1288,13 @@ export function CustomTestRunner({
             </header>
 
             {/* SPLIT PANEL CONTENT */}
-            <div className="flex-1 flex overflow-hidden">
-                {/* Passage panel */}
-                {hasPassage && (
-                    <div className="w-1/2 border-r bg-white flex flex-col overflow-y-auto">
-                        {passages.length === 1 ? (
-                            <>
-                                <div className="border-b px-4 py-2.5 shrink-0 bg-gray-50">
-                                    <span className="text-sm font-medium text-[#1a2744]">
-                                        {isPoem(passages[0].passage_type)
-                                            ? "Poem"
-                                            : passages[0].title || "Extract"}
-                                    </span>
-                                </div>
-                                <ScrollArea className="flex-1">
-                                    <div className="p-6 md:p-8">
-                                        {passages[0].title && (
-                                            <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                {passages[0].title}
-                                            </h3>
-                                        )}
-                                        {passages[0].image_url && (
-                                            <div className="mb-4">
-                                                <img
-                                                    src={passages[0].image_url}
-                                                    alt={
-                                                        passages[0].title ||
-                                                        "Passage image"
-                                                    }
-                                                    className="max-w-full rounded-lg"
-                                                />
-                                            </div>
-                                        )}
-                                        <div
-                                            className={`leading-relaxed text-gray-800 whitespace-pre-line${isPoem(passages[0].passage_type) ? " italic" : ""}`}
-                                        >
-                                            {passages[0].content}
-                                        </div>
-                                    </div>
-                                </ScrollArea>
-                            </>
-                        ) : (
-                            <Tabs
-                                defaultValue="passage-0"
-                                className="flex flex-col h-full"
-                            >
-                                <div className="border-b px-4 pt-2 shrink-0 bg-gray-50">
-                                    <TabsList className="bg-transparent h-auto p-0 gap-0">
-                                        {passages.map((p, idx) => (
-                                            <TabsTrigger
-                                                key={p.id}
-                                                value={`passage-${idx}`}
-                                                className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
-                                            >
-                                                {isPoem(p.passage_type)
-                                                    ? `Poem ${idx + 1}`
-                                                    : p.title ||
-                                                      `Extract ${idx + 1}`}
-                                            </TabsTrigger>
-                                        ))}
-                                    </TabsList>
-                                </div>
-                                {passages.map((p, idx) => (
-                                    <TabsContent
-                                        key={p.id}
-                                        value={`passage-${idx}`}
-                                        className="flex-1 m-0 data-[state=inactive]:hidden"
-                                    >
-                                        <ScrollArea className="h-full">
-                                            <div className="p-6 md:p-8">
-                                                {p.title && (
-                                                    <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                        {p.title}
-                                                    </h3>
-                                                )}
-                                                {p.image_url && (
-                                                    <div className="mb-4">
-                                                        <img
-                                                            src={p.image_url}
-                                                            alt={
-                                                                p.title ||
-                                                                "Passage image"
-                                                            }
-                                                            className="max-w-full rounded-lg"
-                                                        />
-                                                    </div>
-                                                )}
-                                                <div
-                                                    className={`leading-relaxed text-gray-800 whitespace-pre-line${isPoem(p.passage_type) ? " italic" : ""}`}
-                                                >
-                                                    {p.content}
-                                                </div>
-                                            </div>
-                                        </ScrollArea>
-                                    </TabsContent>
-                                ))}
-                            </Tabs>
-                        )}
-                    </div>
-                )}
+            <div className="flex-1 flex overflow-hidden min-h-0">
+                {hasPassage && <PassagePanel passages={passages} />}
 
-                {/* Question panel */}
                 <div
-                    className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white`}
+                    className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white min-h-0 overflow-hidden`}
                 >
-                    <ScrollArea className="flex-1">
+                    <ScrollArea className="flex-1 min-h-0">
                         <div
                             className={cn(
                                 "p-6 md:p-8",
@@ -1626,11 +1401,13 @@ function ReviewQuestionDisplay({
     question,
     questionNumber,
     showSolution,
+    hasExternalPassage = false,
     onToggleSolution,
 }: {
     question: GradedQuestion;
     questionNumber: number;
     showSolution: boolean;
+    hasExternalPassage?: boolean;
     onToggleSolution: () => void;
 }) {
     const content = question.content as Record<string, unknown>;
@@ -1739,107 +1516,123 @@ function ReviewQuestionDisplay({
             const studentLabel =
                 (question.selected as string)?.toUpperCase() ?? "";
 
-            return (
-                <div className="grid grid-cols-2 gap-0 min-h-0">
-                    {/* Left: Question stem + solution */}
-                    <div className="p-6 md:p-8 border-r border-gray-200">
-                        {questionBadge}
-                        <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
-                            <ImageEnhancedText content={questionText} block />
-                        </div>
-                        {questionImages.length > 0 && (
-                            <div
-                                className={`mt-4 grid gap-3 ${questionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
-                            >
-                                {questionImages.map((imgUrl, idx) => (
-                                    <img
-                                        key={`question-img-${idx}`}
-                                        src={imgUrl}
-                                        alt={`Question image ${idx + 1}`}
-                                        className="max-w-full rounded-lg border"
-                                    />
-                                ))}
-                            </div>
-                        )}
-                        {!wasAttempted && (
-                            <p className="text-xs text-slate-400 italic flex items-center gap-1.5 mt-4">
-                                <Minus className="h-3.5 w-3.5" />
-                                Not attempted
-                            </p>
-                        )}
-                        {solutionBlock}
-                    </div>
+            const optionsBlock = (
+                <>
+                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
+                        Answer Options
+                    </p>
+                    <div className="space-y-3">
+                        {options.map((option, index) => {
+                            const optionLabel = option.label.toUpperCase();
+                            const isCorrect = optionLabel === correctLabel;
+                            const isSelected = optionLabel === studentLabel;
+                            const isWrong = isSelected && !isCorrect;
 
-                    {/* Right: Options with correct/wrong highlights */}
-                    <div className="p-6 md:p-8">
-                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-4">
-                            Answer Options
-                        </p>
-                        <div className="space-y-3">
-                            {options.map((option, index) => {
-                                const optionLabel = option.label.toUpperCase();
-                                const isCorrect = optionLabel === correctLabel;
-                                const isSelected = optionLabel === studentLabel;
-                                const isWrong = isSelected && !isCorrect;
-
-                                return (
-                                    <div
-                                        key={`mcq-opt-${index}`}
+                            return (
+                                <div
+                                    key={`mcq-opt-${index}`}
+                                    className={cn(
+                                        "w-full flex items-start gap-3 p-4 rounded-lg border-2 text-left",
+                                        isCorrect
+                                            ? "border-emerald-500 bg-emerald-50/80 shadow-sm"
+                                            : isWrong
+                                              ? "border-rose-400 bg-rose-50/60"
+                                              : "border-gray-200 bg-white",
+                                    )}
+                                >
+                                    <span
                                         className={cn(
-                                            "w-full flex items-start gap-3 p-4 rounded-lg border-2 text-left",
+                                            "shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold",
                                             isCorrect
-                                                ? "border-emerald-500 bg-emerald-50/80 shadow-sm"
+                                                ? "bg-emerald-500 text-white"
                                                 : isWrong
-                                                  ? "border-rose-400 bg-rose-50/60"
-                                                  : "border-gray-200 bg-white",
+                                                  ? "bg-rose-400 text-white"
+                                                  : "bg-gray-100 text-gray-600",
                                         )}
                                     >
-                                        <span
-                                            className={cn(
-                                                "shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold",
-                                                isCorrect
-                                                    ? "bg-emerald-500 text-white"
-                                                    : isWrong
-                                                      ? "bg-rose-400 text-white"
-                                                      : "bg-gray-100 text-gray-600",
-                                            )}
-                                        >
-                                            {optionLabel}
-                                        </span>
-                                        <div className="flex-1 pt-1">
-                                            {option.text && (
-                                                <span
-                                                    className={cn(
-                                                        "text-sm leading-relaxed",
-                                                        isCorrect || isSelected
-                                                            ? "text-gray-900 font-medium"
-                                                            : "text-gray-700",
-                                                    )}
-                                                >
-                                                    <ImageEnhancedText
-                                                        content={option.text}
-                                                    />
-                                                </span>
-                                            )}
-                                            {option.image_url && (
-                                                <img
-                                                    src={option.image_url}
-                                                    alt={`Option ${optionLabel}`}
-                                                    className="max-w-xs rounded mt-2"
+                                        {optionLabel}
+                                    </span>
+                                    <div className="flex-1 pt-1">
+                                        {option.text && (
+                                            <span
+                                                className={cn(
+                                                    "text-sm leading-relaxed",
+                                                    isCorrect || isSelected
+                                                        ? "text-gray-900 font-medium"
+                                                        : "text-gray-700",
+                                                )}
+                                            >
+                                                <ImageEnhancedText
+                                                    content={option.text}
                                                 />
-                                            )}
-                                        </div>
-                                        {isCorrect && (
-                                            <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0 mt-1" />
+                                            </span>
                                         )}
-                                        {isWrong && (
-                                            <XCircle className="h-5 w-5 text-rose-400 shrink-0 mt-1" />
+                                        {option.image_url && (
+                                            <img
+                                                src={option.image_url}
+                                                alt={`Option ${optionLabel}`}
+                                                className="max-w-xs rounded mt-2"
+                                            />
                                         )}
                                     </div>
-                                );
-                            })}
-                        </div>
+                                    {isCorrect && (
+                                        <CheckCircle className="h-5 w-5 text-emerald-500 shrink-0 mt-1" />
+                                    )}
+                                    {isWrong && (
+                                        <XCircle className="h-5 w-5 text-rose-400 shrink-0 mt-1" />
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
+                </>
+            );
+
+            const questionStem = (
+                <>
+                    {questionBadge}
+                    <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
+                        <ImageEnhancedText content={questionText} block />
+                    </div>
+                    {questionImages.length > 0 && (
+                        <div
+                            className={`mt-4 grid gap-3 ${questionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
+                        >
+                            {questionImages.map((imgUrl, idx) => (
+                                <img
+                                    key={`question-img-${idx}`}
+                                    src={imgUrl}
+                                    alt={`Question image ${idx + 1}`}
+                                    className="max-w-full rounded-lg border"
+                                />
+                            ))}
+                        </div>
+                    )}
+                    {!wasAttempted && (
+                        <p className="text-xs text-slate-400 italic flex items-center gap-1.5 mt-4">
+                            <Minus className="h-3.5 w-3.5" />
+                            Not attempted
+                        </p>
+                    )}
+                    {solutionBlock}
+                </>
+            );
+
+            if (hasExternalPassage) {
+                return (
+                    <div className="p-6 md:p-8 space-y-6">
+                        {questionStem}
+                        {optionsBlock}
+                    </div>
+                );
+            }
+
+            return (
+                <div className="grid grid-cols-2 gap-0 min-h-0">
+                    <div className="p-6 md:p-8 border-r border-gray-200">
+                        {questionStem}
+                    </div>
+                    <div className="p-6 md:p-8">{optionsBlock}</div>
                 </div>
             );
         }

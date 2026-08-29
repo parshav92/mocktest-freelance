@@ -20,11 +20,13 @@ import {
     Search,
     ChevronLeft,
     ChevronRight,
-    Trash2,
-    GripVertical,
     SaveAll,
     Send,
+    ArrowUpDown,
 } from "lucide-react";
+import { SortableQuestionList } from "@/components/admin/sortable-question-list";
+import { sortQuestionsByPassage } from "@/lib/utils/sort-questions-by-passage";
+import { hasReadingPassageQuestions } from "@/lib/utils/reading-test";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 interface SubjectInfo {
@@ -44,6 +46,7 @@ interface Question {
     correct_answer: Record<string, unknown> | null;
     marks: number;
     is_active: boolean;
+    passage_ids?: string[];
     subjects: SubjectInfo;
 }
 
@@ -264,14 +267,13 @@ export default function EditCustomTestPage() {
         setSelectedQuestions((prev) => prev.filter((q) => q.id !== qid));
     };
 
-    const moveQuestion = (index: number, direction: "up" | "down") => {
-        setSelectedQuestions((prev) => {
-            const next = [...prev];
-            const target = direction === "up" ? index - 1 : index + 1;
-            if (target < 0 || target >= next.length) return prev;
-            [next[index], next[target]] = [next[target], next[index]];
-            return next;
-        });
+    const showGroupByExtract = useMemo(
+        () => hasReadingPassageQuestions(selectedQuestions),
+        [selectedQuestions],
+    );
+
+    const groupByPassage = () => {
+        setSelectedQuestions((prev) => sortQuestionsByPassage(prev));
     };
 
     // ─── Save (optionally publish) ───────────────────────────────────
@@ -286,8 +288,8 @@ export default function EditCustomTestPage() {
             setSubmitError("Slug is required.");
             return;
         }
-        if (selectedQuestions.length === 0) {
-            setSubmitError("Add at least one question.");
+        if (publish && selectedQuestions.length === 0) {
+            setSubmitError("Add at least one question before publishing.");
             return;
         }
 
@@ -299,7 +301,7 @@ export default function EditCustomTestPage() {
                 body: JSON.stringify({
                     name: name.trim(),
                     slug: slug.trim(),
-                    description: description.trim() || null,
+                    description: (description ?? "").trim() || null,
                     visibility,
                     duration_mins: durationMins,
                     is_active: publish ? true : isActive,
@@ -511,10 +513,24 @@ export default function EditCustomTestPage() {
                         <h2 className="text-lg font-semibold text-zinc-900">
                             Selected Questions
                         </h2>
-                        <span className="text-sm text-zinc-500">
-                            {selectedQuestions.length} question
-                            {selectedQuestions.length !== 1 ? "s" : ""}
-                        </span>
+                        <div className="flex items-center gap-2">
+                            {showGroupByExtract && selectedQuestions.length > 1 && (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={groupByPassage}
+                                    className="h-8 text-xs gap-1"
+                                >
+                                    <ArrowUpDown className="h-3 w-3" />
+                                    Group by extract
+                                </Button>
+                            )}
+                            <span className="text-sm text-zinc-500">
+                                {selectedQuestions.length} question
+                                {selectedQuestions.length !== 1 ? "s" : ""}
+                            </span>
+                        </div>
                     </div>
 
                     {selectedQuestions.length === 0 ? (
@@ -522,64 +538,34 @@ export default function EditCustomTestPage() {
                             No questions added. Use the picker below.
                         </p>
                     ) : (
-                        <div className="space-y-2">
-                            {selectedQuestions.map((q, idx) => (
-                                <div
-                                    key={q.id}
-                                    className="flex items-center gap-3 rounded-xl border border-slate-200/70 bg-zinc-50 px-4 py-3"
-                                >
-                                    <div className="flex flex-col gap-0.5">
-                                        <button
-                                            onClick={() => moveQuestion(idx, "up")}
-                                            disabled={idx === 0}
-                                            className="text-zinc-400 hover:text-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed"
+                        <SortableQuestionList
+                            items={selectedQuestions}
+                            onReorder={setSelectedQuestions}
+                            onRemove={removeQuestion}
+                            renderDetails={(q) => (
+                                <>
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <span className="text-xs font-mono text-zinc-500">
+                                            {q.code}
+                                        </span>
+                                        <Badge variant="secondary" className="text-[10px]">
+                                            {typeLabel(q.question_type)}
+                                        </Badge>
+                                        <span
+                                            className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium capitalize ${difficultyColor(q.difficulty)}`}
                                         >
-                                            <GripVertical className="h-3 w-3 rotate-180" />
-                                        </button>
-                                        <button
-                                            onClick={() => moveQuestion(idx, "down")}
-                                            disabled={idx === selectedQuestions.length - 1}
-                                            className="text-zinc-400 hover:text-zinc-700 disabled:opacity-30 disabled:cursor-not-allowed"
-                                        >
-                                            <GripVertical className="h-3 w-3" />
-                                        </button>
+                                            {q.difficulty}
+                                        </span>
+                                        <span className="text-[10px] text-zinc-400">
+                                            {q.subjects?.name}
+                                        </span>
                                     </div>
-
-                                    <span className="text-xs font-mono text-zinc-400 w-6 text-center">
-                                        {idx + 1}
-                                    </span>
-
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="text-xs font-mono text-zinc-500">
-                                                {q.code}
-                                            </span>
-                                            <Badge variant="secondary" className="text-[10px]">
-                                                {typeLabel(q.question_type)}
-                                            </Badge>
-                                            <span
-                                                className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium capitalize ${difficultyColor(q.difficulty)}`}
-                                            >
-                                                {q.difficulty}
-                                            </span>
-                                            <span className="text-[10px] text-zinc-400">
-                                                {q.subjects?.name}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-zinc-600 mt-0.5 truncate">
-                                            {questionPreview(q.content)}
-                                        </p>
-                                    </div>
-
-                                    <button
-                                        onClick={() => removeQuestion(q.id)}
-                                        className="p-1.5 rounded-lg hover:bg-red-50 text-zinc-400 hover:text-red-500 transition-colors"
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </button>
-                                </div>
-                            ))}
-                        </div>
+                                    <p className="text-xs text-zinc-600 mt-0.5 truncate">
+                                        {questionPreview(q.content)}
+                                    </p>
+                                </>
+                            )}
+                        />
                     )}
                 </section>
 
