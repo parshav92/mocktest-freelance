@@ -18,15 +18,18 @@ const defaultFaqItems = [
         answer: "You can reach out via Contact Us page. As a Sydney-based platform, we are here to help with any technical or account related queries.",
     },
     {
-        question: "How is this website offering different compared to traditional coaching?",
+        question:
+            "How is this website offering different compared to traditional coaching?",
         answer: "Unlike rigid, expensive coaching (often $700+), and limited test offering of traditional coaching, we offer a flexible, AI-powered platform. We provide immediate feedback and unlimited timed mock exams that simulate the real Selective Test Environment, ensuring the student builds the digital literacy required for the current NSW Department of Education format.",
     },
     {
-        question: "What is the best way to prepare for the 2026 NSW Selective High School Placement Test?",
+        question:
+            "What is the best way to prepare for the 2026 NSW Selective High School Placement Test?",
         answer: "The most effective preparation involves consistent practice with materials that match the official computer-based format. This website through subscription plan provides over 3000+ NSW selective-style questions, including Reading, Mathematical Reasoning, Thinking Skills, and Writing, designed specifically for NSW and Sydney students aiming for top-tier schools.",
     },
     {
-        question: "Are the mock tests similar to the official computer-based Selective Test?",
+        question:
+            "Are the mock tests similar to the official computer-based Selective Test?",
         answer: "Yes. The NSW Selective Test is now fully computer-based, our platform simulates similar environment. Our 60+ full-length mock exams replicate the timing, navigation, and difficulty level of the official test, helping students master time management and reduce exam-day anxiety.",
     },
     {
@@ -47,7 +50,7 @@ const defaultFaqItems = [
     },
     {
         question: "Can I use one account for multiple students?",
-        answer: "No. Each account is strictly for a single student. Our \"Custom Mock Exams\" and progress tracking are personalised to each student. Sharing an account would merge data of multiple learners, making the feedback and performance insights inaccurate.",
+        answer: 'No. Each account is strictly for a single student. Our "Custom Mock Exams" and progress tracking are personalised to each student. Sharing an account would merge data of multiple learners, making the feedback and performance insights inaccurate.',
     },
 ];
 
@@ -56,8 +59,12 @@ interface FaqContactSectionProps {
     faqItems?: Array<{ _id?: string; question: string; answer: string }>;
 }
 
-const FaqContactSection = ({ isPage = false, faqItems }: FaqContactSectionProps) => {
-    const activeFaqItems = faqItems && faqItems.length > 0 ? faqItems : defaultFaqItems;
+const FaqContactSection = ({
+    isPage = false,
+    faqItems,
+}: FaqContactSectionProps) => {
+    const activeFaqItems =
+        faqItems && faqItems.length > 0 ? faqItems : defaultFaqItems;
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -94,7 +101,7 @@ const FaqContactSection = ({ isPage = false, faqItems }: FaqContactSectionProps)
                             </p>
                         </div>
 
-                        <div className="bg-slate-50 rounded-3xl border border-slate-100 p-6 md:p-8 max-h-[600px] overflow-y-auto custom-scrollbar">
+                        <div className="bg-slate-50 rounded-3xl border border-slate-100 p-6 py-4 md:p-8 md:py-6 max-h-[600px] overflow-y-auto custom-scrollbar">
                             <Accordion
                                 type="single"
                                 collapsible
@@ -127,8 +134,7 @@ const FaqContactSection = ({ isPage = false, faqItems }: FaqContactSectionProps)
                                 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4"
                                 style={{ letterSpacing: "-0.04em" }}
                             >
-                                Contact{" "}
-                                <span className="text-sky-600">Us</span>
+                                Contact <span className="text-sky-600">Us</span>
                             </h2>
                             <p className="text-slate-600">
                                 Have questions about our platform? We&apos;re
@@ -137,10 +143,7 @@ const FaqContactSection = ({ isPage = false, faqItems }: FaqContactSectionProps)
                         </div>
 
                         <div className="bg-[#7DD3FC] backdrop-blur-sm rounded-3xl border border-slate-700/50 p-6 md:p-8">
-                            <form
-                                onSubmit={handleSubmit}
-                                className="space-y-4"
-                            >
+                            <form onSubmit={handleSubmit} className="space-y-4">
                                 <div className="space-y-2">
                                     <Label
                                         htmlFor="fullName"
