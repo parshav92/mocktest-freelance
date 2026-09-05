@@ -51,6 +51,7 @@ const DEFAULT_STUDENTS: StudentCredential[] = [
     { studentId: "STUHZZXH", password: "123456" },
 ];
 
+
 const args = process.argv.slice(2);
 const BASE_URL =
     getArgValue("--base-url") || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
