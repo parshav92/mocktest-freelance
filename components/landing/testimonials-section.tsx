@@ -19,7 +19,7 @@ const DEFAULT_TESTIMONIALS: Testimonial[] = [
         name: "Priya Sharma",
         role: "Parent",
         content:
-            "MockTest has been a game-changer for my daughter's preparation. The detailed analytics helped us identify weak areas and focus on improvement. She scored in the top 5% in her selective test!",
+            "Selectorial has been a game-changer for my daughter's preparation. The detailed analytics helped us identify weak areas and focus on improvement. She scored in the top 5% in her selective test!",
         rating: 5,
     },
     {

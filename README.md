@@ -1,4 +1,4 @@
-# MockTest Platform
+# Selectoial Platform
 
 An adaptive mock test platform for competitive exam prep — built for parents, students, and admins.
 

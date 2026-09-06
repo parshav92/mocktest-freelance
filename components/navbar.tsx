@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
@@ -54,30 +55,30 @@ const Navbar = () => {
             )}
         >
             <div className="max-w-6xl w-fit ml-auto md:mx-auto px-6">
-                {/* Logo */}
-                {/* <div className={cn(
-                    "flex items-center justify-center mb-2 transition-all duration-500",
-                    scrolled ? "opacity-0 h-0 mb-0 overflow-hidden" : "opacity-100"
-                )}>
-                    <Link href="/" className="flex items-center gap-2.5">
-                        <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-sky-500 text-white font-bold text-sm">
-                            MT
-                        </div>
-                        <span className="font-semibold text-lg tracking-tight text-slate-900">
-                            MockTest
-                        </span>
-                    </Link>
-                </div> */}
-
                 {/* Navigation Bar */}
                 <nav
                     className={cn(
-                        "relative flex items-center justify-between md:justify-center px-4 py-2 rounded-2xl transition-all duration-500",
+                        "relative flex items-center justify-between px-4 py-2 rounded-2xl transition-all duration-500",
                         scrolled
                             ? "bg-white/80 backdrop-blur-xl shadow-lg shadow-black/[0.03]"
                             : "bg-transparent",
                     )}
                 >
+                    <Link
+                        href="/"
+                        className="flex shrink-0 items-center"
+                        aria-label="Selectorial home"
+                    >
+                        <Image
+                            src="/selectorial_logo.jpeg"
+                            alt="Selectorial"
+                            width={635}
+                            height={574}
+                            className="h-9 w-auto rounded-md object-contain"
+                            priority
+                        />
+                    </Link>
+
                     {/* Mobile Menu Toggle - Now on the right */}
                     <button
                         className="md:hidden flex items-center justify-center w-10 h-10 rounded-lg hover:bg-zinc-100 transition-colors order-last ml-auto"

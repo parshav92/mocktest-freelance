@@ -365,13 +365,13 @@ function AuthPageInner() {
 
                                     {/* Footer */}
                                     <div className="text-center space-y-3">
-                                        <Link
+                                        {/* <Link
                                             href="/"
                                             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
                                         >
                                             <ArrowLeft className="w-4 h-4" />
                                             Back to Home
-                                        </Link>
+                                        </Link> */}
                                         <p className="text-sm text-slate-600">
                                             Need Help?{" "}
                                             <a
@@ -522,7 +522,7 @@ function AuthPageInner() {
                                                 <Input
                                                     id="fullName"
                                                     name="fullName"
-                                                    placeholder="John Doe"
+                                                    placeholder="Enter your full name"
                                                     className="bg-white border-slate-200 focus:border-sky-500 focus:ring-sky-500 h-12 rounded-xl"
                                                     required
                                                     disabled={isLoading}
@@ -540,7 +540,7 @@ function AuthPageInner() {
                                                 id="email"
                                                 name="email"
                                                 type="email"
-                                                placeholder="you@example.com"
+                                                placeholder="name@example.com"
                                                 className="bg-white border-slate-200 focus:border-sky-500 focus:ring-sky-500 h-12 rounded-xl"
                                                 required
                                                 disabled={isLoading}

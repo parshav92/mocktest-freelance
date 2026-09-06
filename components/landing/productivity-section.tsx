@@ -19,7 +19,7 @@ const ProductivitySection = () => {
     ];
 
     const codeSnippets = [
-        { label: "Daily MockTest", status: "completed" },
+        { label: "Daily Selectorial", status: "completed" },
         { label: "Weekly Reviews", status: "completed" },
         { label: "Parental Control", status: "completed" },
     ];

@@ -23,7 +23,7 @@ const DEFAULT_STATS: Stat[] = [
 const STAT_COLORS = ["text-sky-500", "text-emerald-500", "text-amber-500"];
 
 const AboutSection = ({
-    heading = "Welcome to MockTest!",
+    heading = "Welcome to Selectorial!",
     description = "We provide comprehensive academic preparation to help students excel in their examinations. Our platform offers expertly crafted mock tests, detailed analytics, and personalized insights for academic success.",
     stats,
 }: AboutSectionProps) => {

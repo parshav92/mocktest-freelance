@@ -154,7 +154,7 @@ const FaqContactSection = ({
                                     <Input
                                         id="fullName"
                                         name="fullName"
-                                        placeholder="John Doe"
+                                        placeholder="Enter your full name"
                                         className="bg-white focus:border-sky-500 text-black placeholder:text-slate-400 h-12 rounded-xl"
                                         required
                                     />
@@ -170,7 +170,7 @@ const FaqContactSection = ({
                                         id="contactPhone"
                                         name="phone"
                                         type="tel"
-                                        placeholder="+91 98765 43210"
+                                        placeholder="Enter your phone number"
                                         className="bg-white focus:border-sky-500 text-black placeholder:text-slate-400 h-12 rounded-xl"
                                     />
                                 </div>
@@ -185,7 +185,7 @@ const FaqContactSection = ({
                                         id="contactEmail"
                                         name="email"
                                         type="email"
-                                        placeholder="you@example.com"
+                                        placeholder="name@example.com"
                                         className="bg-white focus:border-sky-500 text-black placeholder:text-slate-400 h-12 rounded-xl"
                                         required
                                     />
@@ -200,7 +200,7 @@ const FaqContactSection = ({
                                     <Input
                                         id="contactSubject"
                                         name="subject"
-                                        placeholder="How can we help?"
+                                        placeholder="What can we help with?"
                                         className="bg-white focus:border-sky-500 text-black placeholder:text-slate-400 h-12 rounded-xl"
                                         required
                                     />
@@ -215,7 +215,7 @@ const FaqContactSection = ({
                                     <textarea
                                         id="contactMessage"
                                         name="message"
-                                        placeholder="Tell us about your query..."
+                                        placeholder="Share a few details so we can help."
                                         rows={3}
                                         className="w-full bg-white focus:border-sky-500 text-black placeholder:text-slate-400 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                                         required

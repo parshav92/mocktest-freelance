@@ -9,7 +9,7 @@ export const footerSettings = defineType({
             name: "email",
             title: "Support Email",
             type: "string",
-            description: "e.g. support@mocktest.com.au",
+            description: "e.g. support@selectorial.com.au",
             validation: (Rule) => Rule.email(),
         }),
         defineField({
@@ -26,7 +26,7 @@ export const footerSettings = defineType({
             name: "copyrightText",
             title: "Copyright Text",
             type: "string",
-            description: "e.g. '© 2026 MockTest. All rights reserved.'",
+            description: "e.g. '© 2026 Selectorial. All rights reserved.'",
         }),
     ],
     preview: {

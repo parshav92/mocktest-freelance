@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Mail, Phone, MapPin } from "lucide-react";
 
 const footerLinks = {
@@ -6,7 +7,7 @@ const footerLinks = {
         title: "Social Media",
         links: [
             { label: "Website: Home", href: "/" },
-            { label: "Email:", href: "mailto:support@mocktest.com" },
+            { label: "Email:", href: "mailto:support@selectorial.com" },
             { label: "Facebook:", href: "https://facebook.com" },
             { label: "Instagram:", href: "https://instagram.com" },
         ],
@@ -65,13 +66,13 @@ interface FooterProps {
 }
 
 const Footer = ({
-    email = "support@mocktest.com",
+    email = "support@selectorial.com",
     facebookUrl = "https://facebook.com",
     instagramUrl = "https://instagram.com",
     copyrightText,
 }: FooterProps) => {
-    const currentYear = new Date().getFullYear();
-    const copyright = copyrightText ?? `© ${currentYear} MockTest. All rights reserved. ABN: XX XXX XXX XXX`;
+    const copyright =
+        copyrightText ?? `© Selectorial. All rights reserved. ABN: 57 696 042 332`;
 
     return (
         <footer
@@ -86,12 +87,14 @@ const Footer = ({
                             href="/"
                             className="inline-flex items-center gap-2.5 mb-6"
                         >
-                            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-sky-500 text-black font-bold text-sm">
-                                MT
-                            </div>
-                            <span className="font-semibold text-lg tracking-tight">
-                                MockTest
-                            </span>
+                            <Image
+                                src="/selectorial_logo.jpeg"
+                                alt="Selectorial"
+                                width={635}
+                                height={574}
+                                className="h-10 w-auto rounded-lg object-contain"
+                                priority
+                            />
                         </Link>
                         <p className="text-black-400 text-sm leading-relaxed mb-6 max-w-sm">
                             Empowering students to achieve their academic goals
@@ -107,15 +110,15 @@ const Footer = ({
                                 {email}
                             </a>
                             <a
-                                href="tel:+919876543210"
+                                href="tel:+61299999999"
                                 className="flex items-center gap-3 text-sm text-black-400 hover:text-sky-400 transition-colors"
                             >
                                 <Phone className="w-4 h-4" />
-                                +91 98765 43210
+                                +61 2 9999 9999
                             </a>
                             <div className="flex items-start gap-3 text-sm text-black-400">
                                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
-                                Mumbai, Maharashtra, India
+                                Sydney, NSW, Australia
                             </div>
                         </div>
                     </div>

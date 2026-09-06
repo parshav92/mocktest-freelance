@@ -76,7 +76,7 @@ export default async function FAQPage() {
                         </h1>
                         <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto">
                             Find answers to common questions about our platform,
-                            features, and how to get started with MockTest.
+                            features, and how to get started with Selectorial.
                         </p>
                     </div>
                 </section>

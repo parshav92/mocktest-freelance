@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 interface HeroSectionProps {
@@ -11,7 +11,7 @@ interface HeroSectionProps {
 }
 
 const HeroSection = ({
-    heading = "Welcome To MockTest",
+    heading = "Welcome To Selectorial",
     subheading = "Most Trusted Selective Test Preparation Platform. Transform your educational aspirations into reality with personalized guidance, expert mentorship, and proven strategies for success.",
     primaryButtonText = "Free Trial",
     secondaryButtonText = "Subscription Plan",
@@ -155,7 +155,7 @@ const HeroSection = ({
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <div className="text-xs font-semibold text-sky-600 uppercase tracking-wider mb-1">
-                                            Mock Test
+                                            Selectorial
                                         </div>
                                         <div className="text-lg font-bold text-slate-900">
                                             High School Exam

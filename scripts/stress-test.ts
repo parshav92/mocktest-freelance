@@ -167,7 +167,7 @@ async function runScenario(scenario: TestScenario): Promise<Result> {
 async function main(): Promise<void> {
   console.log("");
   console.log("╔══════════════════════════════════════════════════════════╗");
-  console.log("║           🔥 MockTest Stress Test Suite 🔥              ║");
+  console.log("║           🔥 Selectorial Stress Test Suite 🔥              ║");
   console.log("╠══════════════════════════════════════════════════════════╣");
   console.log(`║  Target:       ${BASE_URL.padEnd(41)}║`);
   console.log(`║  Mode:         ${isHeavy ? "HEAVY (30s, 100 conn)" : "DEFAULT (10s, 10 conn)".padEnd(41)}║`);
