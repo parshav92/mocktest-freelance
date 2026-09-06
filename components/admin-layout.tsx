@@ -10,7 +10,6 @@ import {
     LogOut,
     Menu,
     X,
-    Users,
     CreditCard,
     ClipboardList,
     Library,
