@@ -563,6 +563,16 @@ function AuthPageInner() {
                                                 required
                                                 disabled={isLoading}
                                             />
+                                            {authMode === "signin" && (
+                                                <div className="flex justify-end">
+                                                    <Link
+                                                        href="/auth/forgot-password"
+                                                        className="text-xs font-medium text-sky-600 transition-colors hover:text-sky-700"
+                                                    >
+                                                        Forgot password?
+                                                    </Link>
+                                                </div>
+                                            )}
                                         </div>
                                         <Button
                                             type="submit"

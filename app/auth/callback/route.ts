@@ -4,8 +4,10 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get("code");
-  // Support both ?redirect= (our custom param) and ?next= (Supabase default)
-  const next = searchParams.get("redirect") ?? searchParams.get("next") ?? "/dashboard";
+  const requestedRedirect = searchParams.get("redirect") ?? searchParams.get("next");
+  const next = requestedRedirect?.startsWith("/") && !requestedRedirect.startsWith("//")
+    ? requestedRedirect
+    : "/dashboard";
 
   if (code) {
     const supabase = await createClient();
