@@ -32,6 +32,7 @@ import {
     Save,
 } from "lucide-react";
 import type { TypeQuotas } from "@/types/test";
+import { WritingMarkingCriteriaSection } from "@/components/admin/writing-marking-criteria-section";
 
 // All valid question type keys (including passage group controls)
 const QUESTION_TYPE_OPTIONS = [
@@ -479,6 +480,11 @@ export default function ManageSubjectPage() {
                         )}
                     </Button>
                 </div>
+
+                {/* Writing-only: marking criteria reference */}
+                {subject.slug === "writing" && (
+                    <WritingMarkingCriteriaSection />
+                )}
             </div>
         </div>
     );
