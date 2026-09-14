@@ -9,7 +9,7 @@ export const heroSection = defineType({
             name: "heading",
             title: "Main Heading",
             type: "string",
-            description: "The large heading text (e.g. 'Welcome To MockTest')",
+            description: "The large heading text (e.g. 'Welcome To Selectorial')",
             validation: (Rule) => Rule.required(),
         }),
         defineField({

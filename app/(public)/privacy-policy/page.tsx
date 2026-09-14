@@ -59,7 +59,7 @@ Please note that we do not alter our website’s data collection and use practic
         {
             title: "Policy Change",
             content:
-                `We reserve the right to modify, update or remove this Privacy Policy or any other of our policies or practices. We will notify you by modifying the revised version on the selective trial website homepage and ask for your agreement to it at that time. If you do not agree to the amended Privacy Policy, you may not continue navigating or operating this website. Policy changes are effective from the time of such publication. In addition, we are fully authorised to change the subscription price any time without any notice; your price may get upgraded with a new price after the completion of your (any) current package, if applicable.
+                `We reserve the right to modify, update or remove this Privacy Policy or any other of our policies or practices. We will notify you by modifying the revised version on the Selectorial website homepage and ask for your agreement to it at that time. If you do not agree to the amended Privacy Policy, you may not continue navigating or operating this website. Policy changes are effective from the time of such publication. In addition, we are fully authorised to change the subscription price any time without any notice; your price may get upgraded with a new price after the completion of your (any) current package, if applicable.
 `,
         },
         {
@@ -98,6 +98,17 @@ Please note that we do not alter our website’s data collection and use practic
                     </p>
                     <p className="text-sm text-slate-500 mt-4">
                         Last updated: February 15, 2026
+                    </p>
+                </div>
+            </section>
+
+            <section className="px-6 mt-6">
+                <div className="max-w-4xl mx-auto text-center">
+                    <p className="text-slate-600 max-w-2xl mx-auto">
+                        This Privacy Policy applies to Selectorial, a service
+                        operated by DEDHIA FAMILY PTY LTD. By using the
+                        Selectorial website and services you acknowledge and
+                        accept the terms of this Privacy Policy.
                     </p>
                 </div>
             </section>

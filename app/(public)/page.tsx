@@ -8,7 +8,6 @@ import PricingSection from "@/components/landing/pricing-section";
 import FaqContactSection from "@/components/landing/faq-contact-section";
 import Footer from "@/components/landing/footer";
 import {
-    getHeroSection,
     getPricingPlans,
     getTestimonials,
     getFaqItems,
@@ -18,9 +17,8 @@ import {
 } from "@/lib/sanity/queries";
 
 export default async function Home() {
-    const [hero, plans, testimonials, faqItems, about, whyUsItems, footer] =
+    const [plans, testimonials, faqItems, about, whyUsItems, footer] =
         await Promise.all([
-            getHeroSection(),
             getPricingPlans(),
             getTestimonials(),
             getFaqItems(),
@@ -32,12 +30,7 @@ export default async function Home() {
     return (
         <div className="min-h-screen">
             <Navbar />
-            <HeroSection
-                heading={hero?.heading}
-                subheading={hero?.subheading}
-                primaryButtonText={hero?.primaryButtonText}
-                secondaryButtonText={hero?.secondaryButtonText}
-            />
+            <HeroSection />
             <SampleReportSection />
             {/* <AboutSection heading={about?.heading} description={about?.description} stats={about?.stats} /> */}
             {/* <WhyUsSection items={whyUsItems} /> */}

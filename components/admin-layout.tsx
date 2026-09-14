@@ -10,7 +10,6 @@ import {
     LogOut,
     Menu,
     X,
-    Users,
     CreditCard,
     ClipboardList,
     Library,
@@ -160,7 +159,7 @@ export function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
                     <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
                             <h1 className="text-xl font-bold truncate">
-                                MockTest Admin
+                                Selectorial Admin
                             </h1>
                             <p className="text-slate-400 text-sm mt-1 truncate">
                                 {user.fullName}

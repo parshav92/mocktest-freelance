@@ -291,7 +291,7 @@ function printReport(totalElapsed: number): void {
 async function main(): Promise<void> {
   console.log("");
   console.log("╔══════════════════════════════════════════════════════════════╗");
-  console.log("║        🎓 MockTest Authenticated Load Test 🎓               ║");
+  console.log("║        🎓 Selectorial Authenticated Load Test 🎓               ║");
   console.log("╠══════════════════════════════════════════════════════════════╣");
   console.log(`║  Target:          ${BASE_URL.padEnd(42)}║`);
   console.log(`║  Virtual Students: ${String(NUM_STUDENTS).padEnd(41)}║`);

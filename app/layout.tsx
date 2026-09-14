@@ -15,7 +15,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-    title: "MockTest",
+    title: "Selectorial",
     description: "A platform to create and take mock tests.",
 };
 

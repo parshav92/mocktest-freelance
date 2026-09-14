@@ -84,7 +84,7 @@ const WhyUsSection = ({ items }: WhyUsSectionProps) => {
                         style={{ letterSpacing: "-0.04em" }}
                     >
                         Why Choose{" "}
-                        <span className="text-sky-600">MockTest</span>?
+                        <span className="text-sky-600">Selectorial</span>?
                     </h2>
                     <p className="text-slate-600 max-w-2xl mx-auto">
                         Expert guidance for a seamless study journey, backed by

@@ -27,12 +27,19 @@ function AuthPageInner() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
+    const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
     const [checking, setChecking] = useState(true);
 
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirectTo = searchParams.get("redirect") || "/dashboard";
     const supabase = createClient();
+
+    const getAuthCallbackUrl = () => {
+        const callbackUrl = new URL("/auth/callback", window.location.origin);
+        callbackUrl.searchParams.set("redirect", "/dashboard");
+        return callbackUrl.toString();
+    };
 
     // Redirect if already authenticated
     useEffect(() => {
@@ -83,6 +90,7 @@ function AuthPageInner() {
         setIsLoading(true);
         setError(null);
         setMessage(null);
+        setConfirmationEmail(null);
 
         const formData = new FormData(e.currentTarget);
         const email = formData.get("email") as string;
@@ -94,6 +102,7 @@ function AuthPageInner() {
                 email,
                 password,
                 options: {
+                    emailRedirectTo: getAuthCallbackUrl(),
                     data: {
                         full_name: fullName,
                         role: "parent",
@@ -105,6 +114,7 @@ function AuthPageInner() {
                 setError(error.message);
             } else {
                 setMessage("Check your email to confirm your account.");
+                setConfirmationEmail(email);
             }
         } else {
             const { error } = await supabase.auth.signInWithPassword({
@@ -113,10 +123,44 @@ function AuthPageInner() {
             });
 
             if (error) {
-                setError(error.message);
+                const isUnconfirmed =
+                    error.code === "email_not_confirmed" ||
+                    error.message.toLowerCase().includes("email not confirmed");
+                setError(
+                    isUnconfirmed
+                        ? "Please confirm your email address before signing in."
+                        : error.message,
+                );
+                if (isUnconfirmed) {
+                    setConfirmationEmail(email);
+                }
             } else {
                 window.location.href = redirectTo;
             }
+        }
+
+        setIsLoading(false);
+    };
+
+    const handleResendConfirmation = async () => {
+        if (!confirmationEmail) return;
+
+        setIsLoading(true);
+        setError(null);
+        setMessage(null);
+
+        const { error } = await supabase.auth.resend({
+            type: "signup",
+            email: confirmationEmail,
+            options: {
+                emailRedirectTo: getAuthCallbackUrl(),
+            },
+        });
+
+        if (error) {
+            setError("We couldn’t send a new confirmation email. Please try again shortly.");
+        } else {
+            setMessage("A new confirmation email has been sent. Please check your inbox.");
         }
 
         setIsLoading(false);
@@ -183,6 +227,7 @@ function AuthPageInner() {
         setSelectedRole(null);
         setError(null);
         setMessage(null);
+        setConfirmationEmail(null);
     };
 
     return (
@@ -365,13 +410,13 @@ function AuthPageInner() {
 
                                     {/* Footer */}
                                     <div className="text-center space-y-3">
-                                        <Link
+                                        {/* <Link
                                             href="/"
                                             className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 transition-colors"
                                         >
                                             <ArrowLeft className="w-4 h-4" />
                                             Back to Home
-                                        </Link>
+                                        </Link> */}
                                         <p className="text-sm text-slate-600">
                                             Need Help?{" "}
                                             <a
@@ -522,7 +567,7 @@ function AuthPageInner() {
                                                 <Input
                                                     id="fullName"
                                                     name="fullName"
-                                                    placeholder="John Doe"
+                                                    placeholder="Enter your full name"
                                                     className="bg-white border-slate-200 focus:border-sky-500 focus:ring-sky-500 h-12 rounded-xl"
                                                     required
                                                     disabled={isLoading}
@@ -540,11 +585,21 @@ function AuthPageInner() {
                                                 id="email"
                                                 name="email"
                                                 type="email"
-                                                placeholder="you@example.com"
+                                                placeholder="name@example.com"
                                                 className="bg-white border-slate-200 focus:border-sky-500 focus:ring-sky-500 h-12 rounded-xl"
                                                 required
                                                 disabled={isLoading}
                                             />
+                                            {authMode === "signin" && (
+                                                <div className="flex justify-end">
+                                                    <Link
+                                                        href="/auth/forgot-password"
+                                                        className="text-xs font-medium text-sky-600 transition-colors hover:text-sky-700"
+                                                    >
+                                                        Forgot password?
+                                                    </Link>
+                                                </div>
+                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <Label
@@ -563,6 +618,16 @@ function AuthPageInner() {
                                                 required
                                                 disabled={isLoading}
                                             />
+                                            {authMode === "signin" && (
+                                                <div className="flex justify-end">
+                                                    <Link
+                                                        href="/auth/forgot-password"
+                                                        className="text-xs font-medium text-sky-600 transition-colors hover:text-sky-700"
+                                                    >
+                                                        Forgot password?
+                                                    </Link>
+                                                </div>
+                                            )}
                                         </div>
                                         <Button
                                             type="submit"
@@ -577,6 +642,24 @@ function AuthPageInner() {
                                                 : "Create Account"}
                                         </Button>
                                     </form>
+
+                                    {confirmationEmail && (
+                                        <div className="mt-5 rounded-2xl border border-sky-200 bg-sky-50 p-4">
+                                            <p className="text-sm leading-5 text-slate-700">
+                                                Didn&apos;t receive the confirmation email?
+                                            </p>
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                className="mt-3 h-10 w-full rounded-xl border-sky-200 bg-white text-sky-700 hover:bg-sky-100"
+                                                onClick={handleResendConfirmation}
+                                                disabled={isLoading}
+                                            >
+                                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                                Resend confirmation email
+                                            </Button>
+                                        </div>
+                                    )}
 
                                     <div className="relative my-6">
                                         <div className="absolute inset-0 flex items-center">

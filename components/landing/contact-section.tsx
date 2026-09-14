@@ -46,7 +46,7 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
                     {/* Contact Form */}
                     <div className="bg-[#7DD3FC] backdrop-blur-sm rounded-3xl border border-slate-700/50 p-8 md:p-10">
                         <h3 className="text-xl font-semibold text-white mb-6">
@@ -55,16 +55,16 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                         <form onSubmit={handleSubmit} className="space-y-5">
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                    <Label
-                                        htmlFor="firstName"
-                                        className="text-black-300 text-sm"
-                                    >
-                                        First Name
-                                    </Label>
+                                        <Label
+                                            htmlFor="firstName"
+                                            className="text-black-300 text-sm"
+                                        >
+                                            First Name <span className="text-red-500">*</span>
+                                        </Label>
                                     <Input
                                         id="firstName"
                                         name="firstName"
-                                        placeholder="John"
+                                        placeholder="First name"
                                         className="bg-white focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
                                         required
                                     />
@@ -74,12 +74,12 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                         htmlFor="lastName"
                                         className="text-black-300 text-sm"
                                     >
-                                        Last Name
+                                        Last Name <span className="text-red-500">*</span>
                                     </Label>
                                     <Input
                                         id="lastName"
                                         name="lastName"
-                                        placeholder="Doe"
+                                        placeholder="Last name"
                                         className="bg-white focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
                                         required
                                     />
@@ -90,13 +90,13 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                     htmlFor="email"
                                     className="text-black-300 text-sm"
                                 >
-                                    Email
+                                    Email <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                     id="email"
                                     name="email"
                                     type="email"
-                                    placeholder="you@example.com"
+                                    placeholder="name@example.com"
                                     className="bg-white focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
                                     required
                                 />
@@ -106,14 +106,15 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                     htmlFor="phone"
                                     className="text-black-300 text-sm"
                                 >
-                                    Phone (optional)
+                                    Phone <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                     id="phone"
                                     name="phone"
                                     type="tel"
-                                    placeholder="+91 98765 43210"
+                                    placeholder="Enter your phone number"
                                     className="bg-white  focus:border-sky-500 text-black placeholder:text-black-500 h-12 rounded-xl"
+                                    required
                                 />
                             </div>
                             <div className="space-y-2">
@@ -121,12 +122,12 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                     htmlFor="message"
                                     className="text-black-300 text-sm"
                                 >
-                                    Message
+                                    Message <span className="text-red-500">*</span>
                                 </Label>
                                 <textarea
                                     id="message"
                                     name="message"
-                                    placeholder="Tell us about your query..."
+                                    placeholder="Share a few details so we can help."
                                     rows={4}
                                     className="w-full bg-white  focus:border-sky-500 text-black placeholder:text-black-500 rounded-xl px-4 py-3 resize-none focus:outline-none focus:ring-2 focus:ring-sky-500/20"
                                     required
@@ -164,7 +165,7 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
 
                         <div className="space-y-6">
                             <a
-                                href="mailto:support@mocktest.com"
+                                href="mailto:support@selectorial.com"
                                 className="group flex items-center gap-4 p-4 rounded-2xl border border-slate-700/50 hover:bg-slate-800/50 hover:border-white/50 transition-all duration-300 hover:scale-[0.98]"
                             >
                                 <div className="w-12 h-12 rounded-xl bg-sky-900/50 flex items-center justify-center group-hover:bg-sky-800/50 transition-colors">
@@ -175,14 +176,14 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                         Email
                                     </p>
                                     <p className="text-black font-medium">
-                                        support@mocktest.com
+                                        support@selectorial.com
                                     </p>
                                 </div>
                                 <ArrowRight className="w-4 h-4 text-black-500 ml-auto group-hover:text-white group-hover:translate-x-1 transition-all" />
                             </a>
 
                             <a
-                                href="tel:+919876543210"
+                                href="tel:+61299999999"
                                 className="group flex items-center gap-4 p-4 rounded-2xl border border-slate-700/50 hover:bg-slate-800/50 hover:border-white/50 transition-all duration-300 hover:scale-[0.98]"
                             >
                                 <div className="w-12 h-12 rounded-xl bg-sky-900/50 flex items-center justify-center group-hover:bg-sky-800/50 transition-colors">
@@ -193,7 +194,7 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                         Phone
                                     </p>
                                     <p className="text-black font-medium">
-                                        +91 98765 43210
+                                        +61 2 9999 9999
                                     </p>
                                 </div>
                                 <ArrowRight className="w-4 h-4 text-black-500 ml-auto group-hover:text-white group-hover:translate-x-1 transition-all" />
@@ -208,7 +209,7 @@ const ContactSection = ({ isPage = false }: ContactSectionProps) => {
                                         Address
                                     </p>
                                     <p className="text-black font-medium">
-                                        Mumbai, Maharashtra, India
+                                        Sydney, NSW, Australia
                                     </p>
                                 </div>
                             </div>
