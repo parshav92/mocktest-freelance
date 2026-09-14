@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/lib/supabase/admin";
 import type {
     MarkingCriteriaJson,
     MergedMarkingCriteria,
@@ -31,10 +32,18 @@ export function buildTopicPairKey(mainTopic: string, subTopic: string): string {
     return `${normalizeTopicValue(mainTopic).toLowerCase()}::${normalizeTopicValue(subTopic).toLowerCase()}`;
 }
 
+/**
+ * Always reads via service role — writing_marking_criteria may have RLS
+ * without a SELECT policy for the session client.
+ */
+function criteriaClient(_supabase?: SupabaseClient) {
+    return createAdminClient();
+}
+
 export async function loadValidWritingSubtopicKeys(
-    supabase: SupabaseClient,
+    _supabase?: SupabaseClient,
 ): Promise<Set<string>> {
-    const { data, error } = await supabase
+    const { data, error } = await criteriaClient(_supabase)
         .from("writing_marking_criteria")
         .select("main_topic, sub_topic")
         .not("sub_topic", "is", null);
@@ -79,13 +88,18 @@ export function validateWritingTopicPair(
 
 function parseCriteriaJson(
     mainTopic: string,
-    markingCriteria: MarkingCriteriaJson | null,
+    markingCriteria: MarkingCriteriaJson | string | null,
 ): MergedMarkingCriteria["criteria"] {
-    if (!markingCriteria?.criteria?.length) {
+    const parsed =
+        typeof markingCriteria === "string"
+            ? (JSON.parse(markingCriteria) as MarkingCriteriaJson)
+            : markingCriteria;
+
+    if (!parsed?.criteria?.length) {
         return [];
     }
 
-    return markingCriteria.criteria.map((criterion) => ({
+    return parsed.criteria.map((criterion) => ({
         name: criterion.name,
         style: mainTopic,
         descriptions: criterion.descriptions,
@@ -93,7 +107,7 @@ function parseCriteriaJson(
 }
 
 export async function getMergedMarkingCriteria(
-    supabase: SupabaseClient,
+    _supabase: SupabaseClient | undefined,
     mainTopic: string,
     subTopic: string,
 ): Promise<MergedMarkingCriteria> {
@@ -102,7 +116,7 @@ export async function getMergedMarkingCriteria(
         normalizeTopicValue(mainTopic);
     const normalizedSubTopic = normalizeTopicValue(subTopic);
 
-    const { data, error } = await supabase
+    const { data, error } = await criteriaClient(_supabase)
         .from("writing_marking_criteria")
         .select("main_topic, sub_topic, key_focus, marking_criteria")
         .in("main_topic", [normalizedMainTopic, "General"]);
@@ -116,15 +130,15 @@ export async function getMergedMarkingCriteria(
     const rows = data || [];
     const styleRow = rows.find(
         (row) =>
-            row.main_topic === normalizedMainTopic && row.sub_topic === null,
+            row.main_topic === normalizedMainTopic && row.sub_topic == null,
     );
     const generalRow = rows.find(
-        (row) => row.main_topic === "General" && row.sub_topic === null,
+        (row) => row.main_topic === "General" && row.sub_topic == null,
     );
     const subtopicRow = rows.find(
         (row) =>
             row.main_topic === normalizedMainTopic &&
-            row.sub_topic !== null &&
+            row.sub_topic != null &&
             normalizeTopicValue(row.sub_topic) === normalizedSubTopic,
     );
 
