@@ -228,7 +228,10 @@ export default function AdminUploadPage() {
                 const workbook = XLSX.read(arrayBuffer, { type: "array" });
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 const csv = sheetToCsvPreservingNewlines(firstSheet);
-                setCsvText(csv);
+                const { repairMojibakeText } = await import(
+                    "@/lib/utils/text-encoding"
+                );
+                setCsvText(repairMojibakeText(csv));
             } else {
                 // Read CSV with explicit UTF-8 decoding.
                 // Fall back to Windows-1252 (common Excel CSV encoding on Windows)
@@ -244,7 +247,11 @@ export default function AdminUploadPage() {
                 if (text.charCodeAt(0) === 0xfeff) {
                     text = text.slice(1);
                 }
-                setCsvText(text);
+                // Repair UTF-8-as-Latin-1 mojibake (e.g. Â“ for “) before parsing
+                const { repairMojibakeText } = await import(
+                    "@/lib/utils/text-encoding"
+                );
+                setCsvText(repairMojibakeText(text));
             }
         } finally {
             resetMainFileInput();

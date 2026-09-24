@@ -8,8 +8,14 @@ const footerLinks = {
         links: [
             { label: "Website: Home", href: "/" },
             { label: "Email:", href: "mailto:support@selectorial.com" },
-            { label: "Facebook:", href: "https://facebook.com" },
-            { label: "Instagram:", href: "https://instagram.com" },
+            {
+                label: "Facebook:",
+                href: "https://www.facebook.com/share/14tEcUFJw9u/",
+            },
+            {
+                label: "Instagram:",
+                href: "https://www.instagram.com/selectorialselective",
+            },
         ],
     },
     legals: {
@@ -67,8 +73,8 @@ interface FooterProps {
 
 const Footer = ({
     email = "support@selectorial.com",
-    facebookUrl = "https://facebook.com",
-    instagramUrl = "https://instagram.com",
+    facebookUrl = "https://www.facebook.com/share/14tEcUFJw9u/",
+    instagramUrl = "https://www.instagram.com/selectorialselective",
     copyrightText,
 }: FooterProps) => {
     const copyright =
@@ -88,11 +94,11 @@ const Footer = ({
                             className="inline-flex items-center gap-2.5 mb-6"
                         >
                             <Image
-                                src="/selectorial_logo.jpeg"
+                                src="/selectorial_logo.png"
                                 alt="Selectorial"
-                                width={635}
-                                height={574}
-                                className="h-10 w-auto rounded-lg object-contain"
+                                width={1024}
+                                height={925}
+                                className="h-12 w-auto rounded-lg object-contain"
                                 priority
                             />
                         </Link>

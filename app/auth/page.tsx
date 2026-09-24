@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 
 type Role = "student" | "parent" | null;
 type AuthMode = "signin" | "signup";
@@ -261,6 +262,14 @@ function AuthPageInner() {
                     {/* Content */}
                     <div className="relative z-10 flex flex-col justify-center px-12 lg:px-16 xl:px-20">
                         <div className="max-w-md">
+                            <Image
+                                src="/selectorial_logo.png"
+                                alt="Selectorial"
+                                width={1024}
+                                height={925}
+                                className="h-14 w-auto rounded-lg object-contain mb-8 drop-shadow-lg"
+                                priority
+                            />
                             <h1
                                 className="text-4xl lg:text-5xl font-bold text-white mb-6 leading-tight"
                                 style={{ letterSpacing: "-0.04em" }}
@@ -331,6 +340,16 @@ function AuthPageInner() {
                     </Link>
 
                     <div className="w-full max-w-md">
+                        <div className="lg:hidden flex justify-center mb-6">
+                            <Image
+                                src="/selectorial_logo.png"
+                                alt="Selectorial"
+                                width={1024}
+                                height={925}
+                                className="h-12 w-auto rounded-lg object-contain"
+                                priority
+                            />
+                        </div>
                         <AnimatePresence mode="wait">
                             {!selectedRole ? (
                                 <motion.div

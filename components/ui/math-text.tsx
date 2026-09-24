@@ -3,6 +3,7 @@
 import React, { useMemo } from "react";
 import katex from "katex";
 import "katex/dist/katex.min.css";
+import { repairMojibakeText } from "@/lib/utils/text-encoding";
 
 // ============================================
 // UNICODE → KATEX NORMALIZATION MAP
@@ -511,13 +512,16 @@ export const MathText = React.memo(function MathText({
     const rendered = useMemo(() => {
         if (!content) return null;
 
+        // Fix UTF-8-as-Latin-1 mojibake (Â“ etc.) from bad CSV imports
+        const text = repairMojibakeText(content);
+
         // Fast path: no math content → render as plain text
-        if (!hasMathContent(content) && !hasKatexCommand(content)) {
-            return <>{content}</>;
+        if (!hasMathContent(text) && !hasKatexCommand(text)) {
+            return <>{text}</>;
         }
 
         // Split into text/math segments
-        const segments = segmentize(content);
+        const segments = segmentize(text);
 
         return segments.map((seg, i) => {
             if (seg.type === "text") {

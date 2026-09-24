@@ -188,10 +188,10 @@ export async function POST(request: NextRequest) {
             return errorResponse("A test with this slug already exists", 409);
         }
 
-        // Verify all question IDs exist
+        // Verify all question IDs exist and are active
         const { data: validQuestions, error: qError } = await supabase
             .from("questions")
-            .select("id")
+            .select("id, is_active")
             .in("id", question_ids);
 
         if (qError) {
@@ -205,6 +205,16 @@ export async function POST(request: NextRequest) {
         if (invalidIds.length > 0) {
             return errorResponse(
                 `Invalid question IDs: ${invalidIds.join(", ")}`,
+                400
+            );
+        }
+
+        const inactiveIds = (validQuestions || [])
+            .filter((q) => !q.is_active)
+            .map((q) => q.id);
+        if (inactiveIds.length > 0) {
+            return errorResponse(
+                `Inactive questions cannot be added to a custom test: ${inactiveIds.join(", ")}`,
                 400
             );
         }
