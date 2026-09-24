@@ -4,6 +4,7 @@
 // NOTE: Keep `CSV_UPLOAD_SPEC.md` in sync whenever parsing/validation behavior changes.
 
 import { CSV_COLUMNS } from "./templates";
+import { repairMojibakeText } from "@/lib/utils/text-encoding";
 
 export interface ParseError {
     row: number;
@@ -74,11 +75,11 @@ function parseCSVRows(text: string): string[][] {
                 insideQuotes = true;
             } else if (char === ",") {
                 // End of cell
-                currentRow.push(currentCell.trim());
+                currentRow.push(repairMojibakeText(currentCell.trim()));
                 currentCell = "";
             } else if (char === "\n" || (char === "\r" && nextChar === "\n")) {
                 // End of row
-                currentRow.push(currentCell.trim());
+                currentRow.push(repairMojibakeText(currentCell.trim()));
                 if (currentRow.some((cell) => cell !== "")) {
                     rows.push(currentRow);
                 }
@@ -92,7 +93,7 @@ function parseCSVRows(text: string): string[][] {
     }
 
     // Last cell and row
-    currentRow.push(currentCell.trim());
+    currentRow.push(repairMojibakeText(currentCell.trim()));
     if (currentRow.some((cell) => cell !== "")) {
         rows.push(currentRow);
     }

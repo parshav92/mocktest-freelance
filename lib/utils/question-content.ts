@@ -1,3 +1,5 @@
+import { repairMojibakeText } from "@/lib/utils/text-encoding";
+
 export function parseQuestionContent(
     content: unknown,
 ): Record<string, unknown> {
@@ -6,17 +8,37 @@ export function parseQuestionContent(
         try {
             const parsed = JSON.parse(content);
             if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-                return parsed as Record<string, unknown>;
+                return repairContentStrings(parsed as Record<string, unknown>);
             }
         } catch {
-            return { question: content };
+            return { question: repairMojibakeText(content) };
         }
-        return { question: content };
+        return { question: repairMojibakeText(content) };
     }
     if (typeof content === "object" && !Array.isArray(content)) {
-        return content as Record<string, unknown>;
+        return repairContentStrings(content as Record<string, unknown>);
     }
     return {};
+}
+
+function repairContentStrings(
+    record: Record<string, unknown>,
+): Record<string, unknown> {
+    const out: Record<string, unknown> = { ...record };
+    for (const [key, value] of Object.entries(out)) {
+        if (typeof value === "string") {
+            out[key] = repairMojibakeText(value);
+        } else if (Array.isArray(value)) {
+            out[key] = value.map((item) => {
+                if (typeof item === "string") return repairMojibakeText(item);
+                if (item && typeof item === "object") {
+                    return repairContentStrings(item as Record<string, unknown>);
+                }
+                return item;
+            });
+        }
+    }
+    return out;
 }
 
 export function getContentTextField(questionType: string): string {
@@ -58,7 +80,7 @@ export function getOptions(content: unknown): ParsedOption[] | null {
     return parsed.options.map((opt, index) => {
         const fallbackLabel = String.fromCharCode(65 + index);
         if (typeof opt === "string") {
-            return { label: fallbackLabel, text: opt };
+            return { label: fallbackLabel, text: repairMojibakeText(opt) };
         }
         if (typeof opt === "object" && opt !== null) {
             const row = opt as Record<string, unknown>;
@@ -66,7 +88,7 @@ export function getOptions(content: unknown): ParsedOption[] | null {
             const text = row.text ?? row.value ?? row.option;
             return {
                 label,
-                text: typeof text === "string" ? text : undefined,
+                text: typeof text === "string" ? repairMojibakeText(text) : undefined,
             };
         }
         return { label: fallbackLabel, text: "—" };

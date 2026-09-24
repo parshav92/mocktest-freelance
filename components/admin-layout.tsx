@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, ReactNode } from "react";
 import {
     Upload,
@@ -158,8 +159,16 @@ export function AdminLayoutClient({ children, user }: AdminLayoutClientProps) {
                 <div className="p-6 border-b border-slate-800">
                     <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0">
-                            <h1 className="text-xl font-bold truncate">
-                                Selectorial Admin
+                            <Image
+                                src="/selectorial_logo.png"
+                                alt="Selectorial"
+                                width={1024}
+                                height={925}
+                                className="h-10 w-auto rounded-md object-contain mb-3"
+                                priority
+                            />
+                            <h1 className="text-sm font-semibold text-slate-300 truncate">
+                                Admin
                             </h1>
                             <p className="text-slate-400 text-sm mt-1 truncate">
                                 {user.fullName}

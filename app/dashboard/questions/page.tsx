@@ -39,6 +39,7 @@ import {
     CheckSquare,
     Square,
     MinusSquare,
+    ImagePlus,
 } from "lucide-react";
 import {
     getContentTextField,
@@ -48,6 +49,12 @@ import {
     isMcqType,
     parseQuestionContent,
 } from "@/lib/utils/question-content";
+import { repairMojibakeText } from "@/lib/utils/text-encoding";
+import {
+    BUCKETS,
+    generateQuestionImagePath,
+    uploadFile,
+} from "@/lib/storage";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 interface SubjectInfo {
@@ -66,6 +73,7 @@ interface Question {
     content: Record<string, unknown>;
     correct_answer: Record<string, unknown> | null;
     solution_text: string | null;
+    solution_images: string[] | null;
     marks: number;
     is_active: boolean;
     times_shown: number;
@@ -73,6 +81,35 @@ interface Question {
     created_at: string;
     updated_at: string;
     subjects: SubjectInfo;
+}
+
+function getQuestionImages(content: Record<string, unknown>): string[] {
+    if (Array.isArray(content.question_images)) {
+        return content.question_images.filter(
+            (u): u is string => typeof u === "string" && !!u,
+        );
+    }
+    if (typeof content.question_image === "string" && content.question_image) {
+        return [content.question_image];
+    }
+    return [];
+}
+
+function getOptionImageMap(
+    content: Record<string, unknown>,
+): Record<string, string> {
+    const map: Record<string, string> = {};
+    if (!Array.isArray(content.options)) return map;
+    for (const opt of content.options) {
+        if (typeof opt === "object" && opt !== null) {
+            const row = opt as Record<string, unknown>;
+            const label = String(row.label ?? "").toUpperCase();
+            if (label && typeof row.image_url === "string" && row.image_url) {
+                map[label] = row.image_url;
+            }
+        }
+    }
+    return map;
 }
 
 interface FetchResponse {
@@ -223,6 +260,12 @@ export default function AdminQuestionsPage() {
     const [editDifficulty, setEditDifficulty] = useState("");
     const [editMarks, setEditMarks] = useState<number>(1);
     const [editCorrectAnswer, setEditCorrectAnswer] = useState<string>("");
+    const [editQuestionImages, setEditQuestionImages] = useState<string[]>([]);
+    const [editOptionImages, setEditOptionImages] = useState<
+        Record<string, string>
+    >({});
+    const [editSolutionImages, setEditSolutionImages] = useState<string[]>([]);
+    const [editUploading, setEditUploading] = useState(false);
     const [editSaving, setEditSaving] = useState(false);
     const [editError, setEditError] = useState<string | null>(null);
 
@@ -235,7 +278,7 @@ export default function AdminQuestionsPage() {
                 ? (parsedContent[textKey] as string)
                 : getQuestionText(parsedContent),
         );
-        setEditSolution(q.solution_text ?? "");
+        setEditSolution(repairMojibakeText(q.solution_text ?? ""));
         setEditDifficulty(q.difficulty);
         setEditMarks(q.marks);
         setEditCorrectAnswer(
@@ -243,12 +286,100 @@ export default function AdminQuestionsPage() {
                 ? getMcqCorrectLabel(q.correct_answer)
                 : "",
         );
+        setEditQuestionImages(getQuestionImages(parsedContent));
+        setEditOptionImages(getOptionImageMap(parsedContent));
+        setEditSolutionImages(
+            Array.isArray(q.solution_images)
+                ? q.solution_images.filter(Boolean)
+                : [],
+        );
         setEditError(null);
     };
 
     const closeEdit = () => {
         setEditQuestion(null);
         setEditError(null);
+        setEditUploading(false);
+    };
+
+    const uploadEditImage = async (file: File, type: string) => {
+        if (!editQuestion?.subjects?.slug) {
+            throw new Error("Subject slug is missing for this question");
+        }
+        const ext = file.name.split(".").pop()?.toLowerCase() || "png";
+        const path = generateQuestionImagePath(
+            editQuestion.subjects.slug,
+            editQuestion.code,
+            type,
+            ext,
+        );
+        const { url, error } = await uploadFile(BUCKETS.QUESTIONS, path, file);
+        if (error || !url) throw new Error(error || "Upload failed");
+        return url;
+    };
+
+    const handleAddQuestionImage = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file || !editQuestion) return;
+        setEditUploading(true);
+        setEditError(null);
+        try {
+            const nextIndex = editQuestionImages.length + 1;
+            const type = nextIndex === 1 ? "q" : `q${nextIndex}`;
+            const url = await uploadEditImage(file, type);
+            setEditQuestionImages((prev) => [...prev, url]);
+        } catch (err) {
+            setEditError(
+                err instanceof Error ? err.message : "Failed to upload image",
+            );
+        } finally {
+            setEditUploading(false);
+        }
+    };
+
+    const handleSetOptionImage = async (
+        label: string,
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file || !editQuestion) return;
+        setEditUploading(true);
+        setEditError(null);
+        try {
+            const url = await uploadEditImage(file, label.toLowerCase());
+            setEditOptionImages((prev) => ({ ...prev, [label]: url }));
+        } catch (err) {
+            setEditError(
+                err instanceof Error ? err.message : "Failed to upload image",
+            );
+        } finally {
+            setEditUploading(false);
+        }
+    };
+
+    const handleAddSolutionImage = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = e.target.files?.[0];
+        e.target.value = "";
+        if (!file || !editQuestion) return;
+        setEditUploading(true);
+        setEditError(null);
+        try {
+            const nextIndex = editSolutionImages.length + 1;
+            const url = await uploadEditImage(file, `s${nextIndex}`);
+            setEditSolutionImages((prev) => [...prev, url]);
+        } catch (err) {
+            setEditError(
+                err instanceof Error ? err.message : "Failed to upload image",
+            );
+        } finally {
+            setEditUploading(false);
+        }
     };
 
     const saveEdit = async () => {
@@ -257,9 +388,30 @@ export default function AdminQuestionsPage() {
         setEditError(null);
 
         const textKey = getContentTextField(editQuestion.question_type);
-        const updatedContent = { ...editQuestion.content, [textKey]: editText };
+        const updatedContent: Record<string, unknown> = {
+            ...editQuestion.content,
+            [textKey]: editText,
+        };
 
-        // Build correct_answer update for MCQ types
+        updatedContent.question_images =
+            editQuestionImages.length > 0 ? editQuestionImages : undefined;
+        updatedContent.question_image = editQuestionImages[0] || null;
+
+        if (Array.isArray(updatedContent.options)) {
+            updatedContent.options = (
+                updatedContent.options as Array<Record<string, unknown>>
+            ).map((opt, index) => {
+                const label = String(
+                    opt.label ?? String.fromCharCode(65 + index),
+                ).toUpperCase();
+                return {
+                    ...opt,
+                    label,
+                    image_url: editOptionImages[label] || null,
+                };
+            });
+        }
+
         const updatedCorrectAnswer =
             isMcqType(editQuestion.question_type) && editCorrectAnswer
                 ? { label: editCorrectAnswer.toUpperCase() }
@@ -274,6 +426,7 @@ export default function AdminQuestionsPage() {
                     content: updatedContent,
                     correct_answer: updatedCorrectAnswer,
                     solution_text: editSolution || null,
+                    solution_images: editSolutionImages,
                     difficulty: editDifficulty,
                     marks: editMarks,
                 }),
@@ -289,6 +442,7 @@ export default function AdminQuestionsPage() {
                               content: updatedContent,
                               correct_answer: updatedCorrectAnswer,
                               solution_text: editSolution || null,
+                              solution_images: editSolutionImages,
                               difficulty: editDifficulty,
                               marks: editMarks,
                           }
@@ -524,7 +678,8 @@ export default function AdminQuestionsPage() {
                             )}
                         </DialogTitle>
                         <DialogDescription className="text-xs text-zinc-500">
-                            You can edit the question text, correct answer, solution, difficulty and marks.
+                            Edit question text, images, correct answer, solution,
+                            difficulty and marks.
                         </DialogDescription>
                     </DialogHeader>
 
@@ -595,6 +750,197 @@ export default function AdminQuestionsPage() {
                                 />
                             </div>
 
+                            {/* Question images */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                    <label className="text-xs font-medium text-zinc-600">
+                                        Question images
+                                    </label>
+                                    <label className="inline-flex items-center gap-1.5 text-xs text-emerald-700 cursor-pointer hover:underline">
+                                        <ImagePlus className="h-3.5 w-3.5" />
+                                        Add image
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            disabled={editUploading || editSaving}
+                                            onChange={handleAddQuestionImage}
+                                        />
+                                    </label>
+                                </div>
+                                {editQuestionImages.length === 0 ? (
+                                    <p className="text-xs text-zinc-400">
+                                        No question images yet.
+                                    </p>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                        {editQuestionImages.map((url, idx) => (
+                                            <div
+                                                key={`${url}-${idx}`}
+                                                className="relative group rounded-lg border border-zinc-200 overflow-hidden bg-zinc-50"
+                                            >
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={url}
+                                                    alt={`Question image ${idx + 1}`}
+                                                    className="w-full h-24 object-contain"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setEditQuestionImages((prev) =>
+                                                            prev.filter((_, i) => i !== idx),
+                                                        )
+                                                    }
+                                                    className="absolute top-1 right-1 rounded-full bg-white/90 p-1 text-zinc-500 hover:text-red-600 shadow-sm"
+                                                    title="Remove"
+                                                >
+                                                    <X className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Option images (MCQ) */}
+                            {isMcqType(editQuestion.question_type) &&
+                                getOptions(editQuestion.content) && (
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-medium text-zinc-600">
+                                            Option images
+                                        </label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {getOptions(editQuestion.content)!.map((opt) => {
+                                                const label = opt.label.toUpperCase();
+                                                const url = editOptionImages[label];
+                                                return (
+                                                    <div
+                                                        key={label}
+                                                        className="rounded-lg border border-zinc-200 p-2 space-y-2"
+                                                    >
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-xs font-semibold text-zinc-700">
+                                                                Option {label}
+                                                            </span>
+                                                            <label className="text-[11px] text-emerald-700 cursor-pointer hover:underline">
+                                                                {url ? "Replace" : "Add"}
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    className="hidden"
+                                                                    disabled={
+                                                                        editUploading ||
+                                                                        editSaving
+                                                                    }
+                                                                    onChange={(e) =>
+                                                                        handleSetOptionImage(
+                                                                            label,
+                                                                            e,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </label>
+                                                        </div>
+                                                        {url ? (
+                                                            <div className="relative">
+                                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                                <img
+                                                                    src={url}
+                                                                    alt={`Option ${label}`}
+                                                                    className="w-full h-20 object-contain rounded bg-zinc-50"
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() =>
+                                                                        setEditOptionImages(
+                                                                            (prev) => {
+                                                                                const next = {
+                                                                                    ...prev,
+                                                                                };
+                                                                                delete next[
+                                                                                    label
+                                                                                ];
+                                                                                return next;
+                                                                            },
+                                                                        )
+                                                                    }
+                                                                    className="absolute top-1 right-1 rounded-full bg-white/90 p-1 text-zinc-500 hover:text-red-600 shadow-sm"
+                                                                >
+                                                                    <X className="h-3.5 w-3.5" />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <p className="text-[11px] text-zinc-400 py-4 text-center">
+                                                                No image
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
+
+                            {/* Solution images */}
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between gap-2">
+                                    <label className="text-xs font-medium text-zinc-600">
+                                        Solution images
+                                    </label>
+                                    <label className="inline-flex items-center gap-1.5 text-xs text-emerald-700 cursor-pointer hover:underline">
+                                        <ImagePlus className="h-3.5 w-3.5" />
+                                        Add image
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            className="hidden"
+                                            disabled={editUploading || editSaving}
+                                            onChange={handleAddSolutionImage}
+                                        />
+                                    </label>
+                                </div>
+                                {editSolutionImages.length === 0 ? (
+                                    <p className="text-xs text-zinc-400">
+                                        No solution images yet.
+                                    </p>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                        {editSolutionImages.map((url, idx) => (
+                                            <div
+                                                key={`${url}-${idx}`}
+                                                className="relative group rounded-lg border border-zinc-200 overflow-hidden bg-zinc-50"
+                                            >
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={url}
+                                                    alt={`Solution image ${idx + 1}`}
+                                                    className="w-full h-24 object-contain"
+                                                />
+                                                <button
+                                                    type="button"
+                                                    onClick={() =>
+                                                        setEditSolutionImages((prev) =>
+                                                            prev.filter((_, i) => i !== idx),
+                                                        )
+                                                    }
+                                                    className="absolute top-1 right-1 rounded-full bg-white/90 p-1 text-zinc-500 hover:text-red-600 shadow-sm"
+                                                    title="Remove"
+                                                >
+                                                    <X className="h-3.5 w-3.5" />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {editUploading && (
+                                    <p className="text-xs text-zinc-500 flex items-center gap-1.5">
+                                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                        Uploading image…
+                                    </p>
+                                )}
+                            </div>
+
                             {/* Difficulty + Marks row */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-1.5">
@@ -646,7 +992,7 @@ export default function AdminQuestionsPage() {
                         </Button>
                         <Button
                             onClick={saveEdit}
-                            disabled={editSaving}
+                            disabled={editSaving || editUploading}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white"
                         >
                             {editSaving ? (
@@ -1174,7 +1520,7 @@ export default function AdminQuestionsPage() {
                                             {expandedSolutions.has(q.id) && (
                                                 <div className="px-5 pb-4">
                                                     <div className="rounded-xl bg-slate-50 border border-slate-200 px-4 py-3 text-sm text-zinc-700 whitespace-pre-line">
-                                                        {q.solution_text}
+                                                        {repairMojibakeText(q.solution_text)}
                                                     </div>
                                                 </div>
                                             )}

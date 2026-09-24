@@ -225,7 +225,7 @@ export async function PATCH(
             } else {
                 const { data: validQuestions, error: qError } = await supabase
                     .from("questions")
-                    .select("id")
+                    .select("id, is_active")
                     .in("id", question_ids);
 
                 if (qError) {
@@ -236,6 +236,16 @@ export async function PATCH(
                 const invalid = question_ids.filter((qid) => !validIds.has(qid));
                 if (invalid.length > 0) {
                     return errorResponse(`Invalid question IDs: ${invalid.join(", ")}`, 400);
+                }
+
+                const inactiveIds = (validQuestions || [])
+                    .filter((q) => !q.is_active)
+                    .map((q) => q.id);
+                if (inactiveIds.length > 0) {
+                    return errorResponse(
+                        `Inactive questions cannot be added to a custom test: ${inactiveIds.join(", ")}`,
+                        400
+                    );
                 }
 
                 const { error: deleteErr } = await supabase

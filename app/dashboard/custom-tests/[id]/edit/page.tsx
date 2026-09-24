@@ -227,12 +227,19 @@ export default function EditCustomTestPage() {
 
     // ─── Fetch picker questions ─────────────────────────────────────
     const fetchPickerQuestions = useCallback(async () => {
+        if (!pickerSubject) {
+            setPickerQuestions([]);
+            setPickerTotal(0);
+            return;
+        }
+
         setPickerLoading(true);
         try {
             const params = new URLSearchParams();
             params.set("limit", String(PICKER_PAGE_SIZE));
             params.set("offset", String(pickerPage * PICKER_PAGE_SIZE));
-            if (pickerSubject) params.set("subject_id", pickerSubject);
+            params.set("subject_id", pickerSubject);
+            params.set("is_active", "true");
             if (pickerType) params.set("question_type", pickerType);
             if (pickerSearch) params.set("search", pickerSearch);
 
@@ -577,17 +584,16 @@ export default function EditCustomTestPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <Select
-                            value={pickerSubject}
+                            value={pickerSubject || undefined}
                             onValueChange={(v) => {
-                                setPickerSubject(v === "all" ? "" : v);
+                                setPickerSubject(v);
                                 setPickerPage(0);
                             }}
                         >
                             <SelectTrigger>
-                                <SelectValue placeholder="All Subjects" />
+                                <SelectValue placeholder="Select One" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All Subjects</SelectItem>
                                 {subjects.map((s) => (
                                     <SelectItem key={s.id} value={s.id}>
                                         {s.name}
@@ -643,13 +649,17 @@ export default function EditCustomTestPage() {
                         </div>
                     </div>
 
-                    {pickerLoading ? (
+                    {!pickerSubject ? (
+                        <p className="text-sm text-zinc-400 text-center py-8">
+                            Select a subject to view questions.
+                        </p>
+                    ) : pickerLoading ? (
                         <div className="flex items-center justify-center py-12">
                             <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
                         </div>
                     ) : pickerQuestions.length === 0 ? (
                         <p className="text-sm text-zinc-400 text-center py-8">
-                            No questions found.
+                            No active questions found for this subject.
                         </p>
                     ) : (
                         <div className="space-y-1.5">

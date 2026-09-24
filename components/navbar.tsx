@@ -70,11 +70,11 @@ const Navbar = () => {
                         aria-label="Selectorial home"
                     >
                         <Image
-                            src="/selectorial_logo.jpeg"
+                            src="/selectorial_logo.png"
                             alt="Selectorial"
-                            width={635}
-                            height={574}
-                            className="h-9 w-auto rounded-md object-contain"
+                            width={1024}
+                            height={925}
+                            className="h-10 w-auto rounded-md object-contain"
                             priority
                         />
                     </Link>

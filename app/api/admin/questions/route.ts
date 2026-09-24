@@ -1,6 +1,10 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireAdmin, errorResponse, successResponse } from "@/lib/auth/admin";
+import {
+    repairMojibakeInRecord,
+    repairMojibakeText,
+} from "@/lib/utils/text-encoding";
 
 /**
  * GET /api/admin/questions
@@ -18,6 +22,7 @@ import { requireAdmin, errorResponse, successResponse } from "@/lib/auth/admin";
  *   - sort_order (optional – 'asc' or 'desc', default 'desc')
  *   - code_from (optional – start of code range, inclusive)
  *   - code_to   (optional – end of code range, inclusive)
+ *   - is_active (optional – 'true' | 'false' to filter by active status)
  */
 export async function GET(request: NextRequest) {
     const auth = await requireAdmin();
@@ -43,6 +48,7 @@ export async function GET(request: NextRequest) {
         const questionType = searchParams.get("question_type");
         const difficulty = searchParams.get("difficulty");
         const search = searchParams.get("search");
+        const isActiveParam = searchParams.get("is_active");
 
         // Sort order
         const sortOrder = searchParams.get("sort_order");
@@ -69,6 +75,7 @@ export async function GET(request: NextRequest) {
                 content,
                 correct_answer,
                 solution_text,
+                solution_images,
                 marks,
                 is_active,
                 passage_ids,
@@ -100,6 +107,11 @@ export async function GET(request: NextRequest) {
         }
         if (codeTo) {
             query = query.lte("code", codeTo.toUpperCase());
+        }
+        if (isActiveParam === "true") {
+            query = query.eq("is_active", true);
+        } else if (isActiveParam === "false") {
+            query = query.eq("is_active", false);
         }
 
         // Apply pagination
@@ -174,6 +186,7 @@ export async function PATCH(request: NextRequest) {
             content?: Record<string, unknown>;
             correct_answer?: Record<string, unknown>;
             solution_text?: string | null;
+            solution_images?: string[];
             difficulty?: string;
             marks?: number;
             is_active?: boolean;
@@ -185,9 +198,20 @@ export async function PATCH(request: NextRequest) {
 
         // Only allow safe fields
         const allowed: Record<string, unknown> = {};
-        if ("content" in updates) allowed.content = updates.content;
+        if ("content" in updates) {
+            allowed.content =
+                updates.content && typeof updates.content === "object"
+                    ? repairMojibakeInRecord(updates.content)
+                    : updates.content;
+        }
         if ("correct_answer" in updates) allowed.correct_answer = updates.correct_answer;
-        if ("solution_text" in updates) allowed.solution_text = updates.solution_text;
+        if ("solution_text" in updates) {
+            allowed.solution_text =
+                typeof updates.solution_text === "string"
+                    ? repairMojibakeText(updates.solution_text)
+                    : updates.solution_text;
+        }
+        if ("solution_images" in updates) allowed.solution_images = updates.solution_images;
         if ("difficulty" in updates) allowed.difficulty = updates.difficulty;
         if ("marks" in updates) allowed.marks = updates.marks;
         if ("is_active" in updates) allowed.is_active = updates.is_active;
