@@ -16,6 +16,7 @@ import type {
     PassageGroupQuota,
 } from "@/types/test";
 import { EssayEvaluationService } from "@/lib/services/essay-evaluation.service";
+import { resolveTestDurationFromQuestions } from "@/lib/config/essay-config";
 import { countWords, stripHtmlToText } from "@/lib/utils";
 
 // Internal type for questions with answers during grading
@@ -263,7 +264,26 @@ export class TestService {
                     .select("*")
                     .eq("id", existingTest.id)
                     .single();
-                return { test: fullTest!, questions };
+
+                if (!fullTest) {
+                    throw new Error("Failed to load existing test");
+                }
+
+                const durationMins = resolveTestDurationFromQuestions(
+                    questions,
+                    fullTest.duration_mins,
+                );
+                if (durationMins !== fullTest.duration_mins) {
+                    const { data: patched } = await this.supabase
+                        .from("tests")
+                        .update({ duration_mins: durationMins })
+                        .eq("id", fullTest.id)
+                        .select("*")
+                        .single();
+                    return { test: patched ?? { ...fullTest, duration_mins: durationMins }, questions };
+                }
+
+                return { test: fullTest, questions };
             }
             // in_progress test exists — don't allow creating a new one
             throw new Error(
@@ -312,15 +332,19 @@ export class TestService {
             throw new Error("No questions available for this subject");
         }
 
-        // 6. Calculate total marks
+        // 6. Calculate total marks and duration (Writing uses question time_mins)
         const { data: questionsData } = await this.supabase
             .from("questions")
-            .select("marks")
+            .select("marks, question_type, content")
             .in("id", questionIds);
 
         const totalMarks =
             questionsData?.reduce((sum, q) => sum + q.marks, 0) ||
             questionIds.length;
+        const durationMins = resolveTestDurationFromQuestions(
+            questionsData ?? [],
+            subject.duration_mins,
+        );
 
         // 7. Create the test record
         const { data: test, error: testError } = await this.supabase
@@ -330,7 +354,7 @@ export class TestService {
                 subject_id: subjectId,
                 template_id: template?.id || null,
                 status: "not_started" as TestStatus,
-                duration_mins: subject.duration_mins,
+                duration_mins: durationMins,
                 questions_order: questionIds,
                 answers: [],
                 total_marks: totalMarks,
@@ -598,12 +622,19 @@ export class TestService {
             throw new Error(`Test is already ${test.status}`);
         }
 
+        const questions = await this.getQuestionsForTest(test.questions_order);
+        const durationMins = resolveTestDurationFromQuestions(
+            questions,
+            test.duration_mins,
+        );
+
         // Update status to in_progress
         const { data: updatedTest, error } = await this.supabase
             .from("tests")
             .update({
                 status: "in_progress" as TestStatus,
                 started_at: new Date().toISOString(),
+                duration_mins: durationMins,
             })
             .eq("id", testId)
             .select()
@@ -1062,15 +1093,19 @@ export class TestService {
 
             if (questionIds.length === 0) return;
 
-            // Calculate total marks
+            // Calculate total marks and duration (Writing uses question time_mins)
             const { data: questionsData } = await this.supabase
                 .from("questions")
-                .select("marks")
+                .select("marks, question_type, content")
                 .in("id", questionIds);
 
             const totalMarks =
                 questionsData?.reduce((sum, q) => sum + q.marks, 0) ||
                 questionIds.length;
+            const durationMins = resolveTestDurationFromQuestions(
+                questionsData ?? [],
+                subject.duration_mins,
+            );
 
             // Create the pre-generated test
             const { data: test, error } = await this.supabase
@@ -1080,7 +1115,7 @@ export class TestService {
                     subject_id: subjectId,
                     template_id: template?.id || null,
                     status: "not_started" as TestStatus,
-                    duration_mins: subject.duration_mins,
+                    duration_mins: durationMins,
                     questions_order: questionIds,
                     answers: [],
                     total_marks: totalMarks,

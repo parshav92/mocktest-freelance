@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { resolveTestDurationFromQuestions } from "@/lib/config/essay-config";
 
 /**
  * GET /api/custom-tests/[slug]
@@ -213,7 +214,10 @@ export async function GET(
             slug: test.slug,
             description: test.description,
             visibility: test.visibility,
-            duration_mins: test.duration_mins,
+            duration_mins: resolveTestDurationFromQuestions(
+                questionsWithPassages,
+                test.duration_mins,
+            ),
             instructions: test.instructions,
         },
         questions: questionsWithPassages,

@@ -80,8 +80,12 @@ function sheetToCsvPreservingNewlines(sheet: XLSX.WorkSheet): string {
             const cell = sheet[cellAddress];
             let value = "";
             if (cell != null) {
-                // Prefer formatted text (w), fall back to raw value (v)
-                value = cell.w ?? (cell.v != null ? String(cell.v) : "");
+                // Raw string values retain Excel's in-cell line breaks; formatted
+                // values may flatten them.
+                value =
+                    typeof cell.v === "string"
+                        ? cell.v
+                        : (cell.w ?? (cell.v != null ? String(cell.v) : ""));
                 // Normalise CRLF → LF so the parser sees consistent newlines
                 value = value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
             }

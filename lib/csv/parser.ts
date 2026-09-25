@@ -75,11 +75,11 @@ function parseCSVRows(text: string): string[][] {
                 insideQuotes = true;
             } else if (char === ",") {
                 // End of cell
-                currentRow.push(repairMojibakeText(currentCell.trim()));
+                currentRow.push(repairMojibakeText(currentCell));
                 currentCell = "";
             } else if (char === "\n" || (char === "\r" && nextChar === "\n")) {
                 // End of row
-                currentRow.push(repairMojibakeText(currentCell.trim()));
+                currentRow.push(repairMojibakeText(currentCell));
                 if (currentRow.some((cell) => cell !== "")) {
                     rows.push(currentRow);
                 }
@@ -93,7 +93,7 @@ function parseCSVRows(text: string): string[][] {
     }
 
     // Last cell and row
-    currentRow.push(repairMojibakeText(currentCell.trim()));
+    currentRow.push(repairMojibakeText(currentCell));
     if (currentRow.some((cell) => cell !== "")) {
         rows.push(currentRow);
     }
@@ -144,27 +144,32 @@ function getImageStoragePath(
     field: string,
 ): string {
     const bucket = type === "passage" ? "passages" : "questions";
-    // Dynamic suffix: question_N -> qN, solution_N -> sN
+    // Dynamic suffix: question_N -> qN, prompt_N -> pN, solution_N -> sN
     const questionMatch = field.match(/^question_(\d+)$/);
+    const promptMatch = field.match(/^prompt_(\d+)$/);
     const solutionMatch = field.match(/^solution_(\d+)$/);
     const suffix =
         field === "question"
             ? "q"
-            : questionMatch
-              ? `q${questionMatch[1]}`
-              : field === "option_a"
-                ? "a"
-                : field === "option_b"
-                  ? "b"
-                  : field === "option_c"
-                    ? "c"
-                    : field === "option_d"
-                      ? "d"
-                      : field === "passage"
-                        ? "p"
-                        : solutionMatch
-                          ? `s${solutionMatch[1]}`
-                          : "x";
+                            : questionMatch
+                                ? `q${questionMatch[1]}`
+                                : field === "prompt"
+                                    ? "p"
+                                    : promptMatch
+                                        ? `p${promptMatch[1]}`
+                                        : field === "option_a"
+                                            ? "a"
+                                            : field === "option_b"
+                                                ? "b"
+                                                : field === "option_c"
+                                                    ? "c"
+                                                    : field === "option_d"
+                                                        ? "d"
+                                                        : field === "passage"
+                                                            ? "p"
+                                                            : solutionMatch
+                                                                ? `s${solutionMatch[1]}`
+                                                                : "x";
 
     return `${bucket}/${subjectSlug}/${code}_${suffix}.png`;
 }
@@ -852,20 +857,55 @@ function parseEssay(
             continue;
         }
 
-        if (!rowData.time_mins || isNaN(parseInt(rowData.time_mins))) {
+        if (!rowData.time_mins || isNaN(parseInt(rowData.time_mins, 10)) || parseInt(rowData.time_mins, 10) < 1) {
             errors.push({
                 row: i + 1,
                 column: "time_mins",
-                message: "Time in minutes must be a number",
+                message: "Time in minutes must be a positive number (used as the writing test timer)",
             });
             continue;
+        }
+
+        const subject = rowData.subject || "general";
+        const subjectSlug = subject.toLowerCase().replace(/\s+/g, "-");
+        const imageCode = isAutoCode ? `AUTO_${i + 1}` : code;
+        const imageRequirements: ImageRequirement[] = [];
+        const promptImageCount = (() => {
+            const parsed = parseStrictImageCount(rowData.prompt_images);
+            if (!parsed.valid) {
+                errors.push({
+                    row: i + 1,
+                    column: "prompt_images",
+                    message:
+                        "prompt_images must be a numeric value between 0 and 10",
+                });
+                return -1;
+            }
+            return parsed.count;
+        })();
+
+        if (promptImageCount === -1) continue;
+
+        for (let pi = 1; pi <= promptImageCount; pi++) {
+            const field = pi === 1 ? "prompt" : `prompt_${pi}`;
+            imageRequirements.push({
+                field,
+                label: `Prompt Image ${pi}`,
+                storagePath: getImageStoragePath(
+                    "question",
+                    subjectSlug,
+                    imageCode,
+                    field,
+                ),
+                number: pi,
+            });
         }
 
         questions.push({
             rowIndex: i + 1,
             code,
             data: rowData,
-            imageRequirements: [], // Essays don't have images
+            imageRequirements,
             ...(isAutoCode ? { autoCode: true } : {}),
         });
     }

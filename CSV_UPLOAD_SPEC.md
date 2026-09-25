@@ -216,7 +216,7 @@ code,subject,difficulty,topic,subtopic,passage_with_gaps,sentences
 #### 3.6.1 Header
 
 ```csv
-code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins,rubric
+code,subject,difficulty,topic,subtopic,prompt,prompt_images,word_limit,time_mins,rubric
 ```
 
 #### 3.6.2 Required columns (validation)
@@ -231,7 +231,8 @@ code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins,rubric
 
 - `difficulty` must be `easy|medium|hard`.
 - `word_limit` must be numeric.
-- `time_mins` must be numeric.
+- `prompt_images` is optional and must be a numeric value from 0 to 10. Use `[img:N]` in `prompt` to place uploaded images.
+- `time_mins` must be a positive number. For writing (essay-only) tests this value is the test timer.
 - `rubric` is optional; format is `category:points|category:points`.
 
 ---

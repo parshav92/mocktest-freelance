@@ -127,6 +127,7 @@ export const CSV_COLUMNS = {
         "topic", // Main writing style (Narrative, Persuasive, Informative)
         "subtopic", // Sub-style / genre (must match writing_marking_criteria)
         "prompt", // Essay prompt/topic
+        "prompt_images", // Number of images available to [img:N] markers
         "word_limit", // Max words (e.g., 300)
         "time_mins", // Time limit in minutes
         // Marking criteria are resolved from writing_marking_criteria at evaluation time.
@@ -160,9 +161,9 @@ RD_FMS_002,reading,medium,Process writing,Logical flow,"The science experiment w
 RD_P_001,extract,The Loyal Friend,"Once upon a time, there lived two friends named Tom and Jerry...",no
 RD_POEM_P_001,poem,The Morning Sun,"The sun rises in the east so bright, Spreading warmth and golden light...",no`,
 
-    essay: `code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins
-WR_001,writing,medium,Narrative,Imaginative / Adventure,"For years, everyone in your town has been warned never to go beyond a tall fence at the edge of the community. One day, the gate is left open. Write a story about someone who decides to cross the fence.",400,30
-WR_002,writing,medium,Persuasive,Argumentative / Speech,"Your local council is planning to close the town's physical library and replace it with a digital hub. Write a letter to the Mayor expressing your opinion on this change.",400,30`,
+    essay: `code,subject,difficulty,topic,subtopic,prompt,prompt_images,word_limit,time_mins
+WR_001,writing,medium,Narrative,Imaginative / Adventure,"For years, everyone in your town has been warned never to go beyond a tall fence at the edge of the community. One day, the gate is left open. Write a story about someone who decides to cross the fence.",0,400,30
+WR_002,writing,medium,Persuasive,Argumentative / Speech,"Your local council is planning to close the town's physical library and replace it with a digital hub. Write a letter to the Mayor expressing your opinion on this change.",0,400,30`,
 };
 
 // Get CSV header row for a question type

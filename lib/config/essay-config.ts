@@ -176,3 +176,42 @@ export function isWithinWordLimit(
         isOver: wordCount > limit,
     };
 }
+
+export function clampEssayTimeMins(timeMins: number): number {
+    return Math.min(
+        ESSAY_CONFIG.time.maxMins,
+        Math.max(ESSAY_CONFIG.time.minMins, Math.round(timeMins)),
+    );
+}
+
+export function resolveEssayTimeMins(content: unknown): number | null {
+    if (!content || typeof content !== "object") return null;
+    const raw = (content as { time_mins?: unknown }).time_mins;
+    const parsed = typeof raw === "number" ? raw : Number(raw);
+    if (!Number.isFinite(parsed) || parsed <= 0) return null;
+    return clampEssayTimeMins(parsed);
+}
+
+/**
+ * Essay-only tests (Writing) use the question's time_mins for the timer.
+ * Mixed tests keep the subject / custom-test duration.
+ */
+export function resolveTestDurationFromQuestions(
+    questions: Array<{ question_type: string; content: unknown }>,
+    fallbackMins: number,
+): number {
+    if (questions.length === 0) return fallbackMins;
+
+    const allEssays = questions.every((q) => q.question_type === "essay");
+    if (!allEssays) return fallbackMins;
+
+    const times = questions
+        .map((q) => resolveEssayTimeMins(q.content))
+        .filter((t): t is number => t !== null);
+
+    if (times.length === 0) {
+        return clampEssayTimeMins(ESSAY_CONFIG.time.defaultMins);
+    }
+
+    return Math.max(...times);
+}

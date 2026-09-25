@@ -55,8 +55,8 @@ export function ImageEnhancedText({
   block = false,
 }: ImageEnhancedTextProps) {
   const segments = useMemo(() => {
-    // Pattern to match [img:N] where N is a number (1-based index)
-    const imagePattern = /\[img:(\d+)\]/g;
+    // Support the original unnumbered marker as well as [img:N].
+    const imagePattern = /\[img(?::(\d+))?\]/g;
     const parts: (
       | { type: "text"; value: string; isStartOfLine: boolean }
       | { type: "image"; index: number; isStartOfLine: boolean }
@@ -78,7 +78,9 @@ export function ImageEnhancedText({
         isStartOfLine = textBefore.endsWith("\n");
       }
 
-      const imageIndex = parseInt(match[1], 10) - 1; // Convert to 0-based
+      const imageIndex = match[1]
+        ? parseInt(match[1], 10) - 1
+        : parts.filter((part) => part.type === "image").length;
       parts.push({
         type: "image",
         index: imageIndex,

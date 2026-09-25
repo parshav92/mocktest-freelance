@@ -77,11 +77,14 @@ const MCQQuestionStem = memo(({ content }: { content: MCQContent }) => {
               : undefined);
 
     // Find which image indices are referenced via [img:N] syntax
-    const imagePattern = /\[img:(\d+)\]/g;
+    const imagePattern = /\[img(?::(\d+))?\]/g;
     const referencedIndices = new Set<number>();
     let match;
+    let unnumberedIndex = 0;
     while ((match = imagePattern.exec(content.question)) !== null) {
-        const index = parseInt(match[1], 10) - 1; // Convert to 0-based
+        const index = match[1]
+            ? parseInt(match[1], 10) - 1
+            : unnumberedIndex++;
         referencedIndices.add(index);
     }
 
@@ -640,9 +643,6 @@ export const EssayRenderer = memo(
                     />
                 </div>
                 <div className="flex items-center gap-3 flex-wrap">
-                    <Badge variant="outline" className="text-xs gap-1">
-                        Word limit: {content.word_limit}
-                    </Badge>
                     <Badge variant="outline" className="text-xs gap-1">
                         Time: {content.time_mins} min
                     </Badge>

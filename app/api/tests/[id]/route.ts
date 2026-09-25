@@ -6,6 +6,7 @@ import {
     successResponse,
 } from "@/lib/auth/student";
 import { TestService } from "@/lib/services/test.service";
+import { resolveTestDurationFromQuestions } from "@/lib/config/essay-config";
 
 interface RouteParams {
     params: Promise<{ id: string }>;
@@ -56,8 +57,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             isCompleted, // Include answers only for completed tests
         );
 
+        const durationMins =
+            test.status === "not_started"
+                ? resolveTestDurationFromQuestions(questions, test.duration_mins)
+                : test.duration_mins;
+
         return successResponse({
-            test,
+            test: { ...test, duration_mins: durationMins },
             questions,
             is_read_only,
             can_continue: test.status === "in_progress" && !is_read_only,

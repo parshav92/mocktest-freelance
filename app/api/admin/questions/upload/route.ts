@@ -10,6 +10,7 @@ import {
     canonicalizeWritingMainTopic,
 } from "@/lib/services/writing-marking-criteria.service";
 import { WRITING_TOTAL_MARKS } from "@/lib/types/writing-marking-criteria";
+import { clampEssayTimeMins } from "@/lib/config/essay-config";
 
 // GET - Download template
 export async function GET(request: NextRequest) {
@@ -692,10 +693,19 @@ async function insertQuestions(
 
             correctAnswer = { mapping: correctMapping };
         } else if (uploadType === "essay") {
+            const promptImages: string[] = [];
+            const promptImgCount = parseImageCount(q.data.prompt_images);
+            for (let pi = 1; pi <= promptImgCount; pi++) {
+                const field = pi === 1 ? "prompt" : `prompt_${pi}`;
+                const url = findImageUrl(imageUrls, q.code, field);
+                if (url) promptImages.push(url);
+            }
+
             content = {
                 prompt: q.data.prompt,
+                prompt_images: promptImages.length > 0 ? promptImages : undefined,
                 word_limit: parseInt(q.data.word_limit, 10),
-                time_mins: parseInt(q.data.time_mins, 10),
+                time_mins: clampEssayTimeMins(parseInt(q.data.time_mins, 10)),
             };
             correctAnswer = {};
         }
@@ -786,14 +796,19 @@ function findImageUrl(
     code: string,
     field: string,
 ): string | null {
-    // Dynamic suffix: question_N -> _qN, solution_N -> _sN
+    // Dynamic suffix: question_N -> _qN, prompt_N -> _pN, solution_N -> _sN
     const questionMatch = field.match(/^question_(\d+)$/);
+    const promptMatch = field.match(/^prompt_(\d+)$/);
     const solutionMatch = field.match(/^solution_(\d+)$/);
     const fieldSuffix =
         field === "question"
             ? "_q"
             : questionMatch
                 ? `_q${questionMatch[1]}`
+                : field === "prompt"
+                    ? "_p"
+                    : promptMatch
+                        ? `_p${promptMatch[1]}`
                 : field === "option_a"
                     ? "_a"
                     : field === "option_b"
