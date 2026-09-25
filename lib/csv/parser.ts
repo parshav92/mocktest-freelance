@@ -106,9 +106,10 @@ function isYes(value: string | undefined): boolean {
     return value?.toLowerCase() === "yes";
 }
 
-function parseStrictImageCount(
-    value: string | undefined,
-): { valid: boolean; count: number } {
+function parseStrictImageCount(value: string | undefined): {
+    valid: boolean;
+    count: number;
+} {
     if (!value || value.trim() === "") return { valid: true, count: 0 };
     const trimmed = value.trim();
     if (!/^\d+$/.test(trimmed)) return { valid: false, count: 0 };
@@ -151,25 +152,25 @@ function getImageStoragePath(
     const suffix =
         field === "question"
             ? "q"
-                            : questionMatch
-                                ? `q${questionMatch[1]}`
-                                : field === "prompt"
-                                    ? "p"
-                                    : promptMatch
-                                        ? `p${promptMatch[1]}`
-                                        : field === "option_a"
-                                            ? "a"
-                                            : field === "option_b"
-                                                ? "b"
-                                                : field === "option_c"
-                                                    ? "c"
-                                                    : field === "option_d"
-                                                        ? "d"
-                                                        : field === "passage"
-                                                            ? "p"
-                                                            : solutionMatch
-                                                                ? `s${solutionMatch[1]}`
-                                                                : "x";
+            : questionMatch
+              ? `q${questionMatch[1]}`
+              : field === "prompt"
+                ? "p"
+                : promptMatch
+                  ? `p${promptMatch[1]}`
+                  : field === "option_a"
+                    ? "a"
+                    : field === "option_b"
+                      ? "b"
+                      : field === "option_c"
+                        ? "c"
+                        : field === "option_d"
+                          ? "d"
+                          : field === "passage"
+                            ? "p"
+                            : solutionMatch
+                              ? `s${solutionMatch[1]}`
+                              : "x";
 
     return `${bucket}/${subjectSlug}/${code}_${suffix}.png`;
 }
@@ -215,11 +216,14 @@ function parseMCQ(
         "solution_images",
     ];
 
-    const typeSpecificRequired =
-        type === "mcq" ? [] : ["passage_code"];
+    const typeSpecificRequired = type === "mcq" ? [] : ["passage_code"];
 
     // `code` is optional (auto-generated if omitted or empty), `subject` is mandatory for all question types
-    const requiredHeaders = ["subject", ...baseRequired, ...typeSpecificRequired];
+    const requiredHeaders = [
+        "subject",
+        ...baseRequired,
+        ...typeSpecificRequired,
+    ];
 
     const deprecatedHeaders: Array<{ old: string; replacement: string }> = [
         { old: "question_image", replacement: "question_images" },
@@ -402,7 +406,10 @@ function parseMCQ(
             continue;
         }
 
-        if ((type === "passage_mcq" || type === "poem_mcq") && !rowData.passage_code) {
+        if (
+            (type === "passage_mcq" || type === "poem_mcq") &&
+            !rowData.passage_code
+        ) {
             errors.push({
                 row: i + 1,
                 column: "passage_code",
@@ -476,7 +483,12 @@ function parseFillBlank(
     const errors: ParseError[] = [];
 
     // Validate required headers
-    const required = ["subject", "difficulty", "passage_text", "blank_1_options"];
+    const required = [
+        "subject",
+        "difficulty",
+        "passage_text",
+        "blank_1_options",
+    ];
     const missing = required.filter((col) => !headers.includes(col));
     if (missing.length > 0) {
         errors.push({
@@ -574,7 +586,12 @@ function parseFillMissingSentence(
     const errors: ParseError[] = [];
 
     // Validate required headers
-    const required = ["subject", "difficulty", "passage_with_gaps", "sentences"];
+    const required = [
+        "subject",
+        "difficulty",
+        "passage_with_gaps",
+        "sentences",
+    ];
     const missing = required.filter((col) => !headers.includes(col));
     if (missing.length > 0) {
         errors.push({
@@ -857,11 +874,16 @@ function parseEssay(
             continue;
         }
 
-        if (!rowData.time_mins || isNaN(parseInt(rowData.time_mins, 10)) || parseInt(rowData.time_mins, 10) < 1) {
+        if (
+            !rowData.time_mins ||
+            isNaN(parseInt(rowData.time_mins, 10)) ||
+            parseInt(rowData.time_mins, 10) < 1
+        ) {
             errors.push({
                 row: i + 1,
                 column: "time_mins",
-                message: "Time in minutes must be a positive number (used as the writing test timer)",
+                message:
+                    "Time in minutes must be a positive number (used as the writing test timer)",
             });
             continue;
         }

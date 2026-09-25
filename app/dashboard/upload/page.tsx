@@ -90,7 +90,11 @@ function sheetToCsvPreservingNewlines(sheet: XLSX.WorkSheet): string {
                 value = value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
             }
             // RFC 4180: quote fields that contain comma, newline, or double-quote
-            if (value.includes(",") || value.includes("\n") || value.includes('"')) {
+            if (
+                value.includes(",") ||
+                value.includes("\n") ||
+                value.includes('"')
+            ) {
                 value = '"' + value.replace(/"/g, '""') + '"';
             }
             row.push(value);
@@ -192,75 +196,78 @@ export default function AdminUploadPage() {
     }, []);
 
     // Handle file selection
-    const handleFileSelect = useCallback(async (selectedFile: File) => {
-        try {
-            const isCsv =
-                selectedFile.type === "text/csv" ||
-                selectedFile.name.endsWith(".csv");
-            const isExcel =
-                selectedFile.name.endsWith(".xlsx") ||
-                selectedFile.name.endsWith(".xls") ||
-                selectedFile.type ===
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
-                selectedFile.type === "application/vnd.ms-excel";
+    const handleFileSelect = useCallback(
+        async (selectedFile: File) => {
+            try {
+                const isCsv =
+                    selectedFile.type === "text/csv" ||
+                    selectedFile.name.endsWith(".csv");
+                const isExcel =
+                    selectedFile.name.endsWith(".xlsx") ||
+                    selectedFile.name.endsWith(".xls") ||
+                    selectedFile.type ===
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+                    selectedFile.type === "application/vnd.ms-excel";
 
-            if (!isCsv && !isExcel) {
-                setParseResult({
-                    success: false,
-                    type: "",
-                    questions: [],
-                    passages: [],
-                    errors: [
-                        {
-                            row: 0,
-                            message:
-                                "Please upload a CSV or Excel file (.csv, .xlsx, .xls)",
-                        },
-                    ],
-                });
-                return;
-            }
-
-            setFile(selectedFile);
-            setParseResult(null);
-
-            if (isExcel) {
-                // Convert Excel to CSV using SheetJS, but preserve in-cell newlines
-                // (Alt+Enter line breaks in Excel cells). sheet_to_csv() destroys
-                // these; we read cell values directly and apply RFC 4180 quoting.
-                const arrayBuffer = await selectedFile.arrayBuffer();
-                const workbook = XLSX.read(arrayBuffer, { type: "array" });
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const csv = sheetToCsvPreservingNewlines(firstSheet);
-                const { repairMojibakeText } = await import(
-                    "@/lib/utils/text-encoding"
-                );
-                setCsvText(repairMojibakeText(csv));
-            } else {
-                // Read CSV with explicit UTF-8 decoding.
-                // Fall back to Windows-1252 (common Excel CSV encoding on Windows)
-                // to prevent mangled math symbols like θ, π, √, ÷
-                const buffer = await selectedFile.arrayBuffer();
-                let text: string;
-                try {
-                    text = new TextDecoder("utf-8", { fatal: true }).decode(buffer);
-                } catch {
-                    text = new TextDecoder("windows-1252").decode(buffer);
+                if (!isCsv && !isExcel) {
+                    setParseResult({
+                        success: false,
+                        type: "",
+                        questions: [],
+                        passages: [],
+                        errors: [
+                            {
+                                row: 0,
+                                message:
+                                    "Please upload a CSV or Excel file (.csv, .xlsx, .xls)",
+                            },
+                        ],
+                    });
+                    return;
                 }
-                // Strip BOM if present (Excel UTF-8 CSV includes BOM)
-                if (text.charCodeAt(0) === 0xfeff) {
-                    text = text.slice(1);
+
+                setFile(selectedFile);
+                setParseResult(null);
+
+                if (isExcel) {
+                    // Convert Excel to CSV using SheetJS, but preserve in-cell newlines
+                    // (Alt+Enter line breaks in Excel cells). sheet_to_csv() destroys
+                    // these; we read cell values directly and apply RFC 4180 quoting.
+                    const arrayBuffer = await selectedFile.arrayBuffer();
+                    const workbook = XLSX.read(arrayBuffer, { type: "array" });
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const csv = sheetToCsvPreservingNewlines(firstSheet);
+                    const { repairMojibakeText } =
+                        await import("@/lib/utils/text-encoding");
+                    setCsvText(repairMojibakeText(csv));
+                } else {
+                    // Read CSV with explicit UTF-8 decoding.
+                    // Fall back to Windows-1252 (common Excel CSV encoding on Windows)
+                    // to prevent mangled math symbols like θ, π, √, ÷
+                    const buffer = await selectedFile.arrayBuffer();
+                    let text: string;
+                    try {
+                        text = new TextDecoder("utf-8", { fatal: true }).decode(
+                            buffer,
+                        );
+                    } catch {
+                        text = new TextDecoder("windows-1252").decode(buffer);
+                    }
+                    // Strip BOM if present (Excel UTF-8 CSV includes BOM)
+                    if (text.charCodeAt(0) === 0xfeff) {
+                        text = text.slice(1);
+                    }
+                    // Repair UTF-8-as-Latin-1 mojibake (e.g. Â“ for “) before parsing
+                    const { repairMojibakeText } =
+                        await import("@/lib/utils/text-encoding");
+                    setCsvText(repairMojibakeText(text));
                 }
-                // Repair UTF-8-as-Latin-1 mojibake (e.g. Â“ for “) before parsing
-                const { repairMojibakeText } = await import(
-                    "@/lib/utils/text-encoding"
-                );
-                setCsvText(repairMojibakeText(text));
+            } finally {
+                resetMainFileInput();
             }
-        } finally {
-            resetMainFileInput();
-        }
-    }, [resetMainFileInput]);
+        },
+        [resetMainFileInput],
+    );
 
     // Drag and drop handlers
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -566,12 +573,13 @@ export default function AdminUploadPage() {
                         }}
                     />
                     <div
-                        className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-all duration-200 ${isDragging
-                            ? "border-primary bg-primary/5 scale-[1.02]"
-                            : file
-                                ? "border-green-500 bg-green-50/50"
-                                : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 cursor-pointer"
-                            }`}
+                        className={`border-2 border-dashed rounded-lg p-6 sm:p-8 text-center transition-all duration-200 ${
+                            isDragging
+                                ? "border-primary bg-primary/5 scale-[1.02]"
+                                : file
+                                  ? "border-green-500 bg-green-50/50"
+                                  : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30 cursor-pointer"
+                        }`}
                         onDragOver={handleDragOver}
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
@@ -766,13 +774,25 @@ export default function AdminUploadPage() {
                                                 </Badge>
                                                 <div className="flex flex-col gap-1 flex-1">
                                                     <div className="flex items-center gap-2">
-                                                        {question.data.subject && (
-                                                            <Badge variant="secondary" className="text-xs">
-                                                                Subject: {question.data.subject}
+                                                        {question.data
+                                                            .subject && (
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="text-xs"
+                                                            >
+                                                                Subject:{" "}
+                                                                {
+                                                                    question
+                                                                        .data
+                                                                        .subject
+                                                                }
                                                             </Badge>
                                                         )}
                                                         {question.autoCode ? (
-                                                            <Badge variant="secondary" className="font-mono text-xs">
+                                                            <Badge
+                                                                variant="secondary"
+                                                                className="font-mono text-xs"
+                                                            >
                                                                 Auto
                                                             </Badge>
                                                         ) : (
@@ -781,96 +801,107 @@ export default function AdminUploadPage() {
                                                             </span>
                                                         )}
                                                     </div>
-                                                    {(question.data.topic || question.data.subtopic) && (
+                                                    {(question.data.topic ||
+                                                        question.data
+                                                            .subtopic) && (
                                                         <div className="text-xs text-muted-foreground">
-                                                            {question.data.topic && question.data.subtopic
+                                                            {question.data
+                                                                .topic &&
+                                                            question.data
+                                                                .subtopic
                                                                 ? `${question.data.topic} / ${question.data.subtopic}`
-                                                                : question.data.topic || question.data.subtopic}
+                                                                : question.data
+                                                                      .topic ||
+                                                                  question.data
+                                                                      .subtopic}
                                                         </div>
                                                     )}
                                                 </div>
                                                 {question.imageRequirements
                                                     .length > 0 && (
-                                                        <Badge
-                                                            variant={
-                                                                question.imageRequirements.every(
-                                                                    (r) =>
-                                                                        uploadedImages.has(
-                                                                            r.storagePath,
-                                                                        ),
-                                                                )
-                                                                    ? "default"
-                                                                    : "secondary"
-                                                            }
-                                                        >
-                                                            <ImageIcon className="h-3 w-3 mr-1" />
-                                                            {
-                                                                question.imageRequirements.filter(
-                                                                    (r) =>
-                                                                        uploadedImages.has(
-                                                                            r.storagePath,
-                                                                        ),
-                                                                ).length
-                                                            }
-                                                            /
-                                                            {
-                                                                question
-                                                                    .imageRequirements
-                                                                    .length
-                                                            }
-                                                        </Badge>
-                                                    )}
+                                                    <Badge
+                                                        variant={
+                                                            question.imageRequirements.every(
+                                                                (r) =>
+                                                                    uploadedImages.has(
+                                                                        r.storagePath,
+                                                                    ),
+                                                            )
+                                                                ? "default"
+                                                                : "secondary"
+                                                        }
+                                                    >
+                                                        <ImageIcon className="h-3 w-3 mr-1" />
+                                                        {
+                                                            question.imageRequirements.filter(
+                                                                (r) =>
+                                                                    uploadedImages.has(
+                                                                        r.storagePath,
+                                                                    ),
+                                                            ).length
+                                                        }
+                                                        /
+                                                        {
+                                                            question
+                                                                .imageRequirements
+                                                                .length
+                                                        }
+                                                    </Badge>
+                                                )}
                                             </div>
                                         </AccordionTrigger>
                                         <AccordionContent>
                                             <div className="space-y-4 pt-2">
                                                 {(() => {
-                                                    const questionImagePreviews = question.imageRequirements
-                                                        .filter(
-                                                            (req) =>
-                                                                req.field ===
-                                                                "question" ||
-                                                                /^question_\d+$/.test(
-                                                                    req.field,
-                                                                ),
-                                                        )
-                                                        .sort((a, b) => {
-                                                            const getIndex = (
-                                                                field: string,
-                                                            ) => {
-                                                                if (
-                                                                    field ===
-                                                                    "question"
-                                                                )
-                                                                    return 1;
-                                                                const match =
-                                                                    field.match(
-                                                                        /^question_(\d+)$/,
-                                                                    );
-                                                                return match
-                                                                    ? parseInt(
-                                                                        match[1],
-                                                                        10,
+                                                    const questionImagePreviews =
+                                                        question.imageRequirements
+                                                            .filter(
+                                                                (req) =>
+                                                                    req.field ===
+                                                                        "question" ||
+                                                                    /^question_\d+$/.test(
+                                                                        req.field,
+                                                                    ),
+                                                            )
+                                                            .sort((a, b) => {
+                                                                const getIndex =
+                                                                    (
+                                                                        field: string,
+                                                                    ) => {
+                                                                        if (
+                                                                            field ===
+                                                                            "question"
+                                                                        )
+                                                                            return 1;
+                                                                        const match =
+                                                                            field.match(
+                                                                                /^question_(\d+)$/,
+                                                                            );
+                                                                        return match
+                                                                            ? parseInt(
+                                                                                  match[1],
+                                                                                  10,
+                                                                              )
+                                                                            : 999;
+                                                                    };
+                                                                return (
+                                                                    getIndex(
+                                                                        a.field,
+                                                                    ) -
+                                                                    getIndex(
+                                                                        b.field,
                                                                     )
-                                                                    : 999;
-                                                            };
-                                                            return (
-                                                                getIndex(
-                                                                    a.field,
-                                                                ) -
-                                                                getIndex(
-                                                                    b.field,
-                                                                )
-                                                            );
-                                                        })
-                                                        .map(
-                                                            (req) =>
-                                                                uploadedImages.get(
-                                                                    req.storagePath,
-                                                                )?.preview ||
-                                                                "",
-                                                        )
-                                                        .filter(Boolean);
+                                                                );
+                                                            })
+                                                            .map(
+                                                                (req) =>
+                                                                    uploadedImages.get(
+                                                                        req.storagePath,
+                                                                    )
+                                                                        ?.preview ||
+                                                                    "",
+                                                            )
+                                                            .filter(Boolean);
 
                                                     const mainContent =
                                                         question.data
@@ -879,8 +910,7 @@ export default function AdminUploadPage() {
                                                             .passage_text ||
                                                         question.data
                                                             .passage_with_gaps ||
-                                                        question.data
-                                                            .prompt ||
+                                                        question.data.prompt ||
                                                         "";
 
                                                     return (
@@ -888,17 +918,23 @@ export default function AdminUploadPage() {
                                                             {/* Question text */}
                                                             <div>
                                                                 <Label className="text-xs text-muted-foreground">
-                                                                    {question.data.question
+                                                                    {question
+                                                                        .data
+                                                                        .question
                                                                         ? "Question"
-                                                                        : question.data.prompt
-                                                                            ? "Prompt"
-                                                                            : question.data
-                                                                                .passage_text
-                                                                                ? "Passage Text"
-                                                                                : question.data
+                                                                        : question
+                                                                                .data
+                                                                                .prompt
+                                                                          ? "Prompt"
+                                                                          : question
+                                                                                  .data
+                                                                                  .passage_text
+                                                                            ? "Passage Text"
+                                                                            : question
+                                                                                    .data
                                                                                     .passage_with_gaps
-                                                                                    ? "Passage With Gaps"
-                                                                                    : "Question"}
+                                                                              ? "Passage With Gaps"
+                                                                              : "Question"}
                                                                 </Label>
                                                                 <div className="text-sm mt-1 whitespace-pre-wrap leading-relaxed">
                                                                     <ImageEnhancedText
@@ -923,14 +959,20 @@ export default function AdminUploadPage() {
                                                             Blank Options
                                                         </Label>
                                                         <div className="grid gap-2">
-                                                            {Array.from({ length: 5 }).map(
-                                                                (_, blankIndex) => {
+                                                            {Array.from({
+                                                                length: 5,
+                                                            }).map(
+                                                                (
+                                                                    _,
+                                                                    blankIndex,
+                                                                ) => {
                                                                     const position =
                                                                         blankIndex +
                                                                         1;
                                                                     const options =
-                                                                        question.data[
-                                                                        `blank_${position}_options`
+                                                                        question
+                                                                            .data[
+                                                                            `blank_${position}_options`
                                                                         ];
                                                                     if (
                                                                         !options
@@ -943,10 +985,16 @@ export default function AdminUploadPage() {
                                                                             className="p-2 rounded border text-sm"
                                                                         >
                                                                             <span className="font-medium mr-2">
-                                                                                [{position}]
+                                                                                [
+                                                                                {
+                                                                                    position
+                                                                                }
+                                                                                ]
                                                                             </span>
                                                                             <span>
-                                                                                {options}
+                                                                                {
+                                                                                    options
+                                                                                }
                                                                             </span>
                                                                         </div>
                                                                     );
@@ -957,7 +1005,8 @@ export default function AdminUploadPage() {
                                                 )}
 
                                                 {/* Fill missing sentence options preview */}
-                                                {question.data.passage_with_gaps &&
+                                                {question.data
+                                                    .passage_with_gaps &&
                                                     question.data.sentences && (
                                                         <div>
                                                             <Label className="text-xs text-muted-foreground">
@@ -967,7 +1016,8 @@ export default function AdminUploadPage() {
                                                                 block
                                                                 className="text-sm mt-1 whitespace-pre-wrap leading-relaxed"
                                                                 content={
-                                                                    question.data
+                                                                    question
+                                                                        .data
                                                                         .sentences
                                                                 }
                                                             />
@@ -980,7 +1030,7 @@ export default function AdminUploadPage() {
                                                         <div
                                                             className={
                                                                 question.data.answer?.toUpperCase() ===
-                                                                    "A"
+                                                                "A"
                                                                     ? "bg-green-50 p-2 rounded"
                                                                     : "p-2"
                                                             }
@@ -1002,7 +1052,7 @@ export default function AdminUploadPage() {
                                                         <div
                                                             className={
                                                                 question.data.answer?.toUpperCase() ===
-                                                                    "B"
+                                                                "B"
                                                                     ? "bg-green-50 p-2 rounded"
                                                                     : "p-2"
                                                             }
@@ -1024,7 +1074,7 @@ export default function AdminUploadPage() {
                                                         <div
                                                             className={
                                                                 question.data.answer?.toUpperCase() ===
-                                                                    "C"
+                                                                "C"
                                                                     ? "bg-green-50 p-2 rounded"
                                                                     : "p-2"
                                                             }
@@ -1046,7 +1096,7 @@ export default function AdminUploadPage() {
                                                         <div
                                                             className={
                                                                 question.data.answer?.toUpperCase() ===
-                                                                    "D"
+                                                                "D"
                                                                     ? "bg-green-50 p-2 rounded"
                                                                     : "p-2"
                                                             }
@@ -1071,42 +1121,42 @@ export default function AdminUploadPage() {
                                                 {/* Image Upload Fields */}
                                                 {question.imageRequirements
                                                     .length > 0 && (
-                                                        <div className="border-t pt-4 mt-4">
-                                                            <Label className="text-sm font-medium mb-2 block">
-                                                                Required Images
-                                                            </Label>
-                                                            <div className="grid gap-3">
-                                                                {question.imageRequirements.map(
-                                                                    (req) => (
-                                                                        <ImageUploadField
-                                                                            key={
-                                                                                req.storagePath
-                                                                            }
-                                                                            requirement={
-                                                                                req
-                                                                            }
-                                                                            uploadedImage={uploadedImages.get(
+                                                    <div className="border-t pt-4 mt-4">
+                                                        <Label className="text-sm font-medium mb-2 block">
+                                                            Required Images
+                                                        </Label>
+                                                        <div className="grid gap-3">
+                                                            {question.imageRequirements.map(
+                                                                (req) => (
+                                                                    <ImageUploadField
+                                                                        key={
+                                                                            req.storagePath
+                                                                        }
+                                                                        requirement={
+                                                                            req
+                                                                        }
+                                                                        uploadedImage={uploadedImages.get(
+                                                                            req.storagePath,
+                                                                        )}
+                                                                        onUpload={(
+                                                                            file,
+                                                                        ) =>
+                                                                            handleImageUpload(
                                                                                 req.storagePath,
-                                                                            )}
-                                                                            onUpload={(
                                                                                 file,
-                                                                            ) =>
-                                                                                handleImageUpload(
-                                                                                    req.storagePath,
-                                                                                    file,
-                                                                                )
-                                                                            }
-                                                                            onRemove={() =>
-                                                                                handleRemoveImage(
-                                                                                    req.storagePath,
-                                                                                )
-                                                                            }
-                                                                        />
-                                                                    ),
-                                                                )}
-                                                            </div>
+                                                                            )
+                                                                        }
+                                                                        onRemove={() =>
+                                                                            handleRemoveImage(
+                                                                                req.storagePath,
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                ),
+                                                            )}
                                                         </div>
-                                                    )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </AccordionContent>
                                     </AccordionItem>
@@ -1144,35 +1194,35 @@ export default function AdminUploadPage() {
                                                 </Badge>
                                                 {passage.imageRequirements
                                                     .length > 0 && (
-                                                        <Badge
-                                                            variant={
-                                                                passage.imageRequirements.every(
-                                                                    (r) =>
-                                                                        uploadedImages.has(
-                                                                            r.storagePath,
-                                                                        ),
-                                                                )
-                                                                    ? "default"
-                                                                    : "secondary"
-                                                            }
-                                                        >
-                                                            <ImageIcon className="h-3 w-3 mr-1" />
-                                                            {
-                                                                passage.imageRequirements.filter(
-                                                                    (r) =>
-                                                                        uploadedImages.has(
-                                                                            r.storagePath,
-                                                                        ),
-                                                                ).length
-                                                            }
-                                                            /
-                                                            {
-                                                                passage
-                                                                    .imageRequirements
-                                                                    .length
-                                                            }
-                                                        </Badge>
-                                                    )}
+                                                    <Badge
+                                                        variant={
+                                                            passage.imageRequirements.every(
+                                                                (r) =>
+                                                                    uploadedImages.has(
+                                                                        r.storagePath,
+                                                                    ),
+                                                            )
+                                                                ? "default"
+                                                                : "secondary"
+                                                        }
+                                                    >
+                                                        <ImageIcon className="h-3 w-3 mr-1" />
+                                                        {
+                                                            passage.imageRequirements.filter(
+                                                                (r) =>
+                                                                    uploadedImages.has(
+                                                                        r.storagePath,
+                                                                    ),
+                                                            ).length
+                                                        }
+                                                        /
+                                                        {
+                                                            passage
+                                                                .imageRequirements
+                                                                .length
+                                                        }
+                                                    </Badge>
+                                                )}
                                             </div>
                                         </AccordionTrigger>
                                         <AccordionContent>
@@ -1204,42 +1254,42 @@ export default function AdminUploadPage() {
                                                 {/* Image Upload Fields */}
                                                 {passage.imageRequirements
                                                     .length > 0 && (
-                                                        <div className="border-t pt-4 mt-4">
-                                                            <Label className="text-sm font-medium mb-2 block">
-                                                                Required Images
-                                                            </Label>
-                                                            <div className="grid gap-3">
-                                                                {passage.imageRequirements.map(
-                                                                    (req) => (
-                                                                        <ImageUploadField
-                                                                            key={
-                                                                                req.storagePath
-                                                                            }
-                                                                            requirement={
-                                                                                req
-                                                                            }
-                                                                            uploadedImage={uploadedImages.get(
+                                                    <div className="border-t pt-4 mt-4">
+                                                        <Label className="text-sm font-medium mb-2 block">
+                                                            Required Images
+                                                        </Label>
+                                                        <div className="grid gap-3">
+                                                            {passage.imageRequirements.map(
+                                                                (req) => (
+                                                                    <ImageUploadField
+                                                                        key={
+                                                                            req.storagePath
+                                                                        }
+                                                                        requirement={
+                                                                            req
+                                                                        }
+                                                                        uploadedImage={uploadedImages.get(
+                                                                            req.storagePath,
+                                                                        )}
+                                                                        onUpload={(
+                                                                            file,
+                                                                        ) =>
+                                                                            handleImageUpload(
                                                                                 req.storagePath,
-                                                                            )}
-                                                                            onUpload={(
                                                                                 file,
-                                                                            ) =>
-                                                                                handleImageUpload(
-                                                                                    req.storagePath,
-                                                                                    file,
-                                                                                )
-                                                                            }
-                                                                            onRemove={() =>
-                                                                                handleRemoveImage(
-                                                                                    req.storagePath,
-                                                                                )
-                                                                            }
-                                                                        />
-                                                                    ),
-                                                                )}
-                                                            </div>
+                                                                            )
+                                                                        }
+                                                                        onRemove={() =>
+                                                                            handleRemoveImage(
+                                                                                req.storagePath,
+                                                                            )
+                                                                        }
+                                                                    />
+                                                                ),
+                                                            )}
                                                         </div>
-                                                    )}
+                                                    </div>
+                                                )}
                                             </div>
                                         </AccordionContent>
                                     </AccordionItem>
@@ -1388,12 +1438,13 @@ function StepIndicator({
     return (
         <div className="flex items-center gap-1 sm:gap-2">
             <div
-                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${active
-                    ? "bg-primary text-primary-foreground"
-                    : completed
-                        ? "bg-green-500 text-white"
-                        : "bg-muted text-muted-foreground"
-                    }`}
+                className={`w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-medium ${
+                    active
+                        ? "bg-primary text-primary-foreground"
+                        : completed
+                          ? "bg-green-500 text-white"
+                          : "bg-muted text-muted-foreground"
+                }`}
             >
                 {completed ? (
                     <CheckCircle2 className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -1441,8 +1492,9 @@ function ImageUploadField({
     return (
         <>
             <div
-                className={`flex items-center gap-4 p-3 border rounded-lg transition-colors ${isDragOver ? "border-primary bg-primary/5" : ""
-                    }`}
+                className={`flex items-center gap-4 p-3 border rounded-lg transition-colors ${
+                    isDragOver ? "border-primary bg-primary/5" : ""
+                }`}
                 onDragOver={(e) => {
                     e.preventDefault();
                     setIsDragOver(true);

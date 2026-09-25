@@ -341,9 +341,7 @@ async function insertQuestions(
                 subtopic,
             );
             if (validationError) {
-                throw new Error(
-                    `Row ${q.rowIndex}: ${validationError}`,
-                );
+                throw new Error(`Row ${q.rowIndex}: ${validationError}`);
             }
         }
     }
@@ -519,9 +517,7 @@ async function insertQuestions(
 
     // Check for duplicate codes (only for manually-specified codes;
     // auto-generated codes are guaranteed unique by the counter)
-    const manualCodes = questions
-        .filter((q) => q.code)
-        .map((q) => q.code);
+    const manualCodes = questions.filter((q) => q.code).map((q) => q.code);
 
     if (manualCodes.length > 0) {
         const { data: existing } = await supabase
@@ -529,12 +525,8 @@ async function insertQuestions(
             .select("code")
             .in("code", manualCodes);
 
-        const existingCodes = new Set(
-            (existing || []).map((e) => e.code),
-        );
-        const duplicates = manualCodes.filter((c) =>
-            existingCodes.has(c),
-        );
+        const existingCodes = new Set((existing || []).map((e) => e.code));
+        const duplicates = manualCodes.filter((c) => existingCodes.has(c));
 
         if (duplicates.length > 0) {
             throw new Error(
@@ -632,7 +624,6 @@ async function insertQuestions(
 
             correctAnswer = { label: q.data.answer?.toUpperCase() };
         } else if (uploadType === "fill_blank") {
-
             // Parse blanks. CSV convention: first option is the correct one.
             const blanks: Array<{
                 position: number;
@@ -703,7 +694,8 @@ async function insertQuestions(
 
             content = {
                 prompt: q.data.prompt,
-                prompt_images: promptImages.length > 0 ? promptImages : undefined,
+                prompt_images:
+                    promptImages.length > 0 ? promptImages : undefined,
                 word_limit: parseInt(q.data.word_limit, 10),
                 time_mins: clampEssayTimeMins(parseInt(q.data.time_mins, 10)),
             };
@@ -713,11 +705,11 @@ async function insertQuestions(
         // Build passage_ids array from comma-separated passage codes
         const passageIds: string[] = q.data.passage_code
             ? q.data.passage_code
-                .split(",")
-                .map((c) => c.trim())
-                .filter(Boolean)
-                .map((code) => passageMap.get(code)!)
-                .filter(Boolean)
+                  .split(",")
+                  .map((c) => c.trim())
+                  .filter(Boolean)
+                  .map((code) => passageMap.get(code)!)
+                  .filter(Boolean)
             : [];
 
         // Build solution_images array from uploaded solution images (dynamic count)
@@ -737,7 +729,7 @@ async function insertQuestions(
             topic: toNullableText(
                 uploadType === "essay"
                     ? canonicalizeWritingMainTopic(q.data.topic || "") ||
-                      q.data.topic
+                          q.data.topic
                     : q.data.topic,
             ),
             subtopic: toNullableText(q.data.subtopic),
@@ -804,22 +796,22 @@ function findImageUrl(
         field === "question"
             ? "_q"
             : questionMatch
-                ? `_q${questionMatch[1]}`
-                : field === "prompt"
-                    ? "_p"
-                    : promptMatch
-                        ? `_p${promptMatch[1]}`
-                : field === "option_a"
+              ? `_q${questionMatch[1]}`
+              : field === "prompt"
+                ? "_p"
+                : promptMatch
+                  ? `_p${promptMatch[1]}`
+                  : field === "option_a"
                     ? "_a"
                     : field === "option_b"
-                        ? "_b"
-                        : field === "option_c"
-                            ? "_c"
-                            : field === "option_d"
-                                ? "_d"
-                                : solutionMatch
-                                    ? `_s${solutionMatch[1]}`
-                                    : "";
+                      ? "_b"
+                      : field === "option_c"
+                        ? "_c"
+                        : field === "option_d"
+                          ? "_d"
+                          : solutionMatch
+                            ? `_s${solutionMatch[1]}`
+                            : "";
 
     if (!fieldSuffix) return null;
 

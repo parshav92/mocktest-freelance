@@ -82,9 +82,7 @@ const MCQQuestionStem = memo(({ content }: { content: MCQContent }) => {
     let match;
     let unnumberedIndex = 0;
     while ((match = imagePattern.exec(content.question)) !== null) {
-        const index = match[1]
-            ? parseInt(match[1], 10) - 1
-            : unnumberedIndex++;
+        const index = match[1] ? parseInt(match[1], 10) - 1 : unnumberedIndex++;
         referencedIndices.add(index);
     }
 
