@@ -29,6 +29,10 @@ import { Progress } from "@/components/ui/progress";
 import { RichTextViewer } from "@/components/ui/rich-text-editor";
 import { MathText } from "@/components/ui/math-text";
 import { ImageEnhancedText } from "@/components/ui/image-enhanced-text";
+import {
+    getEssayPromptImages,
+    getUnreferencedImages,
+} from "@/lib/utils/question-content";
 
 interface ReviewQuestion {
     question_number: number;
@@ -1688,7 +1692,11 @@ function ReviewQuestionDisplay({
 
         case "essay": {
             const prompt = content.prompt as string;
-            const promptImages = content.prompt_images as string[] | undefined;
+            const promptImages = getEssayPromptImages(content);
+            const unreferencedPromptImages = getUnreferencedImages(
+                prompt || "",
+                promptImages,
+            );
             const essayText = studentAnswer as string;
             const wordLimit = content.word_limit as number | undefined;
             const rubric = content.rubric as Record<string, number> | undefined;
@@ -1701,6 +1709,24 @@ function ReviewQuestionDisplay({
                         <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
                             <ImageEnhancedText content={prompt} images={promptImages} />
                         </div>
+                        {unreferencedPromptImages.length > 0 && (
+                            <div
+                                className={`mt-4 grid gap-3 ${
+                                    unreferencedPromptImages.length > 1
+                                        ? "grid-cols-1 sm:grid-cols-2"
+                                        : ""
+                                }`}
+                            >
+                                {unreferencedPromptImages.map((imgUrl, idx) => (
+                                    <img
+                                        key={`essay-review-img-${idx}`}
+                                        src={imgUrl}
+                                        alt={`Prompt image ${idx + 1}`}
+                                        className="max-w-full rounded-lg border"
+                                    />
+                                ))}
+                            </div>
+                        )}
                         {wordLimit && (
                             <Badge variant="outline" className="text-xs mt-3">
                                 Word limit: {wordLimit}

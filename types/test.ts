@@ -198,7 +198,9 @@ export interface FillMissingSentenceContent {
 
 export interface EssayContent {
     prompt: string;
-    prompt_images?: string[]; // New: supports [img:1], [img:2] etc in prompt text
+    prompt_images?: string[]; // supports [img:1], [img:2] etc in prompt text
+    /** Legacy / admin-edit field — prefer prompt_images; renderers fall back to this */
+    question_images?: string[];
     word_limit: number;
     time_mins: number;
     rubric?: Record<string, number>; // Legacy only; new questions use writing_marking_criteria
