@@ -30,6 +30,11 @@ import {
 import { TEST_CONFIG } from "@/lib/config/test-rules";
 import { MathText } from "@/components/ui/math-text";
 import { ImageEnhancedText } from "@/components/ui/image-enhanced-text";
+import { RichTextViewer } from "@/components/ui/rich-text-editor";
+import {
+    getEssayPromptImages,
+    getUnreferencedImages,
+} from "@/lib/utils/question-content";
 import { InstructionPages } from "@/components/test/instruction-pages";
 import { QuestionRenderer } from "@/components/test/question-renderers";
 import {
@@ -1294,28 +1299,45 @@ export function CustomTestRunner({
                 <div
                     className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white min-h-0 overflow-hidden`}
                 >
-                    <ScrollArea className="flex-1 min-h-0">
-                        <div
-                            className={cn(
-                                "p-6 md:p-8",
-                                questionLayout === "stacked" &&
-                                    "max-w-3xl mx-auto",
-                            )}
-                        >
-                            <div className="flex items-center justify-between mb-6">
+                    {questionLayout === "split" ? (
+                        <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-6 md:p-8">
+                            <div className="flex items-center justify-between mb-6 shrink-0">
                                 <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
                                     Q{currentIndex + 1}
                                 </span>
                             </div>
-
-                            <QuestionRenderer
-                                question={currentQuestion}
-                                answer={currentAnswer}
-                                onAnswer={handleAnswer}
-                                layout={questionLayout}
-                            />
+                            <div className="flex-1 min-h-0 overflow-hidden">
+                                <QuestionRenderer
+                                    question={currentQuestion}
+                                    answer={currentAnswer}
+                                    onAnswer={handleAnswer}
+                                    layout={questionLayout}
+                                />
+                            </div>
                         </div>
-                    </ScrollArea>
+                    ) : (
+                        <ScrollArea className="flex-1 min-h-0">
+                            <div
+                                className={cn(
+                                    "p-6 md:p-8",
+                                    "max-w-3xl mx-auto",
+                                )}
+                            >
+                                <div className="flex items-center justify-between mb-6">
+                                    <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
+                                        Q{currentIndex + 1}
+                                    </span>
+                                </div>
+
+                                <QuestionRenderer
+                                    question={currentQuestion}
+                                    answer={currentAnswer}
+                                    onAnswer={handleAnswer}
+                                    layout={questionLayout}
+                                />
+                            </div>
+                        </ScrollArea>
+                    )}
                 </div>
             </div>
 
@@ -1853,6 +1875,76 @@ function ReviewQuestionDisplay({
                                 )}
                             </div>
                         </div>
+                    </div>
+                </div>
+            );
+        }
+
+        case "essay": {
+            const prompt = (content.prompt as string) || "";
+            const promptImages = getEssayPromptImages(content);
+            const unreferencedPromptImages = getUnreferencedImages(
+                prompt,
+                promptImages,
+            );
+            const essayText = (question.selected as string) || "";
+            const wordLimit = content.word_limit as number | undefined;
+
+            return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-0 min-h-0">
+                    <div className="p-6 md:p-8 border-b md:border-b-0 md:border-r border-gray-200">
+                        {questionBadge}
+                        <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
+                            <ImageEnhancedText
+                                content={prompt}
+                                images={promptImages}
+                            />
+                        </div>
+                        {unreferencedPromptImages.length > 0 && (
+                            <div
+                                className={`mt-4 grid gap-3 ${
+                                    unreferencedPromptImages.length > 1
+                                        ? "grid-cols-1 sm:grid-cols-2"
+                                        : ""
+                                }`}
+                            >
+                                {unreferencedPromptImages.map((imgUrl, idx) => (
+                                    <img
+                                        key={`custom-essay-img-${idx}`}
+                                        src={imgUrl}
+                                        alt={`Prompt image ${idx + 1}`}
+                                        className="max-w-full rounded-lg border"
+                                    />
+                                ))}
+                            </div>
+                        )}
+                        {wordLimit != null && (
+                            <Badge variant="outline" className="text-xs mt-3">
+                                Word limit: {wordLimit}
+                            </Badge>
+                        )}
+                        {!wasAttempted && (
+                            <p className="text-xs text-slate-400 italic flex items-center gap-1.5 mt-4">
+                                <Minus className="h-3.5 w-3.5" />
+                                Not attempted
+                            </p>
+                        )}
+                        {solutionBlock}
+                    </div>
+                    <div className="p-6 md:p-8">
+                        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">
+                            Your Response
+                        </p>
+                        {essayText ? (
+                            <RichTextViewer
+                                content={essayText}
+                                className="text-sm text-slate-700"
+                            />
+                        ) : (
+                            <p className="text-sm text-slate-400 italic">
+                                No response submitted.
+                            </p>
+                        )}
                     </div>
                 </div>
             );

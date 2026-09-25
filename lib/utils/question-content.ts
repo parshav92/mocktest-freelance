@@ -106,3 +106,48 @@ export function getMcqCorrectLabel(
 export function isMcqType(questionType: string): boolean {
     return ["mcq", "passage_mcq", "poem_mcq"].includes(questionType);
 }
+
+/** Resolve essay prompt images from prompt_images or legacy question_images fields. */
+export function getEssayPromptImages(
+    content: Record<string, unknown> | null | undefined,
+): string[] {
+    if (!content) return [];
+
+    const fromArray = (value: unknown): string[] =>
+        Array.isArray(value)
+            ? value.filter((u): u is string => typeof u === "string" && !!u)
+            : [];
+
+    const promptImages = fromArray(content.prompt_images);
+    if (promptImages.length > 0) return promptImages;
+
+    const questionImages = fromArray(content.question_images);
+    if (questionImages.length > 0) return questionImages;
+
+    if (typeof content.prompt_image === "string" && content.prompt_image) {
+        return [content.prompt_image];
+    }
+    if (typeof content.question_image === "string" && content.question_image) {
+        return [content.question_image];
+    }
+    if (
+        typeof content.question_image_url === "string" &&
+        content.question_image_url
+    ) {
+        return [content.question_image_url];
+    }
+
+    return [];
+}
+
+/** Images not referenced via [img:N] in text — show them below the stem. */
+export function getUnreferencedImages(text: string, images: string[]): string[] {
+    if (!images.length) return [];
+    const referenced = new Set<number>();
+    const imagePattern = /\[img:(\d+)\]/g;
+    let match: RegExpExecArray | null;
+    while ((match = imagePattern.exec(text)) !== null) {
+        referenced.add(parseInt(match[1], 10) - 1);
+    }
+    return images.filter((_, idx) => !referenced.has(idx));
+}

@@ -6,6 +6,11 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MathText } from "@/components/ui/math-text";
+import { ImageEnhancedText } from "@/components/ui/image-enhanced-text";
+import {
+    getEssayPromptImages,
+    getUnreferencedImages,
+} from "@/lib/utils/question-content";
 import { ArrowLeft, Loader2, ClipboardList, Play, Pencil, Send } from "lucide-react";
 
 // ─── Types ──────────────────────────────────────────────────────────────
@@ -434,11 +439,65 @@ export default function CustomTestDetailPage() {
 
                                     {/* Question text */}
                                     <div className="px-5 pb-3">
-                                        <MathText
-                                            content={getQuestionText(q.content)}
-                                            block
-                                            className="text-sm text-zinc-800 whitespace-pre-wrap"
-                                        />
+                                        {q.question_type === "essay" ? (
+                                            (() => {
+                                                const prompt =
+                                                    getQuestionText(q.content);
+                                                const promptImages =
+                                                    getEssayPromptImages(
+                                                        q.content,
+                                                    );
+                                                const unreferenced =
+                                                    getUnreferencedImages(
+                                                        prompt,
+                                                        promptImages,
+                                                    );
+                                                return (
+                                                    <div className="space-y-3">
+                                                        <ImageEnhancedText
+                                                            content={prompt}
+                                                            images={promptImages}
+                                                            block
+                                                        />
+                                                        {unreferenced.length >
+                                                            0 && (
+                                                            <div
+                                                                className={`grid gap-2 ${
+                                                                    unreferenced.length >
+                                                                    1
+                                                                        ? "grid-cols-1 sm:grid-cols-2"
+                                                                        : ""
+                                                                }`}
+                                                            >
+                                                                {unreferenced.map(
+                                                                    (
+                                                                        imgUrl,
+                                                                        idx,
+                                                                    ) => (
+                                                                        <img
+                                                                            key={`ct-essay-img-${idx}`}
+                                                                            src={
+                                                                                imgUrl
+                                                                            }
+                                                                            alt={`Prompt image ${idx + 1}`}
+                                                                            className="max-w-full rounded-lg border border-zinc-200"
+                                                                        />
+                                                                    ),
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()
+                                        ) : (
+                                            <MathText
+                                                content={getQuestionText(
+                                                    q.content,
+                                                )}
+                                                block
+                                                className="text-sm text-zinc-800 whitespace-pre-wrap"
+                                            />
+                                        )}
                                     </div>
 
                                     {/* Options */}

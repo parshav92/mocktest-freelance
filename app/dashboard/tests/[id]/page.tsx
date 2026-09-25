@@ -1030,30 +1030,49 @@ export default function TestEnvironmentPage() {
                 <div
                     className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white min-h-0 overflow-hidden`}
                 >
-                    <ScrollArea className="flex-1 min-h-0">
-                        <div
-                            className={cn(
-                                "p-6 md:p-8",
-                                questionLayout === "stacked" &&
-                                "max-w-3xl mx-auto",
-                            )}
-                        >
-                            <div className="flex items-center justify-between mb-6 ">
+                    {questionLayout === "split" ? (
+                        <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-6 md:p-8">
+                            <div className="flex items-center justify-between mb-6 shrink-0">
                                 <div className="flex items-center gap-3">
                                     <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
                                         Q{currentIndex + 1}
                                     </span>
                                 </div>
                             </div>
-
-                            <QuestionRenderer
-                                question={currentQuestion}
-                                answer={currentAnswer}
-                                onAnswer={handleAnswer}
-                                layout={questionLayout}
-                            />
+                            <div className="flex-1 min-h-0 overflow-hidden">
+                                <QuestionRenderer
+                                    question={currentQuestion}
+                                    answer={currentAnswer}
+                                    onAnswer={handleAnswer}
+                                    layout={questionLayout}
+                                />
+                            </div>
                         </div>
-                    </ScrollArea>
+                    ) : (
+                        <ScrollArea className="flex-1 min-h-0">
+                            <div
+                                className={cn(
+                                    "p-6 md:p-8",
+                                    "max-w-3xl mx-auto",
+                                )}
+                            >
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3">
+                                        <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
+                                            Q{currentIndex + 1}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <QuestionRenderer
+                                    question={currentQuestion}
+                                    answer={currentAnswer}
+                                    onAnswer={handleAnswer}
+                                    layout={questionLayout}
+                                />
+                            </div>
+                        </ScrollArea>
+                    )}
                 </div>
             </div>
 

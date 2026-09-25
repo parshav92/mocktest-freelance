@@ -84,10 +84,19 @@ interface Question {
 }
 
 function getQuestionImages(content: Record<string, unknown>): string[] {
+    if (Array.isArray(content.prompt_images)) {
+        const promptImages = content.prompt_images.filter(
+            (u): u is string => typeof u === "string" && !!u,
+        );
+        if (promptImages.length > 0) return promptImages;
+    }
     if (Array.isArray(content.question_images)) {
         return content.question_images.filter(
             (u): u is string => typeof u === "string" && !!u,
         );
+    }
+    if (typeof content.prompt_image === "string" && content.prompt_image) {
+        return [content.prompt_image];
     }
     if (typeof content.question_image === "string" && content.question_image) {
         return [content.question_image];
@@ -393,9 +402,17 @@ export default function AdminQuestionsPage() {
             [textKey]: editText,
         };
 
-        updatedContent.question_images =
-            editQuestionImages.length > 0 ? editQuestionImages : undefined;
-        updatedContent.question_image = editQuestionImages[0] || null;
+        if (editQuestion.question_type === "essay") {
+            const images =
+                editQuestionImages.length > 0 ? editQuestionImages : undefined;
+            updatedContent.prompt_images = images;
+            updatedContent.question_images = images;
+            updatedContent.question_image = editQuestionImages[0] || null;
+        } else {
+            updatedContent.question_images =
+                editQuestionImages.length > 0 ? editQuestionImages : undefined;
+            updatedContent.question_image = editQuestionImages[0] || null;
+        }
 
         if (Array.isArray(updatedContent.options)) {
             updatedContent.options = (

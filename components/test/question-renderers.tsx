@@ -25,6 +25,10 @@ import type {
 } from "@/types/test";
 import { MathText } from "@/components/ui/math-text";
 import { ImageEnhancedText } from "@/components/ui/image-enhanced-text";
+import {
+    getEssayPromptImages,
+    getUnreferencedImages,
+} from "@/lib/utils/question-content";
 
 // ============================================
 // SEEDED SHUFFLE UTILITY
@@ -243,35 +247,26 @@ export const MCQRenderer = memo(
             return (
                 <div
                     id="split"
-                    className="flex  relative"
-                    style={{ maxHeight: "calc(100vh - 210px)" }}
+                    className="flex h-full min-h-0 relative"
                 >
                     {/* Left column: Question stem — independent scroll */}
-                    <div
-                        className={cn(
-                            "transition-all duration-300 ease-in-out overflow-y-auto shrink-0",
-                            optionsCollapsed ? "w-full pr-4" : "w-1/2 pr-8",
-                        )}
-                    >
+                    <div className="flex-1 min-h-0 overflow-y-auto pr-4 transition-all duration-300 ease-in-out">
                         <MCQQuestionStem content={content} />
                     </div>
 
-                    {/* Divider with toggle button */}
-                    <div className="relative flex items-stretch shrink-0">
-                        {/* {!optionsCollapsed && (
-                            <div className="w-px bg-gray-200" />
-                        )} */}
-                        <div className="w-px bg-gray-200" />
+                    {/* Divider gutter — keeps toggle clear of pane scrollbars */}
+                    <div className="relative w-8 shrink-0 self-stretch">
+                        <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gray-200" />
                         <button
                             onClick={() =>
                                 setOptionsCollapsed(!optionsCollapsed)
                             }
                             className={cn(
-                                "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-0",
+                                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
                                 "w-6 h-12 flex items-center justify-center",
                                 "bg-white border border-gray-300 rounded-full shadow-sm",
                                 "hover:bg-gray-50 hover:border-gray-400 transition-colors",
-                                "z-5 cursor-pointer",
+                                "z-10 cursor-pointer",
                             )}
                             title={
                                 optionsCollapsed
@@ -290,8 +285,8 @@ export const MCQRenderer = memo(
                     {/* Right column: Options — independent scroll */}
                     <div
                         className={cn(
-                            "transition-[width] duration-300 ease-in-out overflow-y-auto",
-                            optionsCollapsed ? "w-0 pl-0" : "w-1/2  pl-8",
+                            "transition-[width] duration-300 ease-in-out overflow-y-auto min-h-0",
+                            optionsCollapsed ? "w-0 overflow-hidden" : "flex-1 pl-4",
                         )}
                     >
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
@@ -308,11 +303,7 @@ export const MCQRenderer = memo(
         }
         // Stacked layout (used when passage panel is already visible)
         return (
-            <div
-                id="stacked"
-                className="space-y-6 h-screen overflow-y-auto"
-                style={{ maxHeight: "calc(100vh - 240px)" }}
-            >
+            <div id="stacked" className="space-y-6">
                 <MCQQuestionStem content={content} />
                 <Separator />
                 <MCQOptionsList
@@ -631,14 +622,40 @@ export const EssayRenderer = memo(
                 ? ESSAY_CONFIG.editor.heightSplit
                 : ESSAY_CONFIG.editor.heightStacked;
 
+        const promptImages = getEssayPromptImages(
+            content as unknown as Record<string, unknown>,
+        );
+        const unreferencedPromptImages = getUnreferencedImages(
+            content.prompt || "",
+            promptImages,
+        );
+
         const promptSection = (
             <div className="space-y-4">
                 <div className="text-base leading-relaxed text-foreground whitespace-pre-line">
                     <ImageEnhancedText
                         content={content.prompt}
-                        images={content.prompt_images}
+                        images={promptImages}
                     />
                 </div>
+                {unreferencedPromptImages.length > 0 && (
+                    <div
+                        className={`grid gap-3 ${
+                            unreferencedPromptImages.length > 1
+                                ? "grid-cols-1 sm:grid-cols-2"
+                                : ""
+                        }`}
+                    >
+                        {unreferencedPromptImages.map((imgUrl, idx) => (
+                            <img
+                                key={`essay-prompt-img-${idx}`}
+                                src={imgUrl}
+                                alt={`Prompt image ${idx + 1}`}
+                                className="max-w-full rounded-lg border border-gray-200"
+                            />
+                        ))}
+                    </div>
+                )}
                 <div className="flex items-center gap-3 flex-wrap">
                     <Badge variant="outline" className="text-xs gap-1">
                         Word limit: {content.word_limit}
@@ -689,28 +706,23 @@ export const EssayRenderer = memo(
 
         if (layout === "split") {
             return (
-                <div className="flex min-h-0 h-full relative">
-                    {/* Left column: Prompt */}
-                    <div
-                        className={cn(
-                            "transition-all duration-300 overflow-y-auto ease-in-out shrink-0",
-                            editorCollapsed ? "w-full pr-4" : "w-1/2 pr-8",
-                        )}
-                    >
+                <div className="flex h-full min-h-0 relative">
+                    {/* Left column: Prompt — independent scroll */}
+                    <div className="flex-1 min-h-0 overflow-y-auto pr-4 transition-all duration-300 ease-in-out">
                         {promptSection}
                     </div>
 
-                    {/* Divider with toggle button */}
-                    <div className="relative flex items-stretch shrink-0">
-                        <div className="absolute inset-y-0 w-px h-full bg-gray-200" />
+                    {/* Divider gutter — keeps toggle clear of pane scrollbars */}
+                    <div className="relative w-8 shrink-0 self-stretch">
+                        <div className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-gray-200" />
                         <button
                             onClick={() => setEditorCollapsed(!editorCollapsed)}
                             className={cn(
-                                "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 left-0",
+                                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
                                 "w-6 h-12 flex items-center justify-center",
                                 "bg-white border border-gray-300 rounded-full shadow-sm",
                                 "hover:bg-gray-50 hover:border-gray-400 transition-colors",
-                                "z-5 cursor-pointer",
+                                "z-10 cursor-pointer",
                             )}
                             title={
                                 editorCollapsed ? "Show editor" : "Hide editor"
@@ -724,13 +736,13 @@ export const EssayRenderer = memo(
                         </button>
                     </div>
 
-                    {/* Right column: Editor (collapsible) */}
+                    {/* Right column: Editor — independent scroll */}
                     <div
                         className={cn(
-                            "transition-[width] duration-300 ease-in-out overflow-hidden pl-8",
+                            "transition-[width] duration-300 ease-in-out min-h-0",
                             editorCollapsed
-                                ? "w-0 pl-0"
-                                : "w-1/2 overflow-y-auto",
+                                ? "w-0 overflow-hidden"
+                                : "flex-1 overflow-y-auto pl-4",
                         )}
                     >
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
