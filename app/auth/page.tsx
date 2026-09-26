@@ -329,17 +329,18 @@ function AuthPageInner() {
                 </div>
 
                 {/* Right Side - Form */}
-                <div className="w-full lg:w-1/2 flex items-center justify-center p-6 md:p-12 bg-slate-50/50 relative">
+                <div className="w-full lg:w-1/2 min-h-0 overflow-y-auto overscroll-contain bg-slate-50/50 relative">
                     {/* Mobile Home Link */}
                     <Link
                         href="/"
-                        className="lg:hidden absolute top-4 left-4 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-colors"
+                        className="lg:hidden absolute top-4 left-4 z-10 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 text-slate-700 text-sm font-medium hover:bg-slate-200 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
                         Home
                     </Link>
 
-                    <div className="w-full max-w-md">
+                    <div className="flex min-h-full w-full items-center justify-center p-6 md:p-12">
+                        <div className="w-full max-w-md">
                         <div className="lg:hidden flex justify-center mb-6">
                             <Image
                                 src="/selectorial_logo.png"
@@ -768,6 +769,7 @@ function AuthPageInner() {
                                 </motion.div>
                             )}
                         </AnimatePresence>
+                        </div>
                     </div>
                 </div>
             </div>
