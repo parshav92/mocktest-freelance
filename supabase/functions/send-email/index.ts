@@ -50,6 +50,15 @@ function buildActionLink(
   type: string,
 ): string {
   const url = new URL(redirectTo);
+  // Supabase falls back to the bare Site URL when redirect_to isn't allow-listed.
+  if (url.pathname !== "/auth/callback") {
+    url.pathname = "/auth/callback";
+    url.search = "";
+    url.searchParams.set(
+      "redirect",
+      type === "recovery" ? "/auth/reset-password" : "/dashboard",
+    );
+  }
   url.searchParams.set("token_hash", tokenHash);
   url.searchParams.set("type", type);
   return url.toString();
