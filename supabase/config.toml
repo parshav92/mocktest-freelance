@@ -224,16 +224,16 @@ otp_expiry = 3600
 
 [auth.email.template.confirmation]
 subject = "Confirm your Selectorial account"
-content_path = "./email-templates/confirm-signup.html"
+content_path = "./supabase/email-templates/confirm-signup.html"
 
 [auth.email.template.recovery]
 subject = "Reset your Selectorial password"
-content_path = "./email-templates/reset-password.html"
+content_path = "./supabase/email-templates/reset-password.html"
 
 [auth.email.notification.password_changed]
 enabled = true
 subject = "Your Selectorial password was changed"
-content_path = "./email-templates/password-changed.html"
+content_path = "./supabase/email-templates/password-changed.html"
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
@@ -373,6 +373,10 @@ deno_version = 2
 
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
+
+# Auth hooks authenticate with a webhook signature, not a JWT.
+[functions.send-email]
+verify_jwt = false
 
 [analytics]
 enabled = true
