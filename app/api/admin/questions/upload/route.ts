@@ -95,6 +95,31 @@ export async function POST(request: NextRequest) {
             passages: ParsedPassage[];
         };
 
+        if (uploadType === "passage_mcq" || uploadType === "poem_mcq") {
+            const codeLabel =
+                uploadType === "poem_mcq" ? "Poem code" : "Passage code";
+            const missingCodeRows = parsedData.questions.filter(
+                (question) =>
+                    !question.data.passage_code
+                        ?.split(",")
+                        .some((code) => code.trim().length > 0),
+            );
+
+            if (missingCodeRows.length > 0) {
+                return NextResponse.json(
+                    {
+                        error: `${codeLabel} is required for every ${uploadType} question.`,
+                        errors: missingCodeRows.map((question) => ({
+                            row: question.rowIndex,
+                            column: "passage_code",
+                            message: `${codeLabel} is required. Upload the related ${uploadType === "poem_mcq" ? "poem" : "passage"} first, then enter its code.`,
+                        })),
+                    },
+                    { status: 400 },
+                );
+            }
+        }
+
         // Get images from form data
         const images = formData.getAll("images") as File[];
         const imagePaths = formData.getAll("imagePaths") as string[];

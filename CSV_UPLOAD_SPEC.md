@@ -132,6 +132,7 @@ code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,o
 
 - Same as `mcq` for answer/difficulty/image counts.
 - `passage_code` is required and can be comma-separated (for example `RD_P_001,RD_P_002`).
+- The upload API revalidates this field before uploading images or inserting questions. A blank code rejects the entire upload with row-level errors.
 
 ---
 

@@ -78,7 +78,6 @@ export interface SubjectTemplate {
     passing_score: number | null;
     type_quotas: TypeQuotas | null;
     created_at: string;
-    type_quotas: TypeQuotas | null;
 }
 
 // ============================================
@@ -86,12 +85,11 @@ export interface SubjectTemplate {
 // ============================================
 
 /**
- * Defines per-question-type quotas for a test template.
- * When present on a SubjectTemplate, the test uses template-based selection
- * (per-type quotas with adaptive difficulty applied within each type).
- * When null, the test uses the legacy difficulty-only adaptive algorithm.
+ * Nested (legacy) shape of subject_templates.type_quotas, used only by
+ * getTemplateBasedQuestions(). New templates are saved in the flat
+ * TypeQuotas format above.
  */
-export interface TypeQuotas {
+export interface PassageGroupTypeQuotas {
     /** Passage-linked question groups (e.g., extract passages, poems) */
     passage_groups: PassageGroupQuota[];
     /** Standalone question types (e.g., fill_blank_dropdown) */

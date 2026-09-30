@@ -14,8 +14,10 @@ import type {
     Passage,
     TypeQuotas,
     PassageGroupQuota,
+    PassageGroupTypeQuotas,
 } from "@/types/test";
 import { EssayEvaluationService } from "@/lib/services/essay-evaluation.service";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { countWords, stripHtmlToText } from "@/lib/utils";
 
 // Internal type for questions with answers during grading
@@ -291,10 +293,10 @@ export class TestService {
 
         if (template?.type_quotas) {
             // Template-based selection (Reading: per-type quotas)
-            questionIds = await this.getTemplateBasedQuestions(
+            questionIds = await this.selectTemplateQuestions(
                 studentId,
                 subjectId,
-                template.type_quotas as TypeQuotas,
+                template.type_quotas,
                 distribution,
                 subject.total_questions,
             );
@@ -1027,7 +1029,6 @@ export class TestService {
             const { data: template } = await this.supabase
                 .from("subject_templates")
                 .select("id, type_quotas")
-                .select("id, type_quotas")
                 .eq("subject_id", subjectId)
                 .eq("is_default", true)
                 .single();
@@ -1044,10 +1045,10 @@ export class TestService {
 
             if (template?.type_quotas) {
                 // Template-based selection (Reading: per-type quotas)
-                questionIds = await this.getTemplateBasedQuestions(
+                questionIds = await this.selectTemplateQuestions(
                     studentId,
                     subjectId,
-                    template.type_quotas as TypeQuotas,
+                    template.type_quotas,
                     distribution,
                     subject.total_questions,
                 );
@@ -1397,6 +1398,35 @@ export class TestService {
     // ============================================
 
     /**
+     * subject_templates.type_quotas may be stored in the flat format
+     * (admin UI / current migrations) or the older nested passage_groups format.
+     */
+    private async selectTemplateQuestions(
+        studentId: string,
+        subjectId: string,
+        typeQuotas: unknown,
+        globalDistribution: { easy: number; medium: number; hard: number },
+        totalQuestions: number,
+    ): Promise<string[]> {
+        const nested = typeQuotas as Partial<PassageGroupTypeQuotas>;
+        if (Array.isArray(nested.passage_groups)) {
+            return this.getTemplateBasedQuestions(
+                studentId,
+                subjectId,
+                typeQuotas as PassageGroupTypeQuotas,
+                globalDistribution,
+                totalQuestions,
+            );
+        }
+        return this.buildTypedTestQuestions(
+            studentId,
+            subjectId,
+            typeQuotas as TypeQuotas,
+            globalDistribution,
+        );
+    }
+
+    /**
      * Select questions using per-type quotas from the template.
      * Used when subject_templates.type_quotas is non-null (e.g., Reading).
      *
@@ -1409,7 +1439,7 @@ export class TestService {
     private async getTemplateBasedQuestions(
         studentId: string,
         subjectId: string,
-        typeQuotas: TypeQuotas,
+        typeQuotas: PassageGroupTypeQuotas,
         globalDistribution: { easy: number; medium: number; hard: number },
         totalQuestions: number,
     ): Promise<string[]> {
@@ -1703,157 +1733,322 @@ export class TestService {
         return shuffled;
     }
 
+    private selectAdaptiveCandidates(
+        candidates: Array<{
+            question_id: string;
+            question_difficulty: DifficultyLevel;
+        }>,
+        count: number,
+        distribution: { easy: number; medium: number; hard: number },
+    ): {
+        selected: string[];
+        remaining: Array<{
+            question_id: string;
+            question_difficulty: DifficultyLevel;
+        }>;
+    } {
+        const levels: DifficultyLevel[] = ["easy", "medium", "hard"];
+        const totalWeight = levels.reduce(
+            (sum, level) => sum + Math.max(distribution[level], 0),
+            0,
+        );
+        const denominator = totalWeight || 1;
+        const rawTargets = levels.map((level) => ({
+            level,
+            raw: (count * Math.max(distribution[level], 0)) / denominator,
+        }));
+        const targets = new Map<DifficultyLevel, number>(
+            rawTargets.map(({ level, raw }) => [level, Math.floor(raw)]),
+        );
+        let unassigned =
+            count -
+            levels.reduce(
+                (sum, level) => sum + (targets.get(level) ?? 0),
+                0,
+            );
+
+        for (const { level } of [...rawTargets].sort(
+            (a, b) =>
+                b.raw -
+                Math.floor(b.raw) -
+                (a.raw - Math.floor(a.raw)),
+        )) {
+            if (unassigned === 0) break;
+            targets.set(level, (targets.get(level) ?? 0) + 1);
+            unassigned--;
+        }
+
+        const remaining = [...candidates];
+        const selected: string[] = [];
+        const deficits = new Map<DifficultyLevel, number>();
+
+        for (const level of levels) {
+            const target = targets.get(level) ?? 0;
+            const matches = remaining
+                .filter((candidate) => candidate.question_difficulty === level)
+                .slice(0, target);
+            const matchIds = new Set(matches.map((item) => item.question_id));
+            selected.push(...matches.map((item) => item.question_id));
+            deficits.set(level, target - matches.length);
+            for (let index = remaining.length - 1; index >= 0; index--) {
+                if (matchIds.has(remaining[index].question_id)) {
+                    remaining.splice(index, 1);
+                }
+            }
+        }
+
+        const fallbackOrder: Record<DifficultyLevel, DifficultyLevel[]> = {
+            easy: ["medium", "hard"],
+            medium: ["easy", "hard"],
+            hard: ["medium", "easy"],
+        };
+
+        for (const level of levels) {
+            let deficit = deficits.get(level) ?? 0;
+            for (const fallbackLevel of fallbackOrder[level]) {
+                if (deficit === 0) break;
+                const matches = remaining
+                    .filter(
+                        (candidate) =>
+                            candidate.question_difficulty === fallbackLevel,
+                    )
+                    .slice(0, deficit);
+                const matchIds = new Set(
+                    matches.map((item) => item.question_id),
+                );
+                selected.push(...matches.map((item) => item.question_id));
+                deficit -= matches.length;
+                for (let index = remaining.length - 1; index >= 0; index--) {
+                    if (matchIds.has(remaining[index].question_id)) {
+                        remaining.splice(index, 1);
+                    }
+                }
+            }
+        }
+
+        if (selected.length < count) {
+            const extras = remaining.splice(0, count - selected.length);
+            selected.push(...extras.map((item) => item.question_id));
+        }
+
+        return { selected, remaining };
+    }
+
     /**
-     * Select questions using the typed-quota strategy (when template.type_quotas is set).
+     * Select questions using flat type quotas.
      *
-     * Flat TypeQuotas format — reserved passage-control keys:
-     *   "passage"      → extract passage count
-     *   "passage_mcq"  → questions per extract passage
-     *   "passage_poem" → poem passage count
-     *   "poem_mcq"     → questions per poem passage
-     *
-     * Every other key is automatically treated as a standalone question_type with
-     * the value as the total count (easy 62.5 / medium 25 / hard 12.5 %).
-     * No code change is needed when new question types are added to a subject.
-     *
-     * Returns: passage blocks (shuffled) first, then standalone questions.
+     * Quotas alone determine the test size. Passage/poem questions ignore the
+     * adaptive difficulty split; standalone types follow it. Any unavailable
+     * quota is redistributed across configured standalone types.
      */
     private async buildTypedTestQuestions(
         studentId: string,
         subjectId: string,
         typeQuotas: TypeQuotas,
+        distribution: { easy: number; medium: number; hard: number },
     ): Promise<string[]> {
-        // Reserved keys that control passage selection — not question types themselves
+        const selectionClient = createAdminClient();
         const PASSAGE_CONTROL_KEYS = new Set([
             "passage",
             "passage_mcq",
             "passage_poem",
             "poem_mcq",
         ]);
-
         const passageGroupBlocks: string[][] = [];
+        const passageGroups = [
+            {
+                passageType: "extract",
+                passageCount: Math.max(
+                    Math.floor(typeQuotas["passage"] ?? 0),
+                    0,
+                ),
+                questionsPerPassage: Math.max(
+                    Math.floor(typeQuotas["passage_mcq"] ?? 0),
+                    0,
+                ),
+            },
+            {
+                passageType: "poem",
+                passageCount: Math.max(
+                    Math.floor(typeQuotas["passage_poem"] ?? 0),
+                    0,
+                ),
+                questionsPerPassage: Math.max(
+                    Math.floor(typeQuotas["poem_mcq"] ?? 0),
+                    0,
+                ),
+            },
+        ];
 
-        // ---- 1. Extract passages (passage_type = "extract") ----
-        const extractCount = typeQuotas["passage"] ?? 0;
-        const extractQuestionsPerPassage = typeQuotas["passage_mcq"] ?? 0;
-        if (extractCount > 0 && extractQuestionsPerPassage > 0) {
+        let expectedTotal = passageGroups.reduce(
+            (sum, group) =>
+                sum + group.passageCount * group.questionsPerPassage,
+            0,
+        );
+
+        for (const group of passageGroups) {
+            if (
+                group.passageCount === 0 ||
+                group.questionsPerPassage === 0
+            ) {
+                continue;
+            }
+
             const { data: passageRows, error: passageError } =
-                await this.supabase.rpc("get_fresh_passages_for_test", {
-                    p_student_id: studentId,
-                    p_subject_id: subjectId,
-                    p_passage_type: "extract",
-                    p_count: extractCount,
-                });
+                await selectionClient.rpc(
+                    "get_fresh_passages_with_capacity",
+                    {
+                        p_student_id: studentId,
+                        p_subject_id: subjectId,
+                        p_passage_type: group.passageType,
+                        p_question_type: "passage_mcq",
+                        p_min_questions: group.questionsPerPassage,
+                        p_count: group.passageCount,
+                    },
+                );
+
             if (passageError) {
                 console.error(
-                    "[TypedQuota] get_fresh_passages_for_test (extract) error:",
+                    `[TypedQuota] Passage selection failed (${group.passageType}):`,
                     passageError,
-                );
-            } else {
-                for (const row of (passageRows || []) as {
-                    passage_id: string;
-                }[]) {
-                    const { data: questionRows, error: qError } =
-                        await this.supabase.rpc(
-                            "get_questions_for_passage_typed",
-                            {
-                                p_student_id: studentId,
-                                p_passage_id: row.passage_id,
-                                p_question_type: "passage_mcq",
-                                p_limit: extractQuestionsPerPassage,
-                            },
-                        );
-                    if (qError) {
-                        console.error(
-                            "[TypedQuota] get_questions_for_passage_typed (extract) error:",
-                            qError,
-                        );
-                        continue;
-                    }
-                    const qIds = (questionRows || []).map(
-                        (r: { question_id: string }) => r.question_id,
-                    );
-                    if (qIds.length > 0) passageGroupBlocks.push(qIds);
-                }
-            }
-        }
-
-        // ---- 2. Poem passages (passage_type = "poem") ----
-        const poemCount = typeQuotas["passage_poem"] ?? 0;
-        const poemQuestionsPerPassage = typeQuotas["poem_mcq"] ?? 0;
-        if (poemCount > 0 && poemQuestionsPerPassage > 0) {
-            const { data: passageRows, error: passageError } =
-                await this.supabase.rpc("get_fresh_passages_for_test", {
-                    p_student_id: studentId,
-                    p_subject_id: subjectId,
-                    p_passage_type: "poem",
-                    p_count: poemCount,
-                });
-            if (passageError) {
-                console.error(
-                    "[TypedQuota] get_fresh_passages_for_test (poem) error:",
-                    passageError,
-                );
-            } else {
-                for (const row of (passageRows || []) as {
-                    passage_id: string;
-                }[]) {
-                    const { data: questionRows, error: qError } =
-                        await this.supabase.rpc(
-                            "get_questions_for_passage_typed",
-                            {
-                                p_student_id: studentId,
-                                p_passage_id: row.passage_id,
-                                p_question_type: "passage_mcq",
-                                p_limit: poemQuestionsPerPassage,
-                            },
-                        );
-                    if (qError) {
-                        console.error(
-                            "[TypedQuota] get_questions_for_passage_typed (poem) error:",
-                            qError,
-                        );
-                        continue;
-                    }
-                    const qIds = (questionRows || []).map(
-                        (r: { question_id: string }) => r.question_id,
-                    );
-                    if (qIds.length > 0) passageGroupBlocks.push(qIds);
-                }
-            }
-        }
-
-        // ---- 3. Standalone types — every non-reserved key is a question_type ----
-        const standaloneIds: string[] = [];
-        for (const [key, count] of Object.entries(typeQuotas)) {
-            if (PASSAGE_CONTROL_KEYS.has(key) || !count) continue;
-            const easy = Math.round(count * 0.625);
-            const hard = Math.round(count * 0.125);
-            const medium = count - easy - hard;
-            const { data: questionRows, error: qError } =
-                await this.supabase.rpc("get_test_questions_by_type", {
-                    p_student_id: studentId,
-                    p_subject_id: subjectId,
-                    p_question_type: key,
-                    p_easy_count: easy,
-                    p_medium_count: medium,
-                    p_hard_count: hard,
-                });
-            if (qError) {
-                console.error(
-                    `[TypedQuota] get_test_questions_by_type (${key}) error:`,
-                    qError,
                 );
                 continue;
             }
-            standaloneIds.push(
-                ...(questionRows || []).map(
-                    (r: { question_id: string }) => r.question_id,
-                ),
+
+            for (const row of (passageRows || []) as {
+                passage_id: string;
+            }[]) {
+                const { data: questionRows, error: questionError } =
+                    await selectionClient.rpc(
+                        "get_questions_for_passage_quota",
+                        {
+                            p_student_id: studentId,
+                            p_passage_id: row.passage_id,
+                            p_question_type: "passage_mcq",
+                            p_limit: group.questionsPerPassage,
+                        },
+                    );
+                if (questionError) {
+                    console.error(
+                        `[TypedQuota] Passage questions failed (${group.passageType}):`,
+                        questionError,
+                    );
+                    continue;
+                }
+
+                const ids = (questionRows || []).map(
+                    (item: { question_id: string }) => item.question_id,
+                );
+                if (ids.length === group.questionsPerPassage) {
+                    passageGroupBlocks.push(ids);
+                }
+            }
+        }
+
+        const passageIds = passageGroupBlocks.flat();
+        const standaloneIds: string[] = [];
+        const standalonePools: Array<{
+            questionType: string;
+            weight: number;
+            remaining: Array<{
+                question_id: string;
+                question_difficulty: DifficultyLevel;
+            }>;
+        }> = [];
+
+        for (const [questionType, rawCount] of Object.entries(typeQuotas)) {
+            if (PASSAGE_CONTROL_KEYS.has(questionType)) continue;
+            const count = Math.max(Math.floor(rawCount), 0);
+            if (count === 0) continue;
+            expectedTotal += count;
+
+            const { data, error } = await selectionClient.rpc(
+                "get_test_question_candidates_by_type",
+                {
+                    p_student_id: studentId,
+                    p_subject_id: subjectId,
+                    p_question_type: questionType,
+                },
+            );
+            if (error) {
+                console.error(
+                    `[TypedQuota] Candidate selection failed (${questionType}):`,
+                    error,
+                );
+                standalonePools.push({
+                    questionType,
+                    weight: count,
+                    remaining: [],
+                });
+                continue;
+            }
+
+            const result = this.selectAdaptiveCandidates(
+                (data || []) as Array<{
+                    question_id: string;
+                    question_difficulty: DifficultyLevel;
+                }>,
+                count,
+                distribution,
+            );
+            standaloneIds.push(...result.selected);
+            standalonePools.push({
+                questionType,
+                weight: count,
+                remaining: result.remaining,
+            });
+        }
+
+        let shortfall =
+            expectedTotal - passageIds.length - standaloneIds.length;
+
+        while (shortfall > 0) {
+            const availablePools = standalonePools.filter(
+                (pool) => pool.remaining.length > 0,
+            );
+            if (availablePools.length === 0) break;
+
+            const totalWeight = availablePools.reduce(
+                (sum, pool) => sum + pool.weight,
+                0,
+            );
+            let addedThisRound = 0;
+
+            for (const pool of availablePools) {
+                if (shortfall === 0) break;
+                const share = Math.min(
+                    shortfall,
+                    pool.remaining.length,
+                    Math.max(
+                        1,
+                        Math.floor(
+                            (shortfall * pool.weight) / (totalWeight || 1),
+                        ),
+                    ),
+                );
+                const result = this.selectAdaptiveCandidates(
+                    pool.remaining,
+                    share,
+                    distribution,
+                );
+                standaloneIds.push(...result.selected);
+                pool.remaining = result.remaining;
+                shortfall -= result.selected.length;
+                addedThisRound += result.selected.length;
+            }
+
+            if (addedThisRound === 0) break;
+        }
+
+        if (shortfall > 0) {
+            const configuredTypes = standalonePools
+                .map((pool) => pool.questionType)
+                .join(", ");
+            throw new Error(
+                `Not enough active questions to satisfy type quotas: ${shortfall} question${shortfall === 1 ? "" : "s"} missing. Add content for the configured standalone types (${configuredTypes || "none"}) or reduce the quotas.`,
             );
         }
 
-        // ---- 4. Assemble: passage blocks (shuffled) then standalone ----
         return [
             ...this.shuffleArray(passageGroupBlocks).flat(),
             ...this.shuffleArray(standaloneIds),
