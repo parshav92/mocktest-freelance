@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type AnalyticsLevel = "none" | "basic" | "full";
 
@@ -113,11 +114,18 @@ export async function getStudentEntitlements(
     | { ok: true; planKey: string; entitlements: PlanEntitlements }
     | { ok: false; error: string; code: "NO_PLAN" | "UNKNOWN_PLAN" | "INACTIVE_PLAN" }
 > {
-    const { data: student, error } = await supabase
+    // Students authenticate with a custom JWT, so the request-scoped client is
+    // anon and RLS on `students` hides the row. studentId must come from a
+    // verified session.
+    const { data: student, error } = await createAdminClient()
         .from("students")
         .select("id, plan_key, is_active")
         .eq("id", studentId)
         .maybeSingle();
+
+    if (error) {
+        console.error("Failed to load student entitlements:", error);
+    }
 
     if (error || !student) {
         return { ok: false, error: "Student not found", code: "NO_PLAN" };
