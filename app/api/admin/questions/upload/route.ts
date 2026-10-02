@@ -664,7 +664,12 @@ async function insertQuestions(
                 correct_index: number;
                 correct: string;
             }> = [];
-            for (let i = 1; i <= 5; i++) {
+            const blankPositions = Object.keys(q.data)
+                .map((key) => key.match(/^blank_(\d+)_options$/)?.[1])
+                .filter((position): position is string => Boolean(position))
+                .map(Number)
+                .sort((a, b) => a - b);
+            for (const i of blankPositions) {
                 const optionsStr = q.data[`blank_${i}_options`];
                 if (optionsStr) {
                     const opts = optionsStr

@@ -96,7 +96,7 @@ export const CSV_COLUMNS = {
         "blank_2_options", // Options for blank 2 (if any)
         "blank_3_options", // Options for blank 3 (if any)
         "blank_4_options", // Options for blank 4 (if any)
-        "blank_5_options", // Options for blank 5 (if any)
+        "blank_5_options", // Options for blank 5 (if any). Add blank_6_options, blank_7_options, … for more blanks.
     ],
 
     // Fill missing sentence (Reading) - drag and drop sentences into gaps

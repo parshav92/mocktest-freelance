@@ -184,6 +184,7 @@ code,subject,passage_code,difficulty,topic,subtopic,passage_text,blank_1_options
 - `difficulty` must be `easy|medium|hard`.
 - `passage_text` must contain at least one blank marker like `[1]`.
 - For each marker found (`[1]...[N]`), corresponding `blank_N_options` must be present.
+- There is no limit on the number of blanks. Add `blank_6_options`, `blank_7_options`, … columns as needed; the template header shows only the first five.
 - Options are pipe-separated; first option is treated as correct during upload transformation.
 
 ---
