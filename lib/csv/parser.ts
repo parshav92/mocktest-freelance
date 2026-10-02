@@ -481,7 +481,12 @@ function parseFillBlank(
         return { questions, errors };
     }
 
-    const templateColumns = CSV_COLUMNS.fill_blank;
+    const blankOptionColumns = headers.filter((header) =>
+        /^blank_\d+_options$/.test(header),
+    );
+    const templateColumns = [
+        ...new Set([...CSV_COLUMNS.fill_blank, ...blankOptionColumns]),
+    ];
     const headerIndexMap = getHeaderIndexMap(headers);
 
     for (let i = 1; i < rows.length; i++) {

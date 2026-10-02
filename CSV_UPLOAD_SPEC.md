@@ -132,6 +132,7 @@ code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,o
 
 - Same as `mcq` for answer/difficulty/image counts.
 - `passage_code` is required and can be comma-separated (for example `RD_P_001,RD_P_002`).
+- The upload API revalidates this field before uploading images or inserting questions. A blank code rejects the entire upload with row-level errors.
 
 ---
 
@@ -183,6 +184,7 @@ code,subject,passage_code,difficulty,topic,subtopic,passage_text,blank_1_options
 - `difficulty` must be `easy|medium|hard`.
 - `passage_text` must contain at least one blank marker like `[1]`.
 - For each marker found (`[1]...[N]`), corresponding `blank_N_options` must be present.
+- There is no limit on the number of blanks. Add `blank_6_options`, `blank_7_options`, … columns as needed; the template header shows only the first five.
 - Options are pipe-separated; first option is treated as correct during upload transformation.
 
 ---
