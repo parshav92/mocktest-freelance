@@ -69,7 +69,6 @@ const PAGE_SIZE = 20;
 const PASSAGE_TYPES = [
     { value: "extract", label: "Extract" },
     { value: "poem", label: "Poem" },
-    { value: "article", label: "Article" },
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────────

@@ -106,6 +106,10 @@ function isYes(value: string | undefined): boolean {
     return value?.toLowerCase() === "yes";
 }
 
+function isPositiveInteger(value: string | undefined): boolean {
+    return /^\d+$/.test(value?.trim() ?? "") && parseInt(value!, 10) > 0;
+}
+
 function parseStrictImageCount(
     value: string | undefined,
 ): { valid: boolean; count: number } {
@@ -206,8 +210,6 @@ function parseMCQ(
         "option_c",
         "option_d",
         "answer",
-        "question_images",
-        "solution_images",
     ];
 
     const typeSpecificRequired =
@@ -415,15 +417,15 @@ function parseMCQ(
             continue;
         }
 
-        if (
-            !rowData.option_a ||
-            !rowData.option_b ||
-            !rowData.option_c ||
-            !rowData.option_d
-        ) {
+        const missingOptions = ["a", "b", "c", "d"].filter(
+            (letter) =>
+                !rowData[`option_${letter}`] &&
+                !isYes(rowData[`option_${letter}_image`]),
+        );
+        if (missingOptions.length > 0) {
             errors.push({
                 row: i + 1,
-                message: "All four options (A, B, C, D) are required",
+                message: `Option ${missingOptions.map((l) => l.toUpperCase()).join(", ")} needs text or option_${missingOptions[0]}_image set to yes`,
             });
             continue;
         }
@@ -527,9 +529,21 @@ function parseFillBlank(
             continue;
         }
 
-        // Count blanks in passage text
-        const blankMatches = rowData.passage_text.match(/\[\d+\]/g) || [];
-        const blankCount = blankMatches.length;
+        // The test player also splits on ___ and {blank}, which would shift dropdown positions
+        if (/___+|\{blank\}/i.test(rowData.passage_text)) {
+            errors.push({
+                row: i + 1,
+                column: "passage_text",
+                message:
+                    "Use only [1], [2], ... as blank markers; remove '___' and '{blank}' from the passage",
+            });
+            continue;
+        }
+
+        const blankNumbers = (rowData.passage_text.match(/\[\d+\]/g) || []).map(
+            (marker) => parseInt(marker.slice(1, -1), 10),
+        );
+        const blankCount = blankNumbers.length;
 
         if (blankCount === 0) {
             errors.push({
@@ -541,7 +555,18 @@ function parseFillBlank(
             continue;
         }
 
-        // Validate blank options exist
+        // Dropdowns are filled by position, so markers must read [1], [2], ... [N] in order
+        if (blankNumbers.some((n, idx) => n !== idx + 1)) {
+            errors.push({
+                row: i + 1,
+                column: "passage_text",
+                message: `Blank markers must appear in order [1] to [${blankCount}] with no repeats or gaps (found ${blankNumbers.map((n) => `[${n}]`).join(" ")})`,
+            });
+            continue;
+        }
+
+        const rowErrorCount = errors.length;
+
         for (let b = 1; b <= blankCount; b++) {
             const optionsKey = `blank_${b}_options`;
             if (!rowData[optionsKey]) {
@@ -550,8 +575,46 @@ function parseFillBlank(
                     column: optionsKey,
                     message: `Options for blank ${b} are required`,
                 });
+                continue;
+            }
+
+            const options = rowData[optionsKey].split("|").map((o) => o.trim());
+            if (options.some((o) => o === "")) {
+                errors.push({
+                    row: i + 1,
+                    column: optionsKey,
+                    message: `Blank ${b} has an empty option (check for '||' or a trailing '|')`,
+                });
+            } else if (options.length < 2) {
+                errors.push({
+                    row: i + 1,
+                    column: optionsKey,
+                    message: `Blank ${b} needs at least 2 options separated by |`,
+                });
+            } else if (
+                new Set(options.map((o) => o.toLowerCase())).size !==
+                options.length
+            ) {
+                errors.push({
+                    row: i + 1,
+                    column: optionsKey,
+                    message: `Blank ${b} has duplicate options`,
+                });
             }
         }
+
+        for (const col of blankOptionColumns) {
+            const position = parseInt(col.match(/^blank_(\d+)_options$/)![1], 10);
+            if (position > blankCount && rowData[col]) {
+                errors.push({
+                    row: i + 1,
+                    column: col,
+                    message: `Passage has only ${blankCount} blank marker(s) but ${col} is filled; add [${position}] to the passage or clear this cell`,
+                });
+            }
+        }
+
+        if (errors.length > rowErrorCount) continue;
 
         questions.push({
             rowIndex: i + 1,
@@ -626,9 +689,10 @@ function parseFillMissingSentence(
         }
 
         // Count gap markers like {GAP_1}, {GAP_2}
-        const gapMatches =
-            rowData.passage_with_gaps.match(/\{GAP_\d+\}/g) || [];
-        const gapCount = gapMatches.length;
+        const gapNumbers = (
+            rowData.passage_with_gaps.match(/\{GAP_\d+\}/g) || []
+        ).map((marker) => parseInt(marker.slice(5, -1), 10));
+        const gapCount = gapNumbers.length;
 
         if (gapCount === 0) {
             errors.push({
@@ -636,6 +700,16 @@ function parseFillMissingSentence(
                 column: "passage_with_gaps",
                 message:
                     "Passage must contain at least one gap marker like {GAP_1}",
+            });
+            continue;
+        }
+
+        // The answer key maps gaps to sentences by order of appearance
+        if (gapNumbers.some((n, idx) => n !== idx + 1)) {
+            errors.push({
+                row: i + 1,
+                column: "passage_with_gaps",
+                message: `Gap markers must appear in order {GAP_1} to {GAP_${gapCount}} with no repeats or gaps (found ${gapNumbers.map((n) => `{GAP_${n}}`).join(" ")})`,
             });
             continue;
         }
@@ -659,6 +733,18 @@ function parseFillMissingSentence(
                 row: i + 1,
                 column: "sentences",
                 message: `Need at least ${gapCount} sentences (one per gap), found ${sentenceList.length}`,
+            });
+            continue;
+        }
+
+        if (
+            new Set(sentenceList.map((s) => s.toLowerCase())).size !==
+            sentenceList.length
+        ) {
+            errors.push({
+                row: i + 1,
+                column: "sentences",
+                message: "Sentences must be unique",
             });
             continue;
         }
@@ -712,14 +798,25 @@ function parsePassages(
             continue;
         }
 
+        // Upload resolves the passage's subject from this prefix
+        if (!/^[A-Za-z]{2,5}_/.test(code)) {
+            errors.push({
+                row: i + 1,
+                column: "code",
+                message:
+                    "Code must start with the subject prefix followed by '_' (e.g. RD_P_001)",
+            });
+            continue;
+        }
+
         if (
             !rowData.type ||
-            !["extract", "poem", "article"].includes(rowData.type.toLowerCase())
+            !["extract", "poem"].includes(rowData.type.toLowerCase())
         ) {
             errors.push({
                 row: i + 1,
                 column: "type",
-                message: "Type must be extract, poem, or article",
+                message: "Type must be extract or poem",
             });
             continue;
         }
@@ -777,7 +874,6 @@ function parseEssay(
         "subtopic",
         "prompt",
         "word_limit",
-        "time_mins",
     ];
     const missing = required.filter((col) => !headers.includes(col));
     if (missing.length > 0) {
@@ -848,20 +944,21 @@ function parseEssay(
             continue;
         }
 
-        if (!rowData.word_limit || isNaN(parseInt(rowData.word_limit))) {
+        if (!isPositiveInteger(rowData.word_limit)) {
             errors.push({
                 row: i + 1,
                 column: "word_limit",
-                message: "Word limit must be a number",
+                message: "Word limit must be a whole number greater than 0",
             });
             continue;
         }
 
-        if (!rowData.time_mins || isNaN(parseInt(rowData.time_mins))) {
+        if (rowData.time_mins && !isPositiveInteger(rowData.time_mins)) {
             errors.push({
                 row: i + 1,
                 column: "time_mins",
-                message: "Time in minutes must be a number",
+                message:
+                    "Time in minutes must be a whole number greater than 0 (or left empty)",
             });
             continue;
         }
@@ -954,6 +1051,21 @@ export function parseCSV(csvText: string, type: string): ParseResult {
                 row: 0,
                 message: `Unknown question type: ${type}`,
             });
+    }
+
+    const firstRowByCode = new Map<string, number>();
+    for (const item of [...result.questions, ...result.passages]) {
+        if (!item.code) continue;
+        const firstRow = firstRowByCode.get(item.code);
+        if (firstRow !== undefined) {
+            result.errors.push({
+                row: item.rowIndex,
+                column: "code",
+                message: `Code ${item.code} is already used in row ${firstRow}`,
+            });
+        } else {
+            firstRowByCode.set(item.code, item.rowIndex);
+        }
     }
 
     result.success = result.errors.length === 0;

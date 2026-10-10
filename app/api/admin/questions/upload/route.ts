@@ -692,6 +692,7 @@ async function insertQuestions(
             };
 
             correctAnswer = {
+                answers: blanks.map((b) => b.correct_index),
                 blanks: blanks.map((b) => ({
                     position: b.position,
                     correct_index: b.correct_index,
@@ -725,7 +726,9 @@ async function insertQuestions(
             content = {
                 prompt: q.data.prompt,
                 word_limit: parseInt(q.data.word_limit, 10),
-                time_mins: parseInt(q.data.time_mins, 10),
+                ...(q.data.time_mins
+                    ? { time_mins: parseInt(q.data.time_mins, 10) }
+                    : {}),
             };
             correctAnswer = {};
         }

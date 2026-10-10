@@ -1,5 +1,2 @@
-code,subject,difficulty,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
-
-SC_209,science,easy,what is your name bro?,○,□,△,◇,B,The pattern alternates,1,yes,yes,yes,yes,0
-SC_210,science,easy,okok: 2 4 6 8 ?,10,12,14,16,A,The sequence increases by 2,3,no,no,no,no,0
-SC_203,science,medium,greta 1 great 2: Apple Orange Carrot Banana,Apple,Orange,Carrot,Banana,C,Carrot is a vegetable; the rest are fruiSC,3,no,yes,yes,yes,0
+code,subject,difficulty,topic,subtopic,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
+,mathematical-reasoning,easy,Arithmetic,Addition,What is 15 + 27?,32,42,52,62,B,"Add the tens (10 + 20 = 30), then the ones (5 + 7 = 12). 30 + 12 = 42.",0,no,no,no,no,0

@@ -16,7 +16,7 @@ import {
  *   - limit        (default 20, max 100)
  *   - offset       (default 0)
  *   - subject_id   (optional UUID – filter by subject)
- *   - passage_type (optional – extract | poem | article)
+ *   - passage_type (optional – extract | poem)
  *   - search       (optional – search by passage code or title)
  */
 export async function GET(request: NextRequest) {
@@ -134,7 +134,7 @@ export async function PATCH(request: NextRequest) {
             allowed.content = content;
         }
         if ("passage_type" in body) {
-            if (!["extract", "poem", "article"].includes(passage_type ?? "")) {
+            if (!["extract", "poem"].includes(passage_type ?? "")) {
                 return errorResponse("Invalid passage type", 400);
             }
             allowed.passage_type = passage_type;

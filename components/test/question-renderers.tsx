@@ -660,9 +660,11 @@ export const EssayRenderer = memo(
                     <Badge variant="outline" className="text-xs gap-1">
                         Word limit: {content.word_limit}
                     </Badge>
-                    <Badge variant="outline" className="text-xs gap-1">
-                        Time: {content.time_mins} min
-                    </Badge>
+                    {content.time_mins ? (
+                        <Badge variant="outline" className="text-xs gap-1">
+                            Time: {content.time_mins} min
+                        </Badge>
+                    ) : null}
                 </div>
             </div>
         );

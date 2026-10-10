@@ -11,6 +11,8 @@ When changing upload behavior, update this file alongside:
 - `app/api/admin/questions/upload/route.ts` (DB transformation + insertion)
 - `app/dashboard/upload/page.tsx` (admin preview rendering)
 
+Ready-to-fill example files (one row per type) live in `public/templates/`.
+
 ---
 
 ## 1) Global CSV parsing behavior
@@ -37,17 +39,20 @@ For all question types (`mcq`, `passage_mcq`, `poem_mcq`, `fill_blank`, `fill_mi
 
 ### 2.2 Optional categorization fields
 
-For all question types (`mcq`, `passage_mcq`, `poem_mcq`, `fill_blank`, `fill_missing_sentence`, `essay`):
+For all question types (`mcq`, `passage_mcq`, `poem_mcq`, `fill_blank`, `fill_missing_sentence`):
 
 - `topic` is optional.
 - `subtopic` is optional.
 - If blank, both are stored as `null` in DB.
+
+For `essay`, `topic` and `subtopic` are required (see 3.6).
 
 ### 2.3 Code behavior
 
 - For question types, `code` column is optional.
 - If `code` is missing/empty, code is auto-generated at upload time.
 - For `passage` type, `code` is mandatory.
+- The same code cannot appear on two rows of one CSV.
 
 ### 2.4 Difficulty values
 
@@ -63,8 +68,8 @@ Values are case-insensitive in CSV input.
 
 For MCQ-family types:
 
-- `question_images` must be numeric integer in range `0..10`.
-- `solution_images` must be numeric integer in range `0..10`.
+- `question_images` and `solution_images` columns are optional; an empty cell or missing column means `0`.
+- When filled, they must be a numeric integer in range `0..10`.
 - Non-numeric values are invalid.
 - Deprecated singular columns `question_image` and `solution_image` are rejected.
 
@@ -95,14 +100,14 @@ code,subject,difficulty,topic,subtopic,question,option_a,option_b,option_c,optio
 - `option_c`
 - `option_d`
 - `answer`
-- `question_images`
-- `solution_images`
 
 #### 3.1.3 Row-level rules
 
+- `question` text is required.
+- Each option needs text, unless its `option_X_image` is `yes` (image-only option).
 - `answer` must be one of `A|B|C|D` (case-insensitive).
 - `difficulty` must be `easy|medium|hard`.
-- `question_images` and `solution_images` must be numeric `0..10`.
+- `question_images` and `solution_images` must be empty or numeric `0..10`.
 
 ---
 
@@ -116,21 +121,11 @@ code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,o
 
 #### 3.2.2 Required columns (validation)
 
-- `subject`
-- `passage_code`
-- `difficulty`
-- `question`
-- `option_a`
-- `option_b`
-- `option_c`
-- `option_d`
-- `answer`
-- `question_images`
-- `solution_images`
+- Same as `mcq`, plus `passage_code`.
 
 #### 3.2.3 Row-level rules
 
-- Same as `mcq` for answer/difficulty/image counts.
+- Same as `mcq`.
 - `passage_code` is required and can be comma-separated (for example `RD_P_001,RD_P_002`).
 - The upload API revalidates this field before uploading images or inserting questions. A blank code rejects the entire upload with row-level errors.
 
@@ -146,17 +141,7 @@ code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,o
 
 #### 3.3.2 Required columns (validation)
 
-- `subject`
-- `passage_code`
-- `difficulty`
-- `question`
-- `option_a`
-- `option_b`
-- `option_c`
-- `option_d`
-- `answer`
-- `question_images`
-- `solution_images`
+- Same as `passage_mcq`.
 
 #### 3.3.3 Row-level rules
 
@@ -169,7 +154,7 @@ code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,o
 #### 3.4.1 Header
 
 ```csv
-code,subject,passage_code,difficulty,topic,subtopic,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
+code,subject,difficulty,topic,subtopic,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options,solution
 ```
 
 #### 3.4.2 Required columns (validation)
@@ -182,10 +167,14 @@ code,subject,passage_code,difficulty,topic,subtopic,passage_text,blank_1_options
 #### 3.4.3 Row-level rules
 
 - `difficulty` must be `easy|medium|hard`.
-- `passage_text` must contain at least one blank marker like `[1]`.
-- For each marker found (`[1]...[N]`), corresponding `blank_N_options` must be present.
+- `passage_text` must contain blank markers `[1]`, `[2]`, … `[N]` appearing in that order with no repeats or skipped numbers. The test player fills dropdowns by position.
+- `passage_text` must not contain `___` or `{blank}` (the test player would treat them as extra blanks).
+- Each `blank_N_options` for `N = 1..N` must have at least 2 pipe-separated options, with no empty or duplicate (case-insensitive) options.
+- A filled `blank_N_options` cell beyond the number of markers is an error.
 - There is no limit on the number of blanks. Add `blank_6_options`, `blank_7_options`, … columns as needed; the template header shows only the first five.
-- Options are pipe-separated; first option is treated as correct during upload transformation.
+- The first option is the correct one. Options are shuffled in the test player.
+- `solution` is optional and shown on the review page.
+- There is no answer column and no passage link; the passage text is part of the question.
 
 ---
 
@@ -194,7 +183,7 @@ code,subject,passage_code,difficulty,topic,subtopic,passage_text,blank_1_options
 #### 3.5.1 Header
 
 ```csv
-code,subject,difficulty,topic,subtopic,passage_with_gaps,sentences
+code,subject,difficulty,topic,subtopic,passage_with_gaps,sentences,solution
 ```
 
 #### 3.5.2 Required columns (validation)
@@ -207,9 +196,10 @@ code,subject,difficulty,topic,subtopic,passage_with_gaps,sentences
 #### 3.5.3 Row-level rules
 
 - `difficulty` must be `easy|medium|hard`.
-- `passage_with_gaps` must include at least one marker like `{GAP_1}`.
-- `sentences` is pipe-separated list.
-- Number of provided sentences must be at least number of gap markers.
+- `passage_with_gaps` must contain gap markers `{GAP_1}`, `{GAP_2}`, … `{GAP_N}` appearing in that order with no repeats or skipped numbers.
+- `sentences` is a pipe-separated list of unique sentences. Sentence 1 fills `{GAP_1}`, sentence 2 fills `{GAP_2}`, and so on; any extra sentences are distractors. Sentences are shuffled in the test player.
+- Number of sentences must be at least the number of gaps.
+- `solution` is optional and shown on the review page.
 
 ---
 
@@ -218,23 +208,24 @@ code,subject,difficulty,topic,subtopic,passage_with_gaps,sentences
 #### 3.6.1 Header
 
 ```csv
-code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins,rubric
+code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins
 ```
 
 #### 3.6.2 Required columns (validation)
 
 - `subject`
 - `difficulty`
+- `topic`
+- `subtopic`
 - `prompt`
 - `word_limit`
-- `time_mins`
 
 #### 3.6.3 Row-level rules
 
 - `difficulty` must be `easy|medium|hard`.
-- `word_limit` must be numeric.
-- `time_mins` must be numeric.
-- `rubric` is optional; format is `category:points|category:points`.
+- `topic` (Narrative, Persuasive, Informative) and `subtopic` must match an entry in `writing_marking_criteria`; this is checked at upload.
+- `word_limit` must be a whole number greater than 0. It is enforced in the editor and on submit.
+- `time_mins` is optional. When filled it must be a whole number greater than 0. It is only displayed to the student; the test timer comes from the subject/test duration.
 
 ---
 
@@ -254,7 +245,8 @@ code,type,title,content,has_image
 
 #### 3.7.3 Row-level rules
 
-- `type` must be one of `extract|poem|article`.
+- `code` must start with the subject's code prefix followed by `_` (for example `RD_P_001`). Upload resolves the passage's subject from this prefix.
+- `type` must be `extract` or `poem`.
 - `has_image` uses yes/no style (`yes` means 1 passage image required).
 
 ---
@@ -265,7 +257,8 @@ Implemented in `app/api/admin/questions/upload/route.ts`.
 
 - `fill_blank` content is saved as:
   - `passage_text`
-  - `blanks[]` where each blank has `position`, `options`, `correct_index`, `correct`
+  - `blanks[]` where each blank has `position`, `options`, `correct_index` (always `0`), `correct`
+  - `correct_answer` is `{ answers: number[], blanks: [...] }`
 - `fill_missing_sentence` content is saved as:
   - `passage_with_gaps`
   - `sentences[]`
@@ -274,6 +267,8 @@ Implemented in `app/api/admin/questions/upload/route.ts`.
   - `question`
   - `question_images[]` (if uploaded)
   - `options[]` with optional `image_url`
+- `essay` content is saved as `prompt`, `word_limit`, and `time_mins` (only when provided).
+- `solution` is saved to `solution_text` for every type that has the column.
 - `solution_images[]` are mapped from `solution_images` count and uploaded files.
 
 ---

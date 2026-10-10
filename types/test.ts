@@ -200,7 +200,7 @@ export interface EssayContent {
     /** Legacy / admin-edit field — prefer prompt_images; renderers fall back to this */
     question_images?: string[];
     word_limit: number;
-    time_mins: number;
+    time_mins?: number;
     rubric?: Record<string, number>; // Legacy only; new questions use writing_marking_criteria
 }
 

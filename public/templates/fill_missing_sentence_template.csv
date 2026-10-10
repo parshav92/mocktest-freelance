@@ -1,0 +1,2 @@
+code,subject,difficulty,topic,subtopic,passage_with_gaps,sentences,solution
+,reading,easy,Sequencing,Context fit,"The park was beautiful in spring. {GAP_1} Birds sang in the trees. {GAP_2} Children played happily on the swings.","Flowers bloomed in every garden bed.|Families spread picnic blankets on the grass.|Snow covered the frozen pond.","The first two sentences describe a spring day in order. The third is a distractor because snow does not fit a spring scene."
