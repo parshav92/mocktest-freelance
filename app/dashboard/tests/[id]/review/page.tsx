@@ -835,7 +835,6 @@ export default function TestReviewPage() {
                                                 <ListChecks className="h-4 w-4 text-slate-400" />
                                             );
                                         case "passage_mcq":
-                                        case "poem_mcq":
                                             return (
                                                 <BookOpen className="h-4 w-4 text-slate-400" />
                                             );
@@ -1318,8 +1317,7 @@ function ReviewQuestionDisplay({
 
     switch (question.question_type) {
         case "mcq":
-        case "passage_mcq":
-        case "poem_mcq": {
+        case "passage_mcq": {
             const questionText = content.question as string;
             const options = content.options as Array<{
                 label: string;

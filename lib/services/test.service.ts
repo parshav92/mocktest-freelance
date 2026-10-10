@@ -1314,8 +1314,7 @@ export class TestService {
 
         switch (questionType) {
             case "mcq":
-            case "passage_mcq":
-            case "poem_mcq": {
+            case "passage_mcq": {
                 const correct = correctAnswer as MCQAnswer;
 
                 // Validate structure

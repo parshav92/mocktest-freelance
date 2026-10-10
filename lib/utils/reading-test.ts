@@ -1,4 +1,4 @@
-const READING_PASSAGE_TYPES = new Set(["passage_mcq", "poem_mcq"]);
+const READING_PASSAGE_TYPES = new Set(["passage_mcq"]);
 
 export function isReadingPassageQuestion(question: {
     question_type: string;

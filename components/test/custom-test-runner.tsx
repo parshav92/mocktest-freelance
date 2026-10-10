@@ -330,10 +330,7 @@ export function CustomTestRunner({
     // ── Passage data ───────────────────────────────────
     const passages = useMemo((): Passage[] => {
         if (!currentQuestion) return [];
-        if (
-            currentQuestion.question_type === "passage_mcq" ||
-            currentQuestion.question_type === "poem_mcq"
-        ) {
+        if (currentQuestion.question_type === "passage_mcq") {
             return currentQuestion.passages || [];
         }
         return [];
@@ -747,7 +744,6 @@ export function CustomTestRunner({
                 case "mcq":
                     return <ListChecks className="h-4 w-4 text-slate-400" />;
                 case "passage_mcq":
-                case "poem_mcq":
                     return <BookOpen className="h-4 w-4 text-slate-400" />;
                 case "essay":
                     return <PenLine className="h-4 w-4 text-slate-400" />;
@@ -1513,8 +1509,7 @@ function ReviewQuestionDisplay({
 
     switch (question.question_type) {
         case "mcq":
-        case "passage_mcq":
-        case "poem_mcq": {
+        case "passage_mcq": {
             const questionText = content.question as string;
             const questionImagesRaw = content.question_images as
                 | string[]

@@ -61,7 +61,6 @@ interface CustomTest {
 const QUESTION_TYPES: Record<string, string> = {
     mcq: "MCQ",
     passage_mcq: "Passage MCQ",
-    poem_mcq: "Poem MCQ",
     fill_blank_dropdown: "Fill Blank",
     fill_missing_sentence: "Fill Missing Sentence",
     essay: "Essay",
@@ -140,7 +139,7 @@ function getCorrectAnswerDisplay(
 ): string {
     if (!correctAnswer) return "—";
 
-    if (["mcq", "passage_mcq", "poem_mcq"].includes(questionType)) {
+    if (["mcq", "passage_mcq"].includes(questionType)) {
         const label = (correctAnswer as { label?: string }).label;
         if (label && Array.isArray(content.options)) {
             const opt = (

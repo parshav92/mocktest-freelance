@@ -7,7 +7,6 @@ export type DifficultyLevel = "easy" | "medium" | "hard";
 export type QuestionType =
     | "mcq"
     | "passage_mcq"
-    | "poem_mcq"
     | "fill_blank_dropdown"
     | "fill_missing_sentence"
     | "essay";
@@ -54,7 +53,8 @@ export interface InstructionPage {
  *   "passage"       → number of extract-type passages to select
  *   "passage_mcq"   → questions taken from each extract passage
  *   "passage_poem"  → number of poem-type passages to select
- *   "poem_mcq"      → questions taken from each poem passage
+ *   "poem_mcq"      → passage_mcq questions taken from each poem passage
+ *                     (quota key only; there is no poem_mcq question type)
  *
  * Every other key is treated as a question_type whose value is the total
  * standalone question count for that type.  Adding a new question type to
@@ -101,7 +101,7 @@ export interface PassageGroupTypeQuotas {
 export interface PassageGroupQuota {
     /** Matches passages.passage_type (e.g., "extract", "poem") */
     passage_type: string;
-    /** Matches questions.question_type (e.g., "passage_mcq", "poem_mcq") */
+    /** Matches questions.question_type (e.g., "passage_mcq") */
     question_type: string;
     /** How many passages to select */
     passage_count: number;

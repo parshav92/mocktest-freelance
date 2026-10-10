@@ -172,7 +172,7 @@ async function runStudentFlow(config: StudentConfig): Promise<void> {
 
     // Generate a random answer based on question type
     let selectedAnswer: string | Record<string, unknown> = "A";
-    if (q.question_type === "mcq" || q.question_type === "passage_mcq" || q.question_type === "poem_mcq") {
+    if (q.question_type === "mcq" || q.question_type === "passage_mcq") {
       const options = ["A", "B", "C", "D"];
       selectedAnswer = options[Math.floor(Math.random() * options.length)];
     } else if (q.question_type === "fill_blank_dropdown") {

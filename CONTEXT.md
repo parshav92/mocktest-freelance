@@ -307,8 +307,7 @@ get_student_test_access_status(student_id) → TABLE
 | Type | Format | Subjects |
 |------|--------|----------|
 | `mcq` | Standard multiple choice | Math, Thinking Skills |
-| `passage_mcq` | MCQ based on passage | Reading |
-| `poem_mcq` | MCQ based on poem | Reading |
+| `passage_mcq` | MCQ based on an extract or poem passage | Reading |
 | `fill_blank_dropdown` | Fill blanks with dropdown | Reading |
 | `fill_missing_sentence` | Drag-drop sentences | Reading |
 | `essay` | Free-form writing | Writing |

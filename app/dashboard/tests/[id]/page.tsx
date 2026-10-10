@@ -737,10 +737,7 @@ export default function TestEnvironmentPage() {
     // ============================================
     const passages = useMemo((): Passage[] => {
         if (!currentQuestion) return [];
-        if (
-            currentQuestion.question_type === "passage_mcq" ||
-            currentQuestion.question_type === "poem_mcq"
-        ) {
+        if (currentQuestion.question_type === "passage_mcq") {
             return currentQuestion.passages || [];
         }
         return [];

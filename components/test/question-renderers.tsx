@@ -788,7 +788,6 @@ export function QuestionRenderer({
     switch (question.question_type) {
         case "mcq":
         case "passage_mcq":
-        case "poem_mcq":
             return (
                 <MCQRenderer
                     content={question.content as MCQContent}
