@@ -1,2 +1,3 @@
 code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
 ,reading,RD_P_SAMPLE_001,easy,Comprehension,Character,Why did the sailors trust Mara?,They had met her many times,She kept the light burning every night,She sent them letters,She owned their ships,B,"The passage says she lit the lamp every evening and stayed awake on stormy nights, so sailors could rely on the light.",0,no,no,no,no,0
+,reading,RD_POEM_SAMPLE_001,easy,Poetry analysis,Rhyme scheme,What rhyme scheme does the poem follow?,ABAB,AABB,ABBA,Free verse,B,"Lines 1 and 2 rhyme (hills / sills), and lines 3 and 4 rhyme (song / along).",0,no,no,no,no,0

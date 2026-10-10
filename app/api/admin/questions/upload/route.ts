@@ -23,7 +23,6 @@ export async function GET(request: NextRequest) {
     const validTypes = [
         "mcq",
         "passage_mcq",
-        "poem_mcq",
         "fill_blank",
         "fill_missing_sentence",
         "passage",
@@ -76,7 +75,6 @@ export async function POST(request: NextRequest) {
         const validTypes = [
             "mcq",
             "passage_mcq",
-            "poem_mcq",
             "fill_blank",
             "fill_missing_sentence",
             "passage",
@@ -95,9 +93,7 @@ export async function POST(request: NextRequest) {
             passages: ParsedPassage[];
         };
 
-        if (uploadType === "passage_mcq" || uploadType === "poem_mcq") {
-            const codeLabel =
-                uploadType === "poem_mcq" ? "Poem code" : "Passage code";
+        if (uploadType === "passage_mcq") {
             const missingCodeRows = parsedData.questions.filter(
                 (question) =>
                     !question.data.passage_code
@@ -108,11 +104,11 @@ export async function POST(request: NextRequest) {
             if (missingCodeRows.length > 0) {
                 return NextResponse.json(
                     {
-                        error: `${codeLabel} is required for every ${uploadType} question.`,
+                        error: "Passage code is required for every passage_mcq question.",
                         errors: missingCodeRows.map((question) => ({
                             row: question.rowIndex,
                             column: "passage_code",
-                            message: `${codeLabel} is required. Upload the related ${uploadType === "poem_mcq" ? "poem" : "passage"} first, then enter its code.`,
+                            message: "Passage code is required. Upload the related passage or poem first, then enter its code.",
                         })),
                     },
                     { status: 400 },
@@ -323,8 +319,6 @@ function getQuestionTypeCode(uploadType: string): string {
             return "MCQ";
         case "passage_mcq":
             return "MCQ";
-        case "poem_mcq":
-            return "POEM_MCQ";
         case "fill_blank":
             return "FIB";
         case "fill_missing_sentence":
@@ -435,7 +429,7 @@ async function insertQuestions(
         // 1. If subject is explicitly provided in CSV, use it
         if (data.subject)
             return data.subject.toLowerCase().replace(/\s+/g, "-");
-        // 2. Infer from referenced passage code prefix (passage_mcq/poem_mcq)
+        // 2. Infer from referenced passage code prefix (passage_mcq)
         if (data.passage_code) {
             const firstPassageCode = data.passage_code
                 .split(",")
@@ -609,11 +603,7 @@ async function insertQuestions(
         let content: Record<string, unknown> = {};
         let correctAnswer: Record<string, unknown> | null = null;
 
-        if (
-            uploadType === "mcq" ||
-            uploadType === "passage_mcq" ||
-            uploadType === "poem_mcq"
-        ) {
+        if (uploadType === "mcq" || uploadType === "passage_mcq") {
             const questionImages: string[] = [];
             const qImgCount = parseImageCount(q.data.question_images);
             for (let qi = 1; qi <= qImgCount; qi++) {
@@ -862,8 +852,6 @@ function getQuestionType(uploadType: string): string {
             return "mcq";
         case "passage_mcq":
             return "passage_mcq";
-        case "poem_mcq":
-            return "poem_mcq";
         case "fill_blank":
             return "fill_blank_dropdown";
         case "fill_missing_sentence":

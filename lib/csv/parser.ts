@@ -193,7 +193,7 @@ function getFieldLabel(field: string): string {
     return field;
 }
 
-// Parse CSV for MCQ types (mcq, passage_mcq, poem_mcq)
+// Parse CSV for MCQ types (mcq, passage_mcq)
 function parseMCQ(
     rows: string[][],
     headers: string[],
@@ -399,11 +399,11 @@ function parseMCQ(
             continue;
         }
 
-        if ((type === "passage_mcq" || type === "poem_mcq") && !rowData.passage_code) {
+        if (type === "passage_mcq" && !rowData.passage_code) {
             errors.push({
                 row: i + 1,
                 column: "passage_code",
-                message: "Passage code is required for passage/poem MCQ",
+                message: "Passage code is required for passage MCQ",
             });
             continue;
         }
@@ -489,6 +489,19 @@ function parseFillBlank(
     const templateColumns = [
         ...new Set([...CSV_COLUMNS.fill_blank, ...blankOptionColumns]),
     ];
+
+    // Empty header cells come from trailing commas in spreadsheet exports
+    const unknownColumns = headers.filter(
+        (header) => header !== "" && !templateColumns.includes(header),
+    );
+    if (unknownColumns.length > 0) {
+        errors.push({
+            row: 1,
+            message: `Unsupported columns: ${unknownColumns.join(", ")}. Remove them; fill-in-blank only accepts ${CSV_COLUMNS.fill_blank.join(", ")} (and more blank_N_options). The first option in each blank is the correct answer.`,
+        });
+        return { questions, errors };
+    }
+
     const headerIndexMap = getHeaderIndexMap(headers);
 
     for (let i = 1; i < rows.length; i++) {
@@ -1007,8 +1020,7 @@ export function parseCSV(csvText: string, type: string): ParseResult {
 
     switch (type) {
         case "mcq":
-        case "passage_mcq":
-        case "poem_mcq": {
+        case "passage_mcq": {
             const { questions, errors } = parseMCQ(rows, headers, type);
             result.questions = questions;
             result.errors = errors;

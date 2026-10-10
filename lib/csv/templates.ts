@@ -37,34 +37,11 @@ export const CSV_COLUMNS = {
         "solution_images", // (Optional) number of solution images (0 = none)
     ],
 
-    // Passage-based MCQ (Reading)
+    // Passage-based MCQ (Reading) - used for both extract and poem passages
     passage_mcq: [
         "code", // (Optional) Question code (e.g., RD_MCQ_001). If empty/missing, auto-generated.
         "subject", // Subject slug (required)
-        "passage_code", // Reference to passage(s) - comma-separated for multiple (e.g., RD_P_001 or RD_P_001,RD_P_002)
-        "difficulty", // easy, medium, hard
-        "topic", // (Optional) Broad topic label
-        "subtopic", // (Optional) Narrow subtopic label
-        "question", // Question text
-        "option_a", // Option A
-        "option_b", // Option B
-        "option_c", // Option C
-        "option_d", // Option D
-        "answer", // A, B, C, or D
-        "solution", // (Optional) Explanation
-        "question_images", // (Optional) number of question images (0 = none)
-        "option_a_image", // (Optional) yes/no
-        "option_b_image", // (Optional) yes/no
-        "option_c_image", // (Optional) yes/no
-        "option_d_image", // (Optional) yes/no
-        "solution_images", // (Optional) number of solution images (0 = none)
-    ],
-
-    // Poem-based MCQ (Reading)
-    poem_mcq: [
-        "code", // (Optional) Question code. If empty/missing, auto-generated.
-        "subject", // Subject slug (required)
-        "passage_code", // Reference to poem passage(s) - comma-separated for multiple
+        "passage_code", // Reference to extract or poem passage(s) - comma-separated for multiple (e.g., RD_P_001 or RD_P_001,RD_P_002)
         "difficulty", // easy, medium, hard
         "topic", // (Optional) Broad topic label
         "subtopic", // (Optional) Narrow subtopic label
@@ -144,10 +121,8 @@ TS_001,thinking-skills,easy,Pattern Recognition,Visual sequence,Which shape come
     passage_mcq: `code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
 RD_MCQ_001,reading,RD_P_001,easy,Comprehension,Main idea,What is the main idea of the passage?,Friendship,Adventure,Nature,Science,A,The passage discusses friendship,0,no,no,no,no,0
 RD_MCQ_002,reading,RD_P_001,medium,Inference,Author intent,What does the author mean by 'stood tall'?,Was very tall,Was brave,Was proud,Was angry,B,Context shows bravery,1,no,no,no,no,0
-RD_MCQ_003,reading,"RD_P_001,RD_P_002",medium,Comparison,Theme comparison,Compare the two extracts. What theme do they share?,Friendship,Loss,Growth,Conflict,C,Both passages explore growth,0,no,no,no,no,0`,
-
-    poem_mcq: `code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
-RD_POEM_001,reading,RD_POEM_P_001,easy,Poetry analysis,Rhyme scheme,What rhyme scheme does the poem follow?,ABAB,AABB,ABBA,Free verse,B,Lines 1-2 and 3-4 rhyme,0,no,no,no,no,0`,
+RD_MCQ_003,reading,"RD_P_001,RD_P_002",medium,Comparison,Theme comparison,Compare the two extracts. What theme do they share?,Friendship,Loss,Growth,Conflict,C,Both passages explore growth,0,no,no,no,no,0
+RD_MCQ_004,reading,RD_POEM_P_001,easy,Poetry analysis,Rhyme scheme,What rhyme scheme does the poem follow?,ABAB,AABB,ABBA,Free verse,B,Lines 1-2 and 3-4 rhyme,0,no,no,no,no,0`,
 
     fill_blank: `code,subject,difficulty,topic,subtopic,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options,solution
 RD_FB_001,reading,easy,Grammar,Verb usage,"The cat [1] on the mat. It was [2] comfortable.",sat|sit|set,very|much|more,,,,"Past tense 'sat' fits the story; 'very' modifies the adjective."
@@ -191,7 +166,6 @@ export const SUBJECT_SLUGS = {
 export const QUESTION_TYPE_MAP = {
     mcq: "mcq",
     passage_mcq: "passage_mcq",
-    poem_mcq: "poem_mcq",
     fill_blank: "fill_blank_dropdown",
     fill_blank_dropdown: "fill_blank_dropdown",
     fill_missing_sentence: "fill_missing_sentence",

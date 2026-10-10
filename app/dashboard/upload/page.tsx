@@ -106,13 +106,7 @@ const UPLOAD_TYPES = [
     {
         value: "passage_mcq",
         label: "Passage MCQ",
-        description: "MCQ questions based on reading passages",
-        subjects: "Reading",
-    },
-    {
-        value: "poem_mcq",
-        label: "Poem MCQ",
-        description: "MCQ questions based on poems",
+        description: "MCQ questions based on reading passages or poems",
         subjects: "Reading",
     },
     {

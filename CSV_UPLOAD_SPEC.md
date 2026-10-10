@@ -25,7 +25,7 @@ Implemented in `lib/csv/parser.ts`.
 - Cell values are trimmed.
 - Empty rows are ignored.
 - Header names are normalized to lowercase+trim before matching.
-- Unknown extra CSV columns are ignored by parser mapping (only template columns are used).
+- Unknown extra CSV columns are ignored by parser mapping (only template columns are used), except for `fill_blank`, which rejects them (see 3.3).
 
 ---
 
@@ -33,19 +33,19 @@ Implemented in `lib/csv/parser.ts`.
 
 ### 2.1 Required common fields for question types
 
-For all question types (`mcq`, `passage_mcq`, `poem_mcq`, `fill_blank`, `fill_missing_sentence`, `essay`):
+For all question types (`mcq`, `passage_mcq`, `fill_blank`, `fill_missing_sentence`, `essay`):
 
 - `subject` column is mandatory.
 
 ### 2.2 Optional categorization fields
 
-For all question types (`mcq`, `passage_mcq`, `poem_mcq`, `fill_blank`, `fill_missing_sentence`):
+For all question types (`mcq`, `passage_mcq`, `fill_blank`, `fill_missing_sentence`):
 
 - `topic` is optional.
 - `subtopic` is optional.
 - If blank, both are stored as `null` in DB.
 
-For `essay`, `topic` and `subtopic` are required (see 3.6).
+For `essay`, `topic` and `subtopic` are required (see 3.5).
 
 ### 2.3 Code behavior
 
@@ -127,44 +127,27 @@ code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,o
 
 - Same as `mcq`.
 - `passage_code` is required and can be comma-separated (for example `RD_P_001,RD_P_002`).
+- `passage_code` can point to an `extract` or a `poem` passage. There is no separate poem question type: test generation fills poem passages with `passage_mcq` questions, and the passage panel styles poems from the passage's own `type`.
 - The upload API revalidates this field before uploading images or inserting questions. A blank code rejects the entire upload with row-level errors.
 
 ---
 
-### 3.3 `poem_mcq`
+### 3.3 `fill_blank`
 
 #### 3.3.1 Header
-
-```csv
-code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
-```
-
-#### 3.3.2 Required columns (validation)
-
-- Same as `passage_mcq`.
-
-#### 3.3.3 Row-level rules
-
-- Same as `passage_mcq`.
-
----
-
-### 3.4 `fill_blank`
-
-#### 3.4.1 Header
 
 ```csv
 code,subject,difficulty,topic,subtopic,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options,solution
 ```
 
-#### 3.4.2 Required columns (validation)
+#### 3.3.2 Required columns (validation)
 
 - `subject`
 - `difficulty`
 - `passage_text`
 - `blank_1_options`
 
-#### 3.4.3 Row-level rules
+#### 3.3.3 Row-level rules
 
 - `difficulty` must be `easy|medium|hard`.
 - `passage_text` must contain blank markers `[1]`, `[2]`, … `[N]` appearing in that order with no repeats or skipped numbers. The test player fills dropdowns by position.
@@ -175,25 +158,26 @@ code,subject,difficulty,topic,subtopic,passage_text,blank_1_options,blank_2_opti
 - The first option is the correct one. Options are shuffled in the test player.
 - `solution` is optional and shown on the review page.
 - There is no answer column and no passage link; the passage text is part of the question.
+- Any column not in the header above (other than extra `blank_N_options`) rejects the whole file, for example `answers` or `passage_code`. Empty header cells from trailing commas are ignored.
 
 ---
 
-### 3.5 `fill_missing_sentence`
+### 3.4 `fill_missing_sentence`
 
-#### 3.5.1 Header
+#### 3.4.1 Header
 
 ```csv
 code,subject,difficulty,topic,subtopic,passage_with_gaps,sentences,solution
 ```
 
-#### 3.5.2 Required columns (validation)
+#### 3.4.2 Required columns (validation)
 
 - `subject`
 - `difficulty`
 - `passage_with_gaps`
 - `sentences`
 
-#### 3.5.3 Row-level rules
+#### 3.4.3 Row-level rules
 
 - `difficulty` must be `easy|medium|hard`.
 - `passage_with_gaps` must contain gap markers `{GAP_1}`, `{GAP_2}`, … `{GAP_N}` appearing in that order with no repeats or skipped numbers.
@@ -203,15 +187,15 @@ code,subject,difficulty,topic,subtopic,passage_with_gaps,sentences,solution
 
 ---
 
-### 3.6 `essay`
+### 3.5 `essay`
 
-#### 3.6.1 Header
+#### 3.5.1 Header
 
 ```csv
 code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins
 ```
 
-#### 3.6.2 Required columns (validation)
+#### 3.5.2 Required columns (validation)
 
 - `subject`
 - `difficulty`
@@ -220,7 +204,7 @@ code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins
 - `prompt`
 - `word_limit`
 
-#### 3.6.3 Row-level rules
+#### 3.5.3 Row-level rules
 
 - `difficulty` must be `easy|medium|hard`.
 - `topic` (Narrative, Persuasive, Informative) and `subtopic` must match an entry in `writing_marking_criteria`; this is checked at upload.
@@ -229,21 +213,21 @@ code,subject,difficulty,topic,subtopic,prompt,word_limit,time_mins
 
 ---
 
-### 3.7 `passage`
+### 3.6 `passage`
 
-#### 3.7.1 Header
+#### 3.6.1 Header
 
 ```csv
 code,type,title,content,has_image
 ```
 
-#### 3.7.2 Required columns (validation)
+#### 3.6.2 Required columns (validation)
 
 - `code`
 - `type`
 - `content`
 
-#### 3.7.3 Row-level rules
+#### 3.6.3 Row-level rules
 
 - `code` must start with the subject's code prefix followed by `_` (for example `RD_P_001`). Upload resolves the passage's subject from this prefix.
 - `type` must be `extract` or `poem`.
