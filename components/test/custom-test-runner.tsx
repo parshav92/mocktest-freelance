@@ -35,6 +35,7 @@ import {
     getEssayPromptImages,
     getUnreferencedImages,
 } from "@/lib/utils/question-content";
+import { resolveFillBlankCorrectIndexes } from "@/lib/utils/fill-blank";
 import { InstructionPages } from "@/components/test/instruction-pages";
 import { QuestionRenderer } from "@/components/test/question-renderers";
 import {
@@ -1668,9 +1669,11 @@ function ReviewQuestionDisplay({
             }>;
             const studentAnswers = (question.selected as number[]) || [];
             const correctAnswers =
-                (correctAnswer as { answers?: number[] })?.answers ||
+                resolveFillBlankCorrectIndexes(correctAnswer) ||
                 blanks.map((b) =>
-                    b.options.findIndex((opt) => opt === b.correct),
+                    typeof b.correct_index === "number"
+                        ? b.correct_index
+                        : b.options.findIndex((opt) => opt === b.correct),
                 );
             const parts = passageText.split(/___+|\[\d+\]|\{blank\}/gi);
 

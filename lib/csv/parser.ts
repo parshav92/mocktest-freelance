@@ -5,6 +5,11 @@
 
 import { CSV_COLUMNS } from "./templates";
 import { repairMojibakeText } from "@/lib/utils/text-encoding";
+import {
+    findFillBlankOptionIndex,
+    parseFillBlankAnswersColumn,
+    parseFillBlankOptions,
+} from "@/lib/utils/fill-blank";
 
 export interface ParseError {
     row: number;
@@ -542,6 +547,7 @@ function parseFillBlank(
         }
 
         // Validate blank options exist
+        let optionsValid = true;
         for (let b = 1; b <= blankCount; b++) {
             const optionsKey = `blank_${b}_options`;
             if (!rowData[optionsKey]) {
@@ -550,6 +556,33 @@ function parseFillBlank(
                     column: optionsKey,
                     message: `Options for blank ${b} are required`,
                 });
+                optionsValid = false;
+            }
+        }
+
+        const answersRaw = rowData.answers?.trim();
+        if (answersRaw && optionsValid) {
+            const answerMap = parseFillBlankAnswersColumn(answersRaw);
+            for (let b = 1; b <= blankCount; b++) {
+                const answer = answerMap.get(b);
+                if (!answer) {
+                    errors.push({
+                        row: i + 1,
+                        column: "answers",
+                        message: `Answers must include a correct word for blank ${b}`,
+                    });
+                    continue;
+                }
+                const options = parseFillBlankOptions(
+                    rowData[`blank_${b}_options`],
+                );
+                if (findFillBlankOptionIndex(options, answer) < 0) {
+                    errors.push({
+                        row: i + 1,
+                        column: "answers",
+                        message: `Answer "${answer}" for blank ${b} is not in blank_${b}_options`,
+                    });
+                }
             }
         }
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { resolveFillBlankCorrectIndexes } from "@/lib/utils/fill-blank";
 
 /**
  * POST /api/custom-tests/[slug]/submit
@@ -257,11 +258,7 @@ function gradeAnswer(
             return { isCorrect, marksEarned: isCorrect ? marks : 0 };
         }
         case "fill_blank_dropdown": {
-            const correctArr = Array.isArray(correctAnswer.answers)
-                ? (correctAnswer.answers as number[])
-                : Array.isArray(correctAnswer.blanks)
-                    ? (correctAnswer.blanks as unknown[]).map(() => 0)
-                    : null;
+            const correctArr = resolveFillBlankCorrectIndexes(correctAnswer);
             const selectedArr = selected as number[];
             if (!Array.isArray(selectedArr))
                 return { isCorrect: false, marksEarned: 0 };

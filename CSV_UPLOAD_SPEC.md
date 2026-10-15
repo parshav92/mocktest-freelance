@@ -169,7 +169,7 @@ code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,o
 #### 3.4.1 Header
 
 ```csv
-code,subject,passage_code,difficulty,topic,subtopic,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
+code,subject,passage_code,difficulty,topic,subtopic,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options,answers
 ```
 
 #### 3.4.2 Required columns (validation)
@@ -185,7 +185,9 @@ code,subject,passage_code,difficulty,topic,subtopic,passage_text,blank_1_options
 - `passage_text` must contain at least one blank marker like `[1]`.
 - For each marker found (`[1]...[N]`), corresponding `blank_N_options` must be present.
 - There is no limit on the number of blanks. Add `blank_6_options`, `blank_7_options`, … columns as needed; the template header shows only the first five.
-- Options are pipe-separated; first option is treated as correct during upload transformation.
+- Options are pipe-separated.
+- `answers` is optional. When present, use `1-word, 2-word` (or a comma-separated list in blank order). Each answer must appear in that blank's options.
+- If `answers` is omitted, the first option is treated as correct (legacy convention).
 
 ---
 
@@ -266,6 +268,7 @@ Implemented in `app/api/admin/questions/upload/route.ts`.
 - `fill_blank` content is saved as:
   - `passage_text`
   - `blanks[]` where each blank has `position`, `options`, `correct_index`, `correct`
+  - `correct_answer` is `{ answers: number[] }` (option indexes). Indexes come from the `answers` column when present, otherwise `0` (first option).
 - `fill_missing_sentence` content is saved as:
   - `passage_with_gaps`
   - `sentences[]`

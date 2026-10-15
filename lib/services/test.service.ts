@@ -8,7 +8,6 @@ import type {
     ScoreBreakdown,
     CorrectAnswer,
     MCQAnswer,
-    FillBlankAnswer,
     FillMissingSentenceAnswer,
     EssayContent,
     Passage,
@@ -19,6 +18,7 @@ import type {
 import { EssayEvaluationService } from "@/lib/services/essay-evaluation.service";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { countWords, stripHtmlToText } from "@/lib/utils";
+import { resolveFillBlankCorrectIndexes } from "@/lib/utils/fill-blank";
 
 // Internal type for questions with answers during grading
 interface GradableQuestion {
@@ -1334,24 +1334,16 @@ export class TestService {
             }
 
             case "fill_blank_dropdown": {
-                const correct = correctAnswer as FillBlankAnswer;
-
                 if (!Array.isArray(selected)) return false;
 
-                // Validate structure
-                const legacyBlanks = (
-                    correctAnswer as unknown as Record<string, unknown>
-                )["blanks"];
-                const correctAnswers = Array.isArray(correct.answers)
-                    ? correct.answers
-                    : Array.isArray(legacyBlanks)
-                      ? legacyBlanks.map(() => 0)
-                      : null;
+                const correctAnswers = resolveFillBlankCorrectIndexes(
+                    correctAnswer,
+                );
 
                 if (!correctAnswers) {
                     console.error(
-                        `Invalid fill_blank_dropdown correct_answer structure. Expected {answers: number[]} (or legacy {blanks: string[]}), got:`,
-                        correct,
+                        `Invalid fill_blank_dropdown correct_answer structure. Expected {answers: number[]} (or blanks with correct_index), got:`,
+                        correctAnswer,
                     );
                     return false;
                 }

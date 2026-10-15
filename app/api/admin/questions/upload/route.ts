@@ -10,6 +10,11 @@ import {
     canonicalizeWritingMainTopic,
 } from "@/lib/services/writing-marking-criteria.service";
 import { WRITING_TOTAL_MARKS } from "@/lib/types/writing-marking-criteria";
+import {
+    findFillBlankOptionIndex,
+    parseFillBlankAnswersColumn,
+    parseFillBlankOptions,
+} from "@/lib/utils/fill-blank";
 
 // GET - Download template
 export async function GET(request: NextRequest) {
@@ -657,13 +662,14 @@ async function insertQuestions(
             correctAnswer = { label: q.data.answer?.toUpperCase() };
         } else if (uploadType === "fill_blank") {
 
-            // Parse blanks. CSV convention: first option is the correct one.
+            // Parse blanks. `answers` column wins; otherwise first option is correct.
             const blanks: Array<{
                 position: number;
                 options: string[];
                 correct_index: number;
                 correct: string;
             }> = [];
+            const answerMap = parseFillBlankAnswersColumn(q.data.answers);
             const blankPositions = Object.keys(q.data)
                 .map((key) => key.match(/^blank_(\d+)_options$/)?.[1])
                 .filter((position): position is string => Boolean(position))
@@ -672,10 +678,13 @@ async function insertQuestions(
             for (const i of blankPositions) {
                 const optionsStr = q.data[`blank_${i}_options`];
                 if (optionsStr) {
-                    const opts = optionsStr
-                        .split("|")
-                        .map((o: string) => o.trim());
-                    const correctIndex = 0;
+                    const opts = parseFillBlankOptions(optionsStr);
+                    const fromAnswers = answerMap.get(i);
+                    const fromAnswersIndex =
+                        fromAnswers !== undefined
+                            ? findFillBlankOptionIndex(opts, fromAnswers)
+                            : -1;
+                    const correctIndex = fromAnswersIndex >= 0 ? fromAnswersIndex : 0;
                     blanks.push({
                         position: i,
                         options: opts,
@@ -692,11 +701,7 @@ async function insertQuestions(
             };
 
             correctAnswer = {
-                blanks: blanks.map((b) => ({
-                    position: b.position,
-                    correct_index: b.correct_index,
-                    correct: b.correct,
-                })),
+                answers: blanks.map((b) => b.correct_index),
             };
         } else if (uploadType === "fill_missing_sentence") {
             // Parse sentences from pipe-separated string

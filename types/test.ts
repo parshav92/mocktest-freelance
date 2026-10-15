@@ -185,6 +185,7 @@ export interface FillBlank {
     position: number;
     options: string[];
     correct_index: number;
+    correct?: string;
 }
 
 export interface FillMissingSentenceContent {

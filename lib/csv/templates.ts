@@ -92,11 +92,12 @@ export const CSV_COLUMNS = {
         "topic", // (Optional) Broad topic label
         "subtopic", // (Optional) Narrow subtopic label
         "passage_text", // Text with [1], [2] etc for blanks
-        "blank_1_options", // Options separated by | (pipe), first is correct
+        "blank_1_options", // Options separated by | (pipe)
         "blank_2_options", // Options for blank 2 (if any)
         "blank_3_options", // Options for blank 3 (if any)
         "blank_4_options", // Options for blank 4 (if any)
         "blank_5_options", // Options for blank 5 (if any). Add blank_6_options, blank_7_options, … for more blanks.
+        "answers", // (Optional) Correct words, e.g. "1-sat, 2-very". If omitted, first option is correct.
     ],
 
     // Fill missing sentence (Reading) - drag and drop sentences into gaps
@@ -148,9 +149,9 @@ RD_MCQ_003,reading,"RD_P_001,RD_P_002",medium,Comparison,Theme comparison,Compar
     poem_mcq: `code,subject,passage_code,difficulty,topic,subtopic,question,option_a,option_b,option_c,option_d,answer,solution,question_images,option_a_image,option_b_image,option_c_image,option_d_image,solution_images
 RD_POEM_001,reading,RD_POEM_P_001,easy,Poetry analysis,Rhyme scheme,What rhyme scheme does the poem follow?,ABAB,AABB,ABBA,Free verse,B,Lines 1-2 and 3-4 rhyme,0,no,no,no,no,0`,
 
-    fill_blank: `code,subject,passage_code,difficulty,topic,subtopic,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options
-RD_FB_001,reading,,easy,Grammar,Verb usage,"The cat [1] on the mat. It was [2] comfortable.",sat|sit|set,very|much|more,,,
-RD_FB_002,reading,,medium,Vocabulary,Reading impact,"Reading books [1] your vocabulary and [2] your imagination.",improves|reduces|stops,expands|shrinks|limits,,,`,
+    fill_blank: `code,subject,passage_code,difficulty,topic,subtopic,passage_text,blank_1_options,blank_2_options,blank_3_options,blank_4_options,blank_5_options,answers
+RD_FB_001,reading,,easy,Grammar,Verb usage,"The cat [1] on the mat. It was [2] comfortable.",sat|sit|set,very|much|more,,,,"1-sat, 2-very"
+RD_FB_002,reading,,medium,Vocabulary,Reading impact,"Reading books [1] your vocabulary and [2] your imagination.",improves|reduces|stops,expands|shrinks|limits,,,,"1-improves, 2-expands"`,
 
     fill_missing_sentence: `code,subject,difficulty,topic,subtopic,passage_with_gaps,sentences
 RD_FMS_001,reading,easy,Sequencing,Context fit,"The park was beautiful in spring. {GAP_1} Birds sang in the trees. {GAP_2} Children played on the swings.","Flowers bloomed everywhere.|Families enjoyed picnics on the grass."
