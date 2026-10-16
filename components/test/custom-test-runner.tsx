@@ -1674,7 +1674,7 @@ function ReviewQuestionDisplay({
                     {/* Left: Passage with inline student answers + solution */}
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
-                        <div className="text-base leading-relaxed text-slate-800">
+                        <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
                             {parts.map((part, index) => (
                                 <span key={`fb-part-${index}`}>
                                     <ImageEnhancedText content={part} />
@@ -1794,7 +1794,7 @@ function ReviewQuestionDisplay({
                     {/* Left: Passage with gap results + solution */}
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
-                        <div className="text-base leading-relaxed text-slate-800">
+                        <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
                             {textParts.map((part, i) => {
                                 if (part.type === "text") {
                                     return (

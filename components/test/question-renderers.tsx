@@ -353,7 +353,7 @@ export const FillBlankRenderer = memo(
 
         return (
             <div className="space-y-6">
-                <div className="text-base leading-relaxed text-foreground">
+                <div className="text-base leading-relaxed text-foreground whitespace-pre-line">
                     {parts.map((part, index) => (
                         <span key={`fb-part-${index}`}>
                             <ImageEnhancedText
@@ -477,7 +477,7 @@ export const FillMissingSentenceRenderer = memo(
         return (
             <div className="space-y-6">
                 {/* Passage with gaps */}
-                <div className="text-base leading-relaxed text-foreground">
+                <div className="text-base leading-relaxed text-foreground whitespace-pre-line">
                     {parts.map((part, i) => {
                         if (part.type === "text") {
                             return (
