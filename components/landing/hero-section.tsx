@@ -62,7 +62,7 @@ const HeroSection = ({
                         </Link>
 
                         <Link
-                            href="/pricing"
+                            href="/#pricing"
                             className="rounded-full px-6 py-3.5 text-sm text-slate-900 font-medium bg-white/60 backdrop-blur-sm border border-slate-200 hover:bg-white/80 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-[0.97]"
                         >
                             {secondaryButtonText}
@@ -158,7 +158,7 @@ const HeroSection = ({
                                             Selectorial
                                         </div>
                                         <div className="text-lg font-bold text-slate-900">
-                                            High School Exam
+                                            NSW
                                         </div>
                                     </div>
                                     <div className="text-right">

@@ -21,7 +21,7 @@ export default async function FreeTrialPage() {
         data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) redirect("/auth");
+    if (!user) redirect("/auth?redirect=/free-trial&role=parent");
 
     const { data: profile } = await supabase
         .from("profiles")
@@ -29,7 +29,7 @@ export default async function FreeTrialPage() {
         .eq("id", user.id)
         .single();
 
-    if (!profile || profile.role !== "parent") redirect("/auth");
+    if (!profile || profile.role !== "parent") redirect("/auth?redirect=/free-trial&role=parent");
 
     // ── Fetch free trial tests from DB ─────────────────
     const { data: rawTests } = await supabase
@@ -66,9 +66,6 @@ export default async function FreeTrialPage() {
             <header className="bg-[#1a2744] text-white">
                 <div className="container mx-auto px-4 py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-full bg-white/10">
-                            <Sparkles className="h-5 w-5" />
-                        </div>
                         <div>
                             <p className="font-semibold">Free Trial</p>
                             <p className="text-sm text-white/70">
@@ -126,7 +123,9 @@ export default async function FreeTrialPage() {
                                     </div>
 
                                     <p className="text-center text-xs text-slate-400 mt-6">
-                                        {tests.length} sample test{tests.length !== 1 ? "s" : ""} available
+                                        {tests.length} sample test
+                                        {tests.length !== 1 ? "s" : ""}{" "}
+                                        available
                                     </p>
                                 </>
                             )}

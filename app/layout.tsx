@@ -15,8 +15,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-    title: "Selectorial",
-    description: "A platform to create and take mock tests.",
+    title: "Selectorial | NSW Selective Test Practice",
+    description:
+        "Most trusted Selective Test prep platform. Unlimited full-length timed mock exams with detailed explanations, tracking your child’s strengths, weaknesses, and progress for measurable results.",
 };
 
 export default function RootLayout({

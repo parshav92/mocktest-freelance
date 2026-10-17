@@ -74,16 +74,15 @@ interface FooterProps {
 const Footer = ({
     email = "support@selectorial.com",
     facebookUrl = "https://www.facebook.com/share/14tEcUFJw9u/",
-    instagramUrl = "https://www.instagram.com/selectorialselective",
+    instagramUrl = "https://www.instagram.com/selectorial_nsw",
     copyrightText,
 }: FooterProps) => {
     const copyright =
-        copyrightText ?? `© Selectorial. All rights reserved. ABN: 57 696 042 332`;
+        copyrightText ??
+        `© Selectorial. All rights reserved. ABN: 57 696 042 332`;
 
     return (
-        <footer
-            className="text-black border-t border-slate-700/30"
-        >
+        <footer className="text-slate-900 border-t border-slate-700/30">
             <div className="max-w-6xl mx-auto px-6">
                 {/* Main Footer Content */}
                 <div className="py-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
@@ -115,13 +114,7 @@ const Footer = ({
                                 <Mail className="w-4 h-4" />
                                 {email}
                             </a>
-                            <a
-                                href="tel:+61299999999"
-                                className="flex items-center gap-3 text-sm text-black-400 hover:text-sky-400 transition-colors"
-                            >
-                                <Phone className="w-4 h-4" />
-                                +61 2 9999 9999
-                            </a>
+
                             <div className="flex items-start gap-3 text-sm text-black-400">
                                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
                                 Sydney, NSW, Australia
@@ -136,10 +129,9 @@ const Footer = ({
                         </h4>
                         <ul className="space-y-3">
                             {[
-                                { label: "Website: Home", href: "/" },
-                                { label: "Email:", href: `mailto:${email}` },
-                                { label: "Facebook:", href: facebookUrl },
-                                { label: "Instagram:", href: instagramUrl },
+                                { label: "Email", href: `mailto:${email}` },
+                                { label: "Facebook", href: facebookUrl },
+                                { label: "Instagram", href: instagramUrl },
                             ].map((link) => (
                                 <li key={link.label}>
                                     <Link
@@ -196,9 +188,7 @@ const Footer = ({
 
                 {/* Bottom Bar */}
                 <div className="py-6 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
-                    <p className="text-sm text-black-500">
-                        {copyright}
-                    </p>
+                    <p className="text-sm text-black-500">{copyright}</p>
                     <div className="flex items-center gap-6">
                         <Link
                             href="/#faq"

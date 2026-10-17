@@ -101,6 +101,7 @@ export default function TestEnvironmentPage() {
     // ============================================
     const [phase, setPhase] = useState<TestPhase>("loading");
     const [error, setError] = useState<string | null>(null);
+    const [isStarting, setIsStarting] = useState(false);
 
     // Test data
     const [test, setTest] = useState<Test | null>(null);
@@ -558,6 +559,7 @@ export default function TestEnvironmentPage() {
     };
 
     const handleStartTest = async () => {
+        setIsStarting(true);
         try {
             const res = await fetch(`/api/tests/${testId}`, {
                 method: "PATCH",
@@ -591,6 +593,8 @@ export default function TestEnvironmentPage() {
             setError(
                 err instanceof Error ? err.message : "Failed to start test",
             );
+        } finally {
+            setIsStarting(false);
         }
     };
 
@@ -824,7 +828,7 @@ export default function TestEnvironmentPage() {
                     open={true}
                     onConfirm={handleStartTest}
                     onCancel={() => setPhase("instructions")}
-                    loading={false}
+                    loading={isStarting}
                 />
             </>
         );
@@ -848,9 +852,13 @@ export default function TestEnvironmentPage() {
                     </p>
                     <Button
                         onClick={handleEnterFullscreen}
+                        disabled={isStarting}
                         className="bg-white text-[#1a2744] hover:bg-white/90 font-semibold text-base px-10 py-3 h-auto"
                     >
-                        {isResuming ? "Resume Test" : "Start Test"}
+                        {isStarting && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        {isStarting ? "Starting..." : isResuming ? "Resume Test" : "Start Test"}
                     </Button>
                 </div>
             </div>
@@ -919,13 +927,18 @@ export default function TestEnvironmentPage() {
 
     const isFlagged = flaggedSet.has(currentQuestion.id);
     const hasPassage = passages.length > 0;
+    const isFillMissingSentence =
+        currentQuestion.question_type === "fill_missing_sentence";
 
     // Determine layout: 2-column split for standalone MCQ/essay, stacked for passage-based or inline types
     const questionLayout: "split" | "stacked" =
-        !hasPassage &&
-            (currentQuestion.question_type === "mcq" || currentQuestion.question_type === "essay")
+        isFillMissingSentence ||
+        (!hasPassage &&
+            (currentQuestion.question_type === "mcq" ||
+                currentQuestion.question_type === "essay"))
             ? "split"
             : "stacked";
+    const showExternalPassage = hasPassage && !isFillMissingSentence;
 
     return (
         <div className="h-screen flex flex-col bg-[#e8eef3] font-[family-name:var(--font-inter)] select-none">
@@ -1022,13 +1035,19 @@ export default function TestEnvironmentPage() {
             {/* SPLIT PANEL CONTENT */}
             {/* ============================================ */}
             <div className="flex-1 flex overflow-hidden min-h-0">
-                {hasPassage && <PassagePanel passages={passages} />}
+                {showExternalPassage && <PassagePanel passages={passages} />}
 
                 <div
-                    className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white min-h-0 overflow-hidden`}
+                    className={`${showExternalPassage ? "w-1/2" : "w-full"} flex flex-col bg-white min-h-0 overflow-hidden`}
                 >
                     {questionLayout === "split" ? (
-                        <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-6 md:p-8">
+                        <div
+                            className={cn(
+                                "flex-1 min-h-0 flex flex-col overflow-hidden p-6 md:p-8",
+                                isFillMissingSentence &&
+                                    "w-full max-w-6xl mx-auto",
+                            )}
+                        >
                             <div className="flex items-center justify-between mb-6 shrink-0">
                                 <div className="flex items-center gap-3">
                                     <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
