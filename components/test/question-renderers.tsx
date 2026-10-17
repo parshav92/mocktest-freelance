@@ -1,13 +1,30 @@
 "use client";
 
 import { memo, useMemo, useState } from "react";
+import {
+    DndContext,
+    DragOverlay,
+    PointerSensor,
+    useDraggable,
+    useDroppable,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+} from "@dnd-kit/core";
 import { cn, countWords } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { StorageImage } from "@/components/ui/storage-image";
 import { SafeRichTextEditor } from "@/components/ui/rich-text-editor";
 import { ESSAY_CONFIG, isWithinWordLimit } from "@/lib/config/essay-config";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+    CheckCircle,
+    ChevronLeft,
+    ChevronRight,
+    GripVertical,
+    X,
+    XCircle,
+} from "lucide-react";
 import {
     Select,
     SelectContent,
@@ -29,6 +46,7 @@ import {
     getEssayPromptImages,
     getUnreferencedImages,
 } from "@/lib/utils/question-content";
+import { extractPassageTitleAndText } from "@/lib/utils/passage";
 
 // ============================================
 // SEEDED SHUFFLE UTILITY
@@ -245,10 +263,7 @@ export const MCQRenderer = memo(
 
         if (layout === "split") {
             return (
-                <div
-                    id="split"
-                    className="flex h-full min-h-0 relative"
-                >
+                <div id="split" className="flex h-full min-h-0 relative">
                     {/* Left column: Question stem — independent scroll */}
                     <div className="flex-1 min-h-0 overflow-y-auto pr-4 transition-all duration-300 ease-in-out">
                         <MCQQuestionStem content={content} />
@@ -286,7 +301,9 @@ export const MCQRenderer = memo(
                     <div
                         className={cn(
                             "transition-[width] duration-300 ease-in-out overflow-y-auto min-h-0",
-                            optionsCollapsed ? "w-0 overflow-hidden" : "flex-1 pl-4",
+                            optionsCollapsed
+                                ? "w-0 overflow-hidden"
+                                : "flex-1 pl-4",
                         )}
                     >
                         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
@@ -348,11 +365,36 @@ export const FillBlankRenderer = memo(
             onSelect(newAnswers);
         };
 
+        const { title: passageTitle, text: passageText } = useMemo(
+            () =>
+                extractPassageTitleAndText(
+                    content.passage_text,
+                    (
+                        content as unknown as {
+                            title?: string;
+                            passage_title?: string;
+                        }
+                    ).title ||
+                        (
+                            content as unknown as {
+                                title?: string;
+                                passage_title?: string;
+                            }
+                        ).passage_title,
+                ),
+            [content],
+        );
+
         // Split passage at blank markers
-        const parts = content.passage_text.split(/___+|\[\d+\]|\{blank\}/gi);
+        const parts = passageText.split(/___+|\[\d+\]|\{blank\}/gi);
 
         return (
             <div className="space-y-6">
+                {passageTitle && (
+                    <h3 className="text-lg font-bold text-[#1a2744] mb-4 text-center">
+                        {passageTitle}
+                    </h3>
+                )}
                 <div className="text-base leading-relaxed text-foreground whitespace-pre-line">
                     {parts.map((part, index) => (
                         <span key={`fb-part-${index}`}>
@@ -424,9 +466,242 @@ interface FillMissingSentenceRendererProps {
     onSelect: (mapping: Record<string, number>) => void;
 }
 
+function FmsSentenceCard({
+    index,
+    displayIndex,
+    sentence,
+    isUsed,
+}: {
+    index: number;
+    displayIndex: number;
+    sentence: string;
+    isUsed: boolean;
+}) {
+    const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
+        id: `fms-sentence-${index}`,
+    });
+
+    return (
+        <div
+            ref={setNodeRef}
+            {...listeners}
+            {...attributes}
+            className={cn(
+                "flex items-start gap-2 rounded-lg border p-3 text-sm cursor-grab touch-none transition-shadow",
+                isDragging
+                    ? "border-blue-500 bg-blue-50 opacity-40"
+                    : isUsed
+                      ? "border-blue-200 bg-blue-50/60 text-blue-700"
+                      : "border-gray-200 bg-white text-gray-700 hover:border-blue-300 hover:shadow-sm",
+            )}
+        >
+            <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+            <Badge
+                variant={isUsed ? "default" : "outline"}
+                className={cn(
+                    "h-5 w-5 shrink-0 rounded-full p-0 text-xs font-semibold",
+                    isUsed && "bg-[#2563eb]",
+                )}
+            >
+                {String.fromCharCode(65 + displayIndex)}
+            </Badge>
+            <span className="flex-1">
+                <MathText content={sentence} />
+            </span>
+        </div>
+    );
+}
+
+function FmsGapRow({
+    gapKey,
+    sentence,
+    onClear,
+}: {
+    gapKey: string;
+    sentence?: string;
+    onClear: () => void;
+}) {
+    const { isOver, setNodeRef } = useDroppable({ id: `fms-gap-${gapKey}` });
+    const gapLabel = gapKey.replace("GAP_", "");
+
+    return (
+        <div
+            ref={setNodeRef}
+            className={cn(
+                "flex min-h-14 items-stretch overflow-hidden rounded-lg border border-[#6d86bb] bg-white transition-colors",
+                isOver ? "ring-2 ring-blue-400" : "shadow-sm",
+            )}
+        >
+            <div className="flex w-24 shrink-0 items-center justify-center bg-[#6d86bb] px-3 text-sm font-medium text-white sm:w-32">
+                Gap {gapLabel}
+            </div>
+            {sentence ? (
+                <button
+                    type="button"
+                    onClick={onClear}
+                    className="group relative flex min-w-0 flex-1 items-center gap-2 bg-white px-3 py-2 pr-10 text-left text-sm text-slate-700"
+                    title="Click to remove this sentence"
+                >
+                    <span className="min-w-0">
+                        <MathText content={sentence} />
+                    </span>
+                    <span
+                        aria-hidden="true"
+                        className="absolute right-2 top-2 flex h-4 w-4 items-center justify-center rounded-full bg-slate-200 text-slate-500 transition-colors group-hover:bg-slate-300 group-hover:text-slate-700"
+                    >
+                        <X className="h-3 w-3" />
+                    </span>
+                </button>
+            ) : (
+                <span className="flex min-w-0 flex-1 items-center px-3 text-sm italic text-slate-400">
+                    Drag a sentence here
+                </span>
+            )}
+        </div>
+    );
+}
+
+function FmsSentenceDragOverlay({ sentence }: { sentence: string }) {
+    return (
+        <div className="flex max-w-md items-start gap-2 rounded-lg border-2 border-[#6d86bb] bg-white p-3 text-sm text-slate-700 shadow-xl">
+            <GripVertical className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+            <span className="flex-1">
+                <MathText content={sentence} />
+            </span>
+        </div>
+    );
+}
+
+export function FmsSolutionPanel({
+    sentences,
+    studentMapping,
+    correctMapping,
+}: {
+    sentences: string[];
+    studentMapping: Record<string, number>;
+    correctMapping: Record<string, number>;
+}) {
+    const usedSentenceIndices = new Set(Object.values(studentMapping));
+    const gapEntries = Object.keys(correctMapping).sort(
+        (a, b) => Number(a.replace(/\D/g, "")) - Number(b.replace(/\D/g, "")),
+    );
+
+    return (
+        <div className="space-y-4">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Unselected sentences
+                </p>
+                <div className="space-y-2">
+                    {sentences.map((sentence, sentenceIdx) => {
+                        if (usedSentenceIndices.has(sentenceIdx)) return null;
+                        return (
+                            <div
+                                key={`fms-solution-unused-${sentenceIdx}`}
+                                className="flex items-start gap-2 rounded-lg border border-gray-200 bg-white p-3 text-sm text-gray-700"
+                            >
+                                <Badge
+                                    variant="outline"
+                                    className="h-5 w-5 shrink-0 rounded-full p-0 text-xs"
+                                >
+                                    {String.fromCharCode(65 + sentenceIdx)}
+                                </Badge>
+                                <span className="flex-1">
+                                    <MathText content={sentence} />
+                                </span>
+                            </div>
+                        );
+                    })}
+                    {sentences.every((_, sentenceIdx) =>
+                        usedSentenceIndices.has(sentenceIdx),
+                    ) && (
+                        <p className="py-3 text-center text-sm italic text-slate-400">
+                            All sentences have been placed.
+                        </p>
+                    )}
+                </div>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Dropped answers
+                </p>
+                <div className="space-y-2">
+                    {gapEntries.map((gapKey) => {
+                        const studentIdx = studentMapping[gapKey];
+                        const correctIdx = correctMapping[gapKey];
+                        const isCorrect = studentIdx === correctIdx;
+                        return (
+                            <div
+                                key={`fms-solution-drop-${gapKey}`}
+                                className="flex min-h-14 items-stretch overflow-hidden rounded-lg border border-[#6d86bb] bg-white"
+                            >
+                                <div className="flex w-24 shrink-0 items-center justify-center bg-[#6d86bb] px-3 text-sm font-medium text-white sm:w-32">
+                                    {gapKey.replace("GAP_", "Gap ")}
+                                </div>
+                                <div
+                                    className={cn(
+                                        "flex min-w-0 flex-1 items-center gap-2 px-3 py-2 pr-10 text-sm",
+                                        isCorrect
+                                            ? "text-emerald-700"
+                                            : "text-rose-700",
+                                    )}
+                                >
+                                    <span className="min-w-0 flex-1">
+                                        {studentIdx !== undefined ? (
+                                            <MathText
+                                                content={sentences[studentIdx]}
+                                            />
+                                        ) : (
+                                            <span className="italic text-slate-400">
+                                                Not answered
+                                            </span>
+                                        )}
+                                    </span>
+                                    {isCorrect ? (
+                                        <CheckCircle className="h-4 w-4 shrink-0 text-emerald-500" />
+                                    ) : (
+                                        <XCircle className="h-4 w-4 shrink-0 text-rose-500" />
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50/60 p-4">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-emerald-700">
+                    Correct answers
+                </p>
+                <div className="space-y-2">
+                    {gapEntries.map((gapKey) => (
+                        <div
+                            key={`fms-solution-correct-${gapKey}`}
+                            className="flex min-h-14 items-stretch overflow-hidden rounded-lg border border-[#6d86bb] bg-white"
+                        >
+                            <div className="flex w-24 shrink-0 items-center justify-center bg-[#6d86bb] px-3 text-sm font-medium text-white sm:w-32">
+                                {gapKey.replace("GAP_", "Gap ")}
+                            </div>
+                            <div className="flex min-w-0 flex-1 items-center px-3 py-2 text-sm text-slate-700">
+                                <MathText
+                                    content={sentences[correctMapping[gapKey]]}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export const FillMissingSentenceRenderer = memo(
     ({ content, selected, onSelect }: FillMissingSentenceRendererProps) => {
         const mapping = selected || {};
+        const [activeSentenceIndex, setActiveSentenceIndex] = useState<
+            number | null
+        >(null);
 
         // Stable shuffled sentence order (deterministic per sentence set)
         const shuffledSentenceIndices = useMemo(() => {
@@ -435,29 +710,46 @@ export const FillMissingSentenceRenderer = memo(
             return seededShuffle(indices, seed);
         }, [content.sentences]);
 
+        const { title: passageTitle, text: passageWithGaps } = useMemo(
+            () =>
+                extractPassageTitleAndText(
+                    content.passage_with_gaps,
+                    (
+                        content as unknown as {
+                            title?: string;
+                            passage_title?: string;
+                        }
+                    ).title ||
+                        (
+                            content as unknown as {
+                                title?: string;
+                                passage_title?: string;
+                            }
+                        ).passage_title,
+                ),
+            [content],
+        );
+
         // Find gap markers in passage
         const gapPattern = /\{(GAP_\d+)\}/g;
         const parts: Array<{ type: "text" | "gap"; value: string }> = [];
         let lastIndex = 0;
         let match;
 
-        while ((match = gapPattern.exec(content.passage_with_gaps)) !== null) {
+        while ((match = gapPattern.exec(passageWithGaps)) !== null) {
             if (match.index > lastIndex) {
                 parts.push({
                     type: "text",
-                    value: content.passage_with_gaps.slice(
-                        lastIndex,
-                        match.index,
-                    ),
+                    value: passageWithGaps.slice(lastIndex, match.index),
                 });
             }
             parts.push({ type: "gap", value: match[1] });
             lastIndex = match.index + match[0].length;
         }
-        if (lastIndex < content.passage_with_gaps.length) {
+        if (lastIndex < passageWithGaps.length) {
             parts.push({
                 type: "text",
-                value: content.passage_with_gaps.slice(lastIndex),
+                value: passageWithGaps.slice(lastIndex),
             });
         }
 
@@ -469,115 +761,155 @@ export const FillMissingSentenceRenderer = memo(
             if (sentenceIndex === -1) {
                 delete newMapping[gapKey];
             } else {
+                for (const [key, value] of Object.entries(newMapping)) {
+                    if (key !== gapKey && value === sentenceIndex) {
+                        delete newMapping[key];
+                    }
+                }
                 newMapping[gapKey] = sentenceIndex;
             }
             onSelect(newMapping);
         };
 
+        const sensors = useSensors(
+            useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+        );
+
+        const handleDragEnd = ({ active, over }: DragEndEvent) => {
+            setActiveSentenceIndex(null);
+            if (
+                !over ||
+                typeof active.id !== "string" ||
+                typeof over.id !== "string"
+            )
+                return;
+            const sentenceMatch = active.id.match(/^fms-sentence-(\d+)$/);
+            const gapMatch = over.id.match(/^fms-gap-(GAP_\d+)$/);
+            if (!sentenceMatch || !gapMatch) return;
+            handleSelect(gapMatch[1], Number(sentenceMatch[1]));
+        };
+
+        const handleDragStart = ({
+            active,
+        }: {
+            active: { id: string | number };
+        }) => {
+            const sentenceMatch = String(active.id).match(
+                /^fms-sentence-(\d+)$/,
+            );
+            setActiveSentenceIndex(
+                sentenceMatch ? Number(sentenceMatch[1]) : null,
+            );
+        };
+
+        const gapKeys = parts
+            .filter((part) => part.type === "gap")
+            .map((part) => part.value);
+
         return (
-            <div className="space-y-6">
-                {/* Passage with gaps */}
-                <div className="text-base leading-relaxed text-foreground whitespace-pre-line">
-                    {parts.map((part, i) => {
-                        if (part.type === "text") {
-                            return (
-                                <span key={`fms-text-${i}`}>
-                                    <ImageEnhancedText
-                                        content={part.value}
-                                        images={content.passage_images}
-                                    />
-                                </span>
-                            );
-                        }
-                        const hasSelection =
-                            mapping[part.value] !== undefined &&
-                            mapping[part.value] !== -1;
-                        return (
-                            <Select
-                                key={`fms-gap-${i}`}
-                                value={
-                                    hasSelection
-                                        ? String(mapping[part.value])
-                                        : ""
+            <DndContext
+                sensors={sensors}
+                onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
+                onDragCancel={() => setActiveSentenceIndex(null)}
+            >
+                <div className="grid h-full min-h-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(24rem,0.85fr)]">
+                    <div className="min-h-0 min-w-0 overflow-y-auto pr-2">
+                        {passageTitle && (
+                            <h3 className="text-lg font-bold text-[#1a2744] text-center">
+                                {passageTitle}
+                            </h3>
+                        )}
+                        <div className="text-base leading-relaxed text-foreground whitespace-pre-line">
+                            {parts.map((part, i) => {
+                                if (part.type === "text") {
+                                    return (
+                                        <span key={`fms-text-${i}`}>
+                                            <ImageEnhancedText
+                                                content={part.value}
+                                                images={content.passage_images}
+                                            />
+                                        </span>
+                                    );
                                 }
-                                onValueChange={(val) =>
-                                    handleSelect(part.value, parseInt(val))
-                                }
-                            >
-                                <SelectTrigger
-                                    className={cn(
-                                        "mx-1 inline-flex h-8 w-auto min-w-48 max-w-72 text-sm",
-                                        hasSelection &&
-                                            "border-[#2563eb]/60 bg-blue-50/50",
-                                    )}
-                                >
-                                    <SelectValue placeholder="Select a sentence..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {shuffledSentenceIndices.map((origIdx) => (
-                                        <SelectItem
-                                            key={`fms-sentence-${origIdx}`}
-                                            value={String(origIdx)}
-                                            disabled={
-                                                usedIndices.has(origIdx) &&
-                                                mapping[part.value] !== origIdx
-                                            }
-                                        >
-                                            <MathText
-                                                content={
+
+                                const gapIndex = gapKeys.indexOf(part.value);
+                                return (
+                                    <span
+                                        key={`fms-gap-marker-${i}`}
+                                        className="mx-1 whitespace-nowrap text-sm font-extrabold text-slate-700"
+                                    >
+                                        ({String.fromCharCode(65 + gapIndex)}
+                                        )......
+                                    </span>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="flex min-h-0 flex-col overflow-y-auto rounded-lg border border-slate-200 bg-slate-50">
+                        <div className="min-h-[50%] shrink-0 p-4">
+                            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                Sentences
+                            </h4>
+                            <div className="space-y-2">
+                                {shuffledSentenceIndices.filter(
+                                    (origIdx) => !usedIndices.has(origIdx),
+                                ).length === 0 ? (
+                                    <p className="py-4 text-center text-sm italic text-slate-400">
+                                        All sentences have been placed.
+                                    </p>
+                                ) : (
+                                    shuffledSentenceIndices
+                                        .filter(
+                                            (origIdx) =>
+                                                !usedIndices.has(origIdx),
+                                        )
+                                        .map((origIdx, displayIdx) => (
+                                            <FmsSentenceCard
+                                                key={`fms-sentence-${origIdx}`}
+                                                index={origIdx}
+                                                displayIndex={displayIdx}
+                                                sentence={
                                                     content.sentences[origIdx]
                                                 }
+                                                isUsed={false}
                                             />
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        );
-                    })}
-                </div>
-
-                <Separator />
-
-                {/* Available sentences reference */}
-                <div>
-                    <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-                        Available Sentences
-                    </h4>
-                    <div className="space-y-2">
-                        {shuffledSentenceIndices.map((origIdx, displayIdx) => {
-                            const isUsed = usedIndices.has(origIdx);
-                            return (
-                                <div
-                                    key={`fms-ref-${origIdx}`}
-                                    className={cn(
-                                        "text-sm px-3 py-2.5 rounded-lg flex items-start gap-2.5 transition-all",
-                                        isUsed
-                                            ? "bg-blue-50 text-blue-600/60 line-through"
-                                            : "bg-gray-50 text-gray-700 border border-gray-200",
-                                    )}
-                                >
-                                    <Badge
-                                        variant={isUsed ? "default" : "outline"}
-                                        className={cn(
-                                            "shrink-0 text-xs h-5 w-5 flex items-center justify-center p-0 rounded-full font-semibold",
-                                            isUsed
-                                                ? "bg-[#2563eb]/80"
-                                                : "text-gray-500",
-                                        )}
-                                    >
-                                        {String.fromCharCode(65 + displayIdx)}
-                                    </Badge>
-                                    <span className="flex-1">
-                                        <MathText
-                                            content={content.sentences[origIdx]}
-                                        />
-                                    </span>
-                                </div>
-                            );
-                        })}
+                                        ))
+                                )}
+                            </div>
+                        </div>
+                        <div className="min-h-[50%] shrink-0 border-t border-slate-200 bg-white p-4">
+                            <h4 className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                                Drop answers
+                            </h4>
+                            <div className="space-y-2">
+                                {gapKeys.map((gapKey) => (
+                                    <FmsGapRow
+                                        key={gapKey}
+                                        gapKey={gapKey}
+                                        sentence={
+                                            mapping[gapKey] !== undefined
+                                                ? content.sentences[
+                                                      mapping[gapKey]
+                                                  ]
+                                                : undefined
+                                        }
+                                        onClear={() => handleSelect(gapKey, -1)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+                <DragOverlay>
+                    {activeSentenceIndex !== null ? (
+                        <FmsSentenceDragOverlay
+                            sentence={content.sentences[activeSentenceIndex]}
+                        />
+                    ) : null}
+                </DragOverlay>
+            </DndContext>
         );
     },
 );

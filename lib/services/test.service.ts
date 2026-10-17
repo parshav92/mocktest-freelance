@@ -1364,7 +1364,7 @@ export class TestService {
             case "fill_missing_sentence": {
                 const correct = correctAnswer as FillMissingSentenceAnswer;
 
-                if (typeof selected !== "object" || Array.isArray(selected))
+                if (!selected || typeof selected !== "object" || Array.isArray(selected))
                     return false;
 
                 // Validate structure
@@ -1378,7 +1378,19 @@ export class TestService {
 
                 const selectedMapping = selected as Record<string, number>;
                 return Object.entries(correct.mapping).every(
-                    ([key, value]) => selectedMapping[key] === value,
+                    ([key, value]) => {
+                        if (selectedMapping[key] === value) return true;
+                        // Key normalization fallback (e.g. "GAP_1" vs "gap_1" vs "1" or "GAP_A")
+                        const targetKey = key.toLowerCase().trim();
+                        for (const [sKey, sVal] of Object.entries(selectedMapping)) {
+                            const curKey = sKey.toLowerCase().trim();
+                            if (curKey === targetKey && sVal === value) return true;
+                            const num1 = targetKey.replace(/\D/g, "");
+                            const num2 = curKey.replace(/\D/g, "");
+                            if (num1 && num1 === num2 && sVal === value) return true;
+                        }
+                        return false;
+                    },
                 );
             }
 

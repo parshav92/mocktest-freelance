@@ -23,7 +23,22 @@ type Role = "student" | "parent" | null;
 type AuthMode = "signin" | "signup";
 
 function AuthPageInner() {
-    const [selectedRole, setSelectedRole] = useState<Role>(null);
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const roleParam = searchParams.get("role") as Role;
+    const redirectParam = searchParams.get("redirect");
+    const redirectTo = redirectParam || "/dashboard";
+    const isTrialAuth = !!redirectParam?.includes("free-trial");
+
+    const initialRole: Role =
+        roleParam === "parent" || roleParam === "student"
+            ? roleParam
+            : redirectParam?.includes("free-trial")
+              ? "parent"
+              : null;
+
+    const [selectedRole, setSelectedRole] = useState<Role>(initialRole);
+    const [hasUserResetRole, setHasUserResetRole] = useState(false);
     const [authMode, setAuthMode] = useState<AuthMode>("signin");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -31,14 +46,20 @@ function AuthPageInner() {
     const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
     const [checking, setChecking] = useState(true);
 
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const redirectTo = searchParams.get("redirect") || "/dashboard";
     const supabase = createClient();
+
+    useEffect(() => {
+        if (hasUserResetRole) return;
+        if (roleParam === "parent" || roleParam === "student") {
+            setSelectedRole(roleParam);
+        } else if (redirectParam?.includes("free-trial")) {
+            setSelectedRole("parent");
+        }
+    }, [roleParam, redirectParam, hasUserResetRole]);
 
     const getAuthCallbackUrl = () => {
         const callbackUrl = new URL("/auth/callback", window.location.origin);
-        callbackUrl.searchParams.set("redirect", "/dashboard");
+        callbackUrl.searchParams.set("redirect", redirectTo);
         return callbackUrl.toString();
     };
 
@@ -99,7 +120,7 @@ function AuthPageInner() {
         const fullName = formData.get("fullName") as string;
 
         if (authMode === "signup") {
-            const { error } = await supabase.auth.signUp({
+            const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
                 options: {
@@ -113,6 +134,8 @@ function AuthPageInner() {
 
             if (error) {
                 setError(error.message);
+            } else if (data?.session) {
+                window.location.href = redirectTo;
             } else {
                 setMessage("Check your email to confirm your account.");
                 setConfirmationEmail(email);
@@ -225,6 +248,7 @@ function AuthPageInner() {
     };
 
     const resetSelection = () => {
+        setHasUserResetRole(true);
         setSelectedRole(null);
         setError(null);
         setMessage(null);
@@ -563,12 +587,18 @@ function AuthPageInner() {
                                         <h1 className="text-2xl font-bold tracking-tight mb-2 text-slate-900">
                                             {authMode === "signin"
                                                 ? "Welcome Back"
-                                                : "Create Account"}
+                                                : isTrialAuth
+                                                    ? "Start Free Trial"
+                                                    : "Create Account"}
                                         </h1>
                                         <p className="text-slate-600 text-sm">
                                             {authMode === "signin"
-                                                ? "Sign in to manage your students"
-                                                : "Get started with your parent account"}
+                                                ? isTrialAuth
+                                                    ? "Sign in to start your free trial"
+                                                    : "Sign in to manage your students"
+                                                : isTrialAuth
+                                                    ? "Create a parent account to start your free trial"
+                                                    : "Get started with your parent account"}
                                         </p>
                                     </div>
 
@@ -610,16 +640,6 @@ function AuthPageInner() {
                                                 required
                                                 disabled={isLoading}
                                             />
-                                            {authMode === "signin" && (
-                                                <div className="flex justify-end">
-                                                    <Link
-                                                        href="/auth/forgot-password"
-                                                        className="text-xs font-medium text-sky-600 transition-colors hover:text-sky-700"
-                                                    >
-                                                        Forgot password?
-                                                    </Link>
-                                                </div>
-                                            )}
                                         </div>
                                         <div className="space-y-2">
                                             <Label

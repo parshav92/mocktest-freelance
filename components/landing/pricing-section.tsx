@@ -57,10 +57,6 @@ const PricingSection = ({ plans }: PricingSectionProps) => {
         <section id="pricing" className="w-full bg-slate-50 py-24 px-6">
             <div className="max-w-6xl mx-auto">
                 <div className="text-center mb-16">
-                    <span className="inline-flex items-center gap-2 bg-sky-50 border border-sky-100 rounded-full px-4 py-2 text-sky-600 text-[10px] font-bold tracking-[0.2em] uppercase mb-6">
-                        <Sparkles className="w-3 h-3" />
-                        Pricing
-                    </span>
                     <h2
                         className="text-3xl md:text-5xl font-bold text-slate-900 mb-4"
                         style={{ letterSpacing: "-0.04em" }}

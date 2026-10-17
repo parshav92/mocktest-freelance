@@ -74,7 +74,7 @@ function PassageBody({ passage }: { passage: Passage }) {
     return (
         <div className="p-6 md:p-8">
             {passage.title && (
-                <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                <h3 className="text-lg font-bold text-[#1a2744] mb-4 text-center">
                     {passage.title}
                 </h3>
             )}

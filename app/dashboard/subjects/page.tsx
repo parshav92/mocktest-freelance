@@ -52,25 +52,28 @@ import {
 import { cn } from "@/lib/utils";
 
 // Icon mapping
-const ICON_COMPONENTS: Record<string, React.ComponentType<{ className?: string }>> = {
+const ICON_COMPONENTS: Record<
+    string,
+    React.ComponentType<{ className?: string }>
+> = {
     "book-open": BookOpen,
-    "pencil": Pencil,
-    "calculator": Calculator,
-    "brain": Brain,
-    "flask": TestTube,
-    "globe": Globe,
-    "music": Music,
-    "palette": Palette,
-    "code": Code,
-    "microscope": Microscope,
-    "atom": Atom,
-    "lightbulb": Lightbulb,
-    "compass": Compass,
-    "ruler": Ruler,
-    "library": Library,
+    pencil: Pencil,
+    calculator: Calculator,
+    brain: Brain,
+    flask: TestTube,
+    globe: Globe,
+    music: Music,
+    palette: Palette,
+    code: Code,
+    microscope: Microscope,
+    atom: Atom,
+    lightbulb: Lightbulb,
+    compass: Compass,
+    ruler: Ruler,
+    library: Library,
     "graduation-cap": GraduationCap,
-    "languages": Languages,
-    "history": History,
+    languages: Languages,
+    history: History,
 };
 
 interface Subject {
@@ -156,7 +159,9 @@ export default function AdminSubjectsPage() {
             setSubjects(data.subjects || []);
             setAvailableIcons(data.available_icons || []);
         } catch (err) {
-            setError(err instanceof Error ? err.message : "Failed to load subjects");
+            setError(
+                err instanceof Error ? err.message : "Failed to load subjects",
+            );
         } finally {
             setIsLoading(false);
         }
@@ -171,7 +176,10 @@ export default function AdminSubjectsPage() {
         setForm((prev) => ({
             ...prev,
             name,
-            slug: name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+            slug: name
+                .toLowerCase()
+                .replace(/\s+/g, "-")
+                .replace(/[^a-z0-9-]/g, ""),
         }));
     };
 
@@ -192,7 +200,7 @@ export default function AdminSubjectsPage() {
     // Check if code prefix is unique
     const isCodePrefixUnique = (prefix: string): boolean => {
         return !subjects.some(
-            (s) => s.code_prefix?.toUpperCase() === prefix.toUpperCase()
+            (s) => s.code_prefix?.toUpperCase() === prefix.toUpperCase(),
         );
     };
 
@@ -210,7 +218,9 @@ export default function AdminSubjectsPage() {
                 throw new Error("Code prefix is required");
             }
             if (!isCodePrefixUnique(form.code_prefix)) {
-                throw new Error(`Code prefix "${form.code_prefix}" is already in use`);
+                throw new Error(
+                    `Code prefix "${form.code_prefix}" is already in use`,
+                );
             }
 
             // Build instructions JSONB
@@ -268,7 +278,10 @@ export default function AdminSubjectsPage() {
         } catch (err) {
             setSubmitResult({
                 success: false,
-                message: err instanceof Error ? err.message : "Failed to create subject",
+                message:
+                    err instanceof Error
+                        ? err.message
+                        : "Failed to create subject",
             });
         } finally {
             setIsSubmitting(false);
@@ -315,8 +328,9 @@ export default function AdminSubjectsPage() {
                             <DialogHeader>
                                 <DialogTitle>Add New Subject</DialogTitle>
                                 <DialogDescription>
-                                    Create a new test subject. Students will be able to take
-                                    practice tests for this subject.
+                                    Create a new test subject. Students will be
+                                    able to take practice tests for this
+                                    subject.
                                 </DialogDescription>
                             </DialogHeader>
 
@@ -324,12 +338,16 @@ export default function AdminSubjectsPage() {
                                 {/* Basic Info */}
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="name">Subject Name *</Label>
+                                        <Label htmlFor="name">
+                                            Subject Name *
+                                        </Label>
                                         <Input
                                             id="name"
                                             placeholder="e.g., Science"
                                             value={form.name}
-                                            onChange={(e) => handleNameChange(e.target.value)}
+                                            onChange={(e) =>
+                                                handleNameChange(e.target.value)
+                                            }
                                         />
                                     </div>
                                     <div className="space-y-2">
@@ -368,10 +386,17 @@ export default function AdminSubjectsPage() {
                                                 onChange={(e) =>
                                                     setForm((prev) => ({
                                                         ...prev,
-                                                        code_prefix: e.target.value
-                                                            .toUpperCase()
-                                                            .replace(/[^A-Z]/g, "")
-                                                            .substring(0, 5),
+                                                        code_prefix:
+                                                            e.target.value
+                                                                .toUpperCase()
+                                                                .replace(
+                                                                    /[^A-Z]/g,
+                                                                    "",
+                                                                )
+                                                                .substring(
+                                                                    0,
+                                                                    5,
+                                                                ),
                                                     }))
                                                 }
                                                 className="font-mono uppercase w-24"
@@ -384,7 +409,10 @@ export default function AdminSubjectsPage() {
                                                 onClick={() =>
                                                     setForm((prev) => ({
                                                         ...prev,
-                                                        code_prefix: generateCodePrefix(prev.name),
+                                                        code_prefix:
+                                                            generateCodePrefix(
+                                                                prev.name,
+                                                            ),
                                                     }))
                                                 }
                                             >
@@ -392,23 +420,31 @@ export default function AdminSubjectsPage() {
                                             </Button>
                                         </div>
                                         <p className="text-xs text-zinc-500">
-                                            Used in question codes: {form.code_prefix || "XX"}_001,{" "}
+                                            Used in question codes:{" "}
+                                            {form.code_prefix || "XX"}_001,{" "}
                                             {form.code_prefix || "XX"}_002, etc.
                                         </p>
                                         {form.code_prefix &&
-                                            !isCodePrefixUnique(form.code_prefix) && (
+                                            !isCodePrefixUnique(
+                                                form.code_prefix,
+                                            ) && (
                                                 <p className="text-xs text-red-500">
-                                                    This prefix is already in use
+                                                    This prefix is already in
+                                                    use
                                                 </p>
                                             )}
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="description">Description</Label>
+                                        <Label htmlFor="description">
+                                            Description
+                                        </Label>
                                         <textarea
                                             id="description"
                                             placeholder="Brief description of the subject..."
                                             value={form.description}
-                                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                                            onChange={(
+                                                e: React.ChangeEvent<HTMLTextAreaElement>,
+                                            ) =>
                                                 setForm((prev) => ({
                                                     ...prev,
                                                     description: e.target.value,
@@ -440,11 +476,14 @@ export default function AdminSubjectsPage() {
                                                     "p-3 rounded-lg border-2 transition-all hover:bg-zinc-50",
                                                     form.icon === iconName
                                                         ? "border-emerald-500 bg-emerald-50"
-                                                        : "border-zinc-200"
+                                                        : "border-zinc-200",
                                                 )}
                                                 title={iconName}
                                             >
-                                                {renderIcon(iconName, "h-5 w-5 mx-auto")}
+                                                {renderIcon(
+                                                    iconName,
+                                                    "h-5 w-5 mx-auto",
+                                                )}
                                             </button>
                                         ))}
                                     </div>
@@ -459,7 +498,9 @@ export default function AdminSubjectsPage() {
                                     </Label>
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="duration">Duration (minutes)</Label>
+                                            <Label htmlFor="duration">
+                                                Duration (minutes)
+                                            </Label>
                                             <Input
                                                 id="duration"
                                                 type="number"
@@ -469,7 +510,10 @@ export default function AdminSubjectsPage() {
                                                 onChange={(e) =>
                                                     setForm((prev) => ({
                                                         ...prev,
-                                                        duration_mins: parseInt(e.target.value) || 45,
+                                                        duration_mins:
+                                                            parseInt(
+                                                                e.target.value,
+                                                            ) || 45,
                                                     }))
                                                 }
                                             />
@@ -488,7 +532,9 @@ export default function AdminSubjectsPage() {
                                                     setForm((prev) => ({
                                                         ...prev,
                                                         total_questions:
-                                                            parseInt(e.target.value) || 40,
+                                                            parseInt(
+                                                                e.target.value,
+                                                            ) || 40,
                                                     }))
                                                 }
                                             />
@@ -503,7 +549,10 @@ export default function AdminSubjectsPage() {
                                     </Label>
                                     <div className="grid grid-cols-3 gap-4">
                                         <div className="space-y-2">
-                                            <Label htmlFor="easy" className="text-green-600">
+                                            <Label
+                                                htmlFor="easy"
+                                                className="text-green-600"
+                                            >
                                                 Easy
                                             </Label>
                                             <Input
@@ -514,13 +563,19 @@ export default function AdminSubjectsPage() {
                                                 onChange={(e) =>
                                                     setForm((prev) => ({
                                                         ...prev,
-                                                        easy_count: parseInt(e.target.value) || 0,
+                                                        easy_count:
+                                                            parseInt(
+                                                                e.target.value,
+                                                            ) || 0,
                                                     }))
                                                 }
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="medium" className="text-amber-600">
+                                            <Label
+                                                htmlFor="medium"
+                                                className="text-amber-600"
+                                            >
                                                 Medium
                                             </Label>
                                             <Input
@@ -531,13 +586,19 @@ export default function AdminSubjectsPage() {
                                                 onChange={(e) =>
                                                     setForm((prev) => ({
                                                         ...prev,
-                                                        medium_count: parseInt(e.target.value) || 0,
+                                                        medium_count:
+                                                            parseInt(
+                                                                e.target.value,
+                                                            ) || 0,
                                                     }))
                                                 }
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label htmlFor="hard" className="text-red-600">
+                                            <Label
+                                                htmlFor="hard"
+                                                className="text-red-600"
+                                            >
                                                 Hard
                                             </Label>
                                             <Input
@@ -548,7 +609,10 @@ export default function AdminSubjectsPage() {
                                                 onChange={(e) =>
                                                     setForm((prev) => ({
                                                         ...prev,
-                                                        hard_count: parseInt(e.target.value) || 0,
+                                                        hard_count:
+                                                            parseInt(
+                                                                e.target.value,
+                                                            ) || 0,
                                                     }))
                                                 }
                                             />
@@ -556,8 +620,11 @@ export default function AdminSubjectsPage() {
                                     </div>
                                     <p className="text-xs text-zinc-500">
                                         Total:{" "}
-                                        {form.easy_count + form.medium_count + form.hard_count}{" "}
-                                        questions (should match Total Questions above)
+                                        {form.easy_count +
+                                            form.medium_count +
+                                            form.hard_count}{" "}
+                                        questions (should match Total Questions
+                                        above)
                                     </p>
                                 </div>
 
@@ -569,18 +636,22 @@ export default function AdminSubjectsPage() {
                                         Test Instructions
                                     </Label>
                                     <p className="text-sm text-zinc-500">
-                                        These instructions will be shown to students before they
-                                        start the test. Use the editor to format text.
+                                        These instructions will be shown to
+                                        students before they start the test. Use
+                                        the editor to format text.
                                     </p>
                                     <div className="space-y-2">
-                                        <Label htmlFor="instruction_title">Page Title</Label>
+                                        <Label htmlFor="instruction_title">
+                                            Page Title
+                                        </Label>
                                         <Input
                                             id="instruction_title"
                                             value={form.instruction_title}
                                             onChange={(e) =>
                                                 setForm((prev) => ({
                                                     ...prev,
-                                                    instruction_title: e.target.value,
+                                                    instruction_title:
+                                                        e.target.value,
                                                 }))
                                             }
                                         />
@@ -605,7 +676,9 @@ export default function AdminSubjectsPage() {
                                 {submitResult && (
                                     <Alert
                                         variant={
-                                            submitResult.success ? "default" : "destructive"
+                                            submitResult.success
+                                                ? "default"
+                                                : "destructive"
                                         }
                                     >
                                         {submitResult.success ? (
@@ -633,7 +706,9 @@ export default function AdminSubjectsPage() {
                                             isSubmitting ||
                                             !form.name.trim() ||
                                             !form.code_prefix ||
-                                            !isCodePrefixUnique(form.code_prefix)
+                                            !isCodePrefixUnique(
+                                                form.code_prefix,
+                                            )
                                         }
                                         className="bg-emerald-600 hover:bg-emerald-700"
                                     >
@@ -677,7 +752,9 @@ export default function AdminSubjectsPage() {
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
                             <Card>
                                 <CardHeader className="pb-2">
-                                    <CardDescription>Total Subjects</CardDescription>
+                                    <CardDescription>
+                                        Total Subjects
+                                    </CardDescription>
                                     <CardTitle className="text-2xl">
                                         {subjects.length}
                                     </CardTitle>
@@ -685,19 +762,26 @@ export default function AdminSubjectsPage() {
                             </Card>
                             <Card>
                                 <CardHeader className="pb-2">
-                                    <CardDescription>Active Subjects</CardDescription>
+                                    <CardDescription>
+                                        Active Subjects
+                                    </CardDescription>
                                     <CardTitle className="text-2xl">
-                                        {subjects.filter((s) => s.is_active).length}
+                                        {
+                                            subjects.filter((s) => s.is_active)
+                                                .length
+                                        }
                                     </CardTitle>
                                 </CardHeader>
                             </Card>
                             <Card>
                                 <CardHeader className="pb-2">
-                                    <CardDescription>Total Questions</CardDescription>
+                                    <CardDescription>
+                                        Total Questions
+                                    </CardDescription>
                                     <CardTitle className="text-2xl">
                                         {subjects.reduce(
                                             (sum, s) => sum + s.question_count,
-                                            0
+                                            0,
                                         )}
                                     </CardTitle>
                                 </CardHeader>
@@ -718,7 +802,7 @@ export default function AdminSubjectsPage() {
                                                 <div className="p-3 rounded-lg bg-zinc-100">
                                                     {renderIcon(
                                                         subject.icon,
-                                                        "h-6 w-6 text-zinc-700"
+                                                        "h-6 w-6 text-zinc-700",
                                                     )}
                                                 </div>
 
@@ -751,7 +835,8 @@ export default function AdminSubjectsPage() {
                                                                 Prefix:
                                                             </span>
                                                             <code className="px-1.5 py-0.5 bg-zinc-100 rounded font-mono text-xs">
-                                                                {subject.code_prefix || "—"}
+                                                                {subject.code_prefix ||
+                                                                    "—"}
                                                             </code>
                                                         </div>
                                                         <div className="flex items-center gap-1.5">
@@ -767,18 +852,13 @@ export default function AdminSubjectsPage() {
                                                                 Duration:
                                                             </span>
                                                             <span className="text-zinc-700">
-                                                                {subject.duration_mins} min
+                                                                {
+                                                                    subject.duration_mins
+                                                                }{" "}
+                                                                min
                                                             </span>
                                                         </div>
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-zinc-400">
-                                                                Questions:
-                                                            </span>
-                                                            <span className="text-zinc-700">
-                                                                {subject.question_count} /{" "}
-                                                                {subject.total_questions}
-                                                            </span>
-                                                        </div>
+
                                                         {subject.default_template && (
                                                             <div className="flex items-center gap-1.5">
                                                                 <span className="text-zinc-400">
@@ -786,21 +866,24 @@ export default function AdminSubjectsPage() {
                                                                 </span>
                                                                 <span className="text-green-600">
                                                                     {
-                                                                        subject.default_template
+                                                                        subject
+                                                                            .default_template
                                                                             .easy_count
                                                                     }
                                                                     E
                                                                 </span>
                                                                 <span className="text-amber-600">
                                                                     {
-                                                                        subject.default_template
+                                                                        subject
+                                                                            .default_template
                                                                             .medium_count
                                                                     }
                                                                     M
                                                                 </span>
                                                                 <span className="text-red-600">
                                                                     {
-                                                                        subject.default_template
+                                                                        subject
+                                                                            .default_template
                                                                             .hard_count
                                                                     }
                                                                     H
@@ -826,8 +909,8 @@ export default function AdminSubjectsPage() {
                                 {subjects.length === 0 && (
                                     <Card>
                                         <CardContent className="py-12 text-center text-zinc-500">
-                                            No subjects found. Click &quot;Add Subject&quot; to
-                                            create one.
+                                            No subjects found. Click &quot;Add
+                                            Subject&quot; to create one.
                                         </CardContent>
                                     </Card>
                                 )}

@@ -36,7 +36,10 @@ import {
     getUnreferencedImages,
 } from "@/lib/utils/question-content";
 import { InstructionPages } from "@/components/test/instruction-pages";
-import { QuestionRenderer } from "@/components/test/question-renderers";
+import {
+    FmsSolutionPanel,
+    QuestionRenderer,
+} from "@/components/test/question-renderers";
 import {
     ProgressSummary,
     PreSubmitSummary,
@@ -49,6 +52,7 @@ import { useTimer } from "@/hooks/use-timer";
 import { useAntiCheat } from "@/hooks/use-anti-cheat";
 import type { QuestionForTest, Passage, InstructionPage } from "@/types/test";
 import { PassagePanel } from "@/components/test/passage-panel";
+import { extractPassageTitleAndText } from "@/lib/utils/passage";
 
 // ── Types ──────────────────────────────────────────────
 
@@ -133,6 +137,7 @@ export function CustomTestRunner({
     // ── State ──────────────────────────────────────────
     const [phase, setPhase] = useState<Phase>("loading");
     const [error, setError] = useState<string | null>(null);
+    const [isStarting, setIsStarting] = useState(false);
 
     // Test data (fetched from API)
     const [testData, setTestData] = useState<CustomTestData | null>(null);
@@ -280,12 +285,17 @@ export function CustomTestRunner({
     };
 
     const handleStart = async () => {
-        // Enter fullscreen if configured
-        if (TEST_CONFIG.antiCheat.requireFullscreen) {
-            await antiCheat.enterFullscreen();
+        setIsStarting(true);
+        try {
+            // Enter fullscreen if configured
+            if (TEST_CONFIG.antiCheat.requireFullscreen) {
+                await antiCheat.enterFullscreen();
+            }
+            setStartedAt(new Date().toISOString());
+            setPhase("testing");
+        } finally {
+            setIsStarting(false);
         }
-        setStartedAt(new Date().toISOString());
-        setPhase("testing");
     };
 
     const handleWarningDismiss = async () => {
@@ -420,7 +430,7 @@ export function CustomTestRunner({
                     open={true}
                     onConfirm={handleStart}
                     onCancel={() => setPhase("instructions")}
-                    loading={false}
+                    loading={isStarting}
                 />
             </>
         );
@@ -439,9 +449,13 @@ export function CustomTestRunner({
                     </p>
                     <Button
                         onClick={handleStart}
+                        disabled={isStarting}
                         className="bg-white text-[#1a2744] hover:bg-white/90 font-semibold text-base px-10 py-3 h-auto"
                     >
-                        Start Test
+                        {isStarting && (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        )}
+                        {isStarting ? "Starting..." : "Start Test"}
                     </Button>
                 </div>
             </div>
@@ -1209,12 +1223,16 @@ export function CustomTestRunner({
 
     const isFlagged = flaggedSet.has(currentQuestion.id);
     const hasPassage = passages.length > 0;
+    const isFillMissingSentence =
+        currentQuestion.question_type === "fill_missing_sentence";
     const questionLayout: "split" | "stacked" =
-        !hasPassage &&
-        (currentQuestion.question_type === "mcq" ||
-            currentQuestion.question_type === "essay")
+        isFillMissingSentence ||
+        (!hasPassage &&
+            (currentQuestion.question_type === "mcq" ||
+                currentQuestion.question_type === "essay"))
             ? "split"
             : "stacked";
+    const showExternalPassage = hasPassage && !isFillMissingSentence;
 
     return (
         <div className="h-screen flex flex-col bg-[#e8eef3] select-none">
@@ -1290,13 +1308,19 @@ export function CustomTestRunner({
 
             {/* SPLIT PANEL CONTENT */}
             <div className="flex-1 flex overflow-hidden min-h-0">
-                {hasPassage && <PassagePanel passages={passages} />}
+                {showExternalPassage && <PassagePanel passages={passages} />}
 
                 <div
-                    className={`${hasPassage ? "w-1/2" : "w-full"} flex flex-col bg-white min-h-0 overflow-hidden`}
+                    className={`${showExternalPassage ? "w-1/2" : "w-full"} flex flex-col bg-white min-h-0 overflow-hidden`}
                 >
                     {questionLayout === "split" ? (
-                        <div className="flex-1 min-h-0 flex flex-col overflow-hidden p-6 md:p-8">
+                        <div
+                            className={cn(
+                                "flex-1 min-h-0 flex flex-col overflow-hidden p-6 md:p-8",
+                                isFillMissingSentence &&
+                                    "w-full max-w-6xl mx-auto",
+                            )}
+                        >
                             <div className="flex items-center justify-between mb-6 shrink-0">
                                 <span className="bg-[#1a2744] text-white text-sm font-bold px-3 py-1 rounded-lg">
                                     Q{currentIndex + 1}
@@ -1522,6 +1546,10 @@ function ReviewQuestionDisplay({
                       : content.question_image_url
                         ? [content.question_image_url as string]
                         : [];
+            const unreferencedQuestionImages = getUnreferencedImages(
+                questionText,
+                questionImages,
+            );
             const options = content.options as Array<{
                 label: string;
                 text?: string;
@@ -1609,13 +1637,17 @@ function ReviewQuestionDisplay({
                 <>
                     {questionBadge}
                     <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
-                        <ImageEnhancedText content={questionText} block />
+                        <ImageEnhancedText
+                            content={questionText}
+                            images={questionImages}
+                            block
+                        />
                     </div>
-                    {questionImages.length > 0 && (
+                    {unreferencedQuestionImages.length > 0 && (
                         <div
-                            className={`mt-4 grid gap-3 ${questionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
+                            className={`mt-4 grid gap-3 ${unreferencedQuestionImages.length > 1 ? "grid-cols-1 sm:grid-cols-2" : ""}`}
                         >
-                            {questionImages.map((imgUrl, idx) => (
+                            {unreferencedQuestionImages.map((imgUrl, idx) => (
                                 <img
                                     key={`question-img-${idx}`}
                                     src={imgUrl}
@@ -1655,12 +1687,29 @@ function ReviewQuestionDisplay({
         }
 
         case "fill_blank_dropdown": {
-            const passageText = content.passage_text as string;
+            const rawPassageText = content.passage_text as string;
+            const { title: passageTitle, text: passageText } =
+                extractPassageTitleAndText(
+                    rawPassageText,
+                    (
+                        content as unknown as {
+                            title?: string;
+                            passage_title?: string;
+                        }
+                    ).title ||
+                        (
+                            content as unknown as {
+                                title?: string;
+                                passage_title?: string;
+                            }
+                        ).passage_title,
+                );
             const blanks = content.blanks as Array<{
                 correct: string;
                 options: string[];
                 correct_index: number;
             }>;
+            const passageImages = (content.passage_images as string[]) || [];
             const studentAnswers = (question.selected as number[]) || [];
             const correctAnswers =
                 (correctAnswer as { answers?: number[] })?.answers ||
@@ -1674,10 +1723,18 @@ function ReviewQuestionDisplay({
                     {/* Left: Passage with inline student answers + solution */}
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
+                        {passageTitle && (
+                            <h3 className="text-lg font-bold text-[#1a2744] mb-4 text-center">
+                                {passageTitle}
+                            </h3>
+                        )}
                         <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
                             {parts.map((part, index) => (
                                 <span key={`fb-part-${index}`}>
-                                    <ImageEnhancedText content={part} />
+                                    <ImageEnhancedText
+                                        content={part}
+                                        images={passageImages}
+                                    />
                                     {index < blanks.length &&
                                         (() => {
                                             const isCorrectBlank =
@@ -1758,8 +1815,25 @@ function ReviewQuestionDisplay({
         }
 
         case "fill_missing_sentence": {
-            const passageWithGaps = content.passage_with_gaps as string;
+            const rawPassage = content.passage_with_gaps as string;
+            const { title: passageTitle, text: passageWithGaps } =
+                extractPassageTitleAndText(
+                    rawPassage,
+                    (
+                        content as unknown as {
+                            title?: string;
+                            passage_title?: string;
+                        }
+                    ).title ||
+                        (
+                            content as unknown as {
+                                title?: string;
+                                passage_title?: string;
+                            }
+                        ).passage_title,
+                );
             const sentences = content.sentences as string[];
+            const passageImages = (content.passage_images as string[]) || [];
             const studentMapping =
                 (question.selected as Record<string, number>) || {};
             const correctMapping = (
@@ -1790,10 +1864,15 @@ function ReviewQuestionDisplay({
             }
 
             return (
-                <div className="grid grid-cols-2 gap-0 min-h-0">
+                <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-0 min-h-0">
                     {/* Left: Passage with gap results + solution */}
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
+                        {passageTitle && (
+                            <h3 className="text-lg font-bold text-[#1a2744] mb-4 text-center">
+                                {passageTitle}
+                            </h3>
+                        )}
                         <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
                             {textParts.map((part, i) => {
                                 if (part.type === "text") {
@@ -1801,38 +1880,28 @@ function ReviewQuestionDisplay({
                                         <span key={`fms-text-${i}`}>
                                             <ImageEnhancedText
                                                 content={part.value}
+                                                images={passageImages}
                                             />
                                         </span>
                                     );
                                 }
-                                const studentIdx = studentMapping[part.value];
-                                const correctIdx = correctMapping?.[part.value];
-                                const isCorrectGap = studentIdx === correctIdx;
-                                const selectedSentence =
-                                    studentIdx !== undefined
-                                        ? sentences[studentIdx]
-                                        : null;
 
                                 return (
                                     <span
                                         key={`fms-gap-${i}`}
-                                        className={cn(
-                                            "inline-block mx-1 px-3 py-1 rounded-md text-sm font-medium border",
-                                            isCorrectGap
-                                                ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                                                : "bg-rose-50 border-rose-300 text-rose-700",
-                                        )}
+                                        className="mx-1 whitespace-nowrap text-sm font-extrabold text-slate-700"
                                     >
-                                        <ImageEnhancedText
-                                            content={
-                                                selectedSentence || "Empty"
-                                            }
-                                        />
-                                        {isCorrectGap ? (
-                                            <CheckCircle className="inline h-3.5 w-3.5 ml-1 text-emerald-500" />
-                                        ) : (
-                                            <XCircle className="inline h-3.5 w-3.5 ml-1 text-rose-400" />
+                                        (
+                                        {String.fromCharCode(
+                                            64 +
+                                                Number(
+                                                    part.value.replace(
+                                                        /\D/g,
+                                                        "",
+                                                    ),
+                                                ),
                                         )}
+                                        )......
                                     </span>
                                 );
                             })}
@@ -1840,36 +1909,12 @@ function ReviewQuestionDisplay({
                         {solutionBlock}
                     </div>
 
-                    {/* Right: Correct placement */}
                     <div className="p-6 md:p-8">
-                        <div className="p-4 bg-emerald-50/60 rounded-lg border border-emerald-200">
-                            <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-2.5">
-                                Correct Placement
-                            </p>
-                            <div className="space-y-1.5">
-                                {Object.entries(correctMapping || {}).map(
-                                    ([gapKey, sentenceIdx]) => (
-                                        <div
-                                            key={gapKey}
-                                            className="flex items-start gap-2 text-sm"
-                                        >
-                                            <span className="text-xs font-medium text-emerald-600 w-16 shrink-0 pt-0.5">
-                                                {gapKey.replace("_", " ")}
-                                            </span>
-                                            <span className="text-emerald-700">
-                                                <ImageEnhancedText
-                                                    content={
-                                                        sentences[
-                                                            sentenceIdx as number
-                                                        ]
-                                                    }
-                                                />
-                                            </span>
-                                        </div>
-                                    ),
-                                )}
-                            </div>
-                        </div>
+                        <FmsSolutionPanel
+                            sentences={sentences}
+                            studentMapping={studentMapping}
+                            correctMapping={correctMapping || {}}
+                        />
                     </div>
                 </div>
             );
