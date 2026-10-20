@@ -21,7 +21,7 @@ const footerLinks = {
     legals: {
         title: "Legals",
         links: [
-            { label: "Child Safety and Conduct", href: "/terms" },
+            { label: "Child Safety and Conduct", href: "/child-safety" },
             { label: "Terms and Conditions", href: "/terms" },
             { label: "Privacy Policy", href: "/privacy-policy" },
         ],
@@ -72,7 +72,7 @@ interface FooterProps {
 }
 
 const Footer = ({
-    email = "support@selectorial.com",
+    email = "admin@selectorial.com.au",
     facebookUrl = "https://www.facebook.com/share/14tEcUFJw9u/",
     instagramUrl = "https://www.instagram.com/selectorial_nsw",
     copyrightText,
