@@ -35,6 +35,7 @@ import {
 } from "@/lib/utils/question-content";
 import { extractPassageTitleAndText } from "@/lib/utils/passage";
 import { FmsSolutionPanel } from "@/components/test/question-renderers";
+import { getFmsGapLabel } from "@/components/test/question-renderers";
 
 interface ReviewQuestion {
     question_number: number;
@@ -1688,18 +1689,9 @@ function ReviewQuestionDisplay({
                                 return (
                                     <span
                                         key={`fms-gap-${i}`}
-                                        className="mx-1 whitespace-nowrap text-sm font-extrabold text-slate-700"
+                                        className="mx-1 whitespace-nowrap text-lg font-extrabold text-slate-800"
                                     >
-                                        (
-                                        {String.fromCharCode(
-                                            64 +
-                                                Number(
-                                                    part.value.replace(
-                                                        /\D/g,
-                                                        "",
-                                                    ),
-                                                ),
-                                        )}
+                                        ({getFmsGapLabel(part.value)}
                                         )......
                                     </span>
                                 );

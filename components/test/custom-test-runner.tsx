@@ -38,6 +38,7 @@ import {
 import { InstructionPages } from "@/components/test/instruction-pages";
 import {
     FmsSolutionPanel,
+    getFmsGapLabel,
     QuestionRenderer,
 } from "@/components/test/question-renderers";
 import {
@@ -1889,19 +1890,10 @@ function ReviewQuestionDisplay({
                                 return (
                                     <span
                                         key={`fms-gap-${i}`}
-                                        className="mx-1 whitespace-nowrap text-sm font-extrabold text-slate-700"
+                                        className="mx-1 whitespace-nowrap text-lg font-extrabold text-slate-800"
                                     >
-                                        (
-                                        {String.fromCharCode(
-                                            64 +
-                                                Number(
-                                                    part.value.replace(
-                                                        /\D/g,
-                                                        "",
-                                                    ),
-                                                ),
-                                        )}
-                                        )......
+                                        ({getFmsGapLabel(part.value)}
+                                        ).......
                                     </span>
                                 );
                             })}

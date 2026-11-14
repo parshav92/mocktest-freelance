@@ -77,6 +77,13 @@ function seededShuffle(indices: number[], seed: number): number[] {
     return arr;
 }
 
+export function getFmsGapLabel(gapKey: string): string {
+    const gapNumber = Number(gapKey.replace(/\D/g, ""));
+    return Number.isInteger(gapNumber) && gapNumber > 0
+        ? String.fromCharCode(64 + gapNumber)
+        : gapKey;
+}
+
 // ============================================
 // LAYOUT TYPE
 // ============================================
@@ -522,13 +529,13 @@ function FmsGapRow({
     onClear: () => void;
 }) {
     const { isOver, setNodeRef } = useDroppable({ id: `fms-gap-${gapKey}` });
-    const gapLabel = gapKey.replace("GAP_", "");
+    const gapLabel = getFmsGapLabel(gapKey);
 
     return (
         <div
             ref={setNodeRef}
             className={cn(
-                "flex min-h-14 items-stretch overflow-hidden rounded-lg border border-[#6d86bb] bg-white transition-colors",
+                "flex min-h-20 items-stretch overflow-hidden rounded-lg border border-[#6d86bb] bg-white transition-colors",
                 isOver ? "ring-2 ring-blue-400" : "shadow-sm",
             )}
         >
@@ -553,8 +560,8 @@ function FmsGapRow({
                     </span>
                 </button>
             ) : (
-                <span className="flex min-w-0 flex-1 items-center px-3 text-sm italic text-slate-400">
-                    Drag a sentence here
+                <span className="flex min-w-0 flex-1 items-center px-4 text-base italic text-slate-500">
+                    Drop a sentence here
                 </span>
             )}
         </div>
@@ -634,10 +641,10 @@ export function FmsSolutionPanel({
                         return (
                             <div
                                 key={`fms-solution-drop-${gapKey}`}
-                                className="flex min-h-14 items-stretch overflow-hidden rounded-lg border border-[#6d86bb] bg-white"
+                                className="flex min-h-20 items-stretch overflow-hidden rounded-lg border border-[#6d86bb] bg-white"
                             >
                                 <div className="flex w-24 shrink-0 items-center justify-center bg-[#6d86bb] px-3 text-sm font-medium text-white sm:w-32">
-                                    {gapKey.replace("GAP_", "Gap ")}
+                                    Gap {getFmsGapLabel(gapKey)}
                                 </div>
                                 <div
                                     className={cn(
@@ -678,10 +685,10 @@ export function FmsSolutionPanel({
                     {gapEntries.map((gapKey) => (
                         <div
                             key={`fms-solution-correct-${gapKey}`}
-                            className="flex min-h-14 items-stretch overflow-hidden rounded-lg border border-[#6d86bb] bg-white"
+                            className="flex min-h-20 items-stretch overflow-hidden rounded-lg border border-[#6d86bb] bg-white"
                         >
                             <div className="flex w-24 shrink-0 items-center justify-center bg-[#6d86bb] px-3 text-sm font-medium text-white sm:w-32">
-                                {gapKey.replace("GAP_", "Gap ")}
+                                Gap {getFmsGapLabel(gapKey)}
                             </div>
                             <div className="flex min-w-0 flex-1 items-center px-3 py-2 text-sm text-slate-700">
                                 <MathText
@@ -833,14 +840,12 @@ export const FillMissingSentenceRenderer = memo(
                                     );
                                 }
 
-                                const gapIndex = gapKeys.indexOf(part.value);
                                 return (
                                     <span
                                         key={`fms-gap-marker-${i}`}
-                                        className="mx-1 whitespace-nowrap text-sm font-extrabold text-slate-700"
+                                        className="mx-1 whitespace-nowrap text-lg font-extrabold text-slate-800"
                                     >
-                                        ({String.fromCharCode(65 + gapIndex)}
-                                        )......
+                                        ({getFmsGapLabel(part.value)}).......
                                     </span>
                                 );
                             })}
