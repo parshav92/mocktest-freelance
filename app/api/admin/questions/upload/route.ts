@@ -274,15 +274,8 @@ async function insertPassages(
             );
         }
 
-        // Get image URL if exists
-        let imageUrl = null;
-        for (const req of p.imageRequirements) {
-            const url = imageUrls.get(req.storagePath);
-            if (url) {
-                imageUrl = url;
-                break;
-            }
-        }
+        // Match uploaded image by code/suffix, ignoring extension (.png vs .webp)
+        const imageUrl = findImageUrl(imageUrls, p.code, "passage");
 
         return {
             code: p.code,
@@ -825,9 +818,11 @@ function findImageUrl(
                             ? "_c"
                             : field === "option_d"
                                 ? "_d"
-                                : solutionMatch
-                                    ? `_s${solutionMatch[1]}`
-                                    : "";
+                                : field === "passage"
+                                    ? "_p"
+                                    : solutionMatch
+                                        ? `_s${solutionMatch[1]}`
+                                        : "";
 
     if (!fieldSuffix) return null;
 
