@@ -80,7 +80,7 @@ function seededShuffle(indices: number[], seed: number): number[] {
 export function getFmsGapLabel(gapKey: string): string {
     const gapNumber = Number(gapKey.replace(/\D/g, ""));
     return Number.isInteger(gapNumber) && gapNumber > 0
-        ? String.fromCharCode(64 + gapNumber)
+        ? String(gapNumber)
         : gapKey;
 }
 
@@ -843,9 +843,16 @@ export const FillMissingSentenceRenderer = memo(
                                 return (
                                     <span
                                         key={`fms-gap-marker-${i}`}
-                                        className="mx-1 whitespace-nowrap text-lg font-extrabold text-slate-800"
+                                        className="mx-1 my-1 inline-flex min-w-[12rem] sm:min-w-[16rem] items-center gap-2 rounded-md border-2 border-dashed border-[#6d86bb] bg-[#eef2fa] px-2.5 py-1.5 align-middle"
+                                        aria-label={`Gap ${getFmsGapLabel(part.value)}`}
                                     >
-                                        ({getFmsGapLabel(part.value)}).......
+                                        <span className="shrink-0 rounded bg-[#6d86bb] px-2 py-0.5 text-xs font-bold tracking-wide text-white">
+                                            Gap {getFmsGapLabel(part.value)}
+                                        </span>
+                                        <span
+                                            aria-hidden="true"
+                                            className="h-0.5 flex-1 rounded-full bg-[repeating-linear-gradient(90deg,#94a3b8_0_6px,transparent_6px_10px)]"
+                                        />
                                     </span>
                                 );
                             })}
