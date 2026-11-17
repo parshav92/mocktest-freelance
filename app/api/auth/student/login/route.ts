@@ -7,7 +7,6 @@ import { cookies } from "next/headers";
 const STUDENT_JWT_SECRET = new TextEncoder().encode(
   process.env.STUDENT_JWT_SECRET || "your-super-secret-key-change-in-production"
 );
-
 export async function POST(request: Request) {
   try {
     const { studentId, password } = await request.json();

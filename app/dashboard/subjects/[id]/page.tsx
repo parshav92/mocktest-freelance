@@ -39,7 +39,7 @@ const QUESTION_TYPE_OPTIONS = [
     { value: "passage", label: "Passage (count of passages)" },
     { value: "passage_mcq", label: "Passage MCQ (questions per passage)" },
     { value: "passage_poem", label: "Poem Passage (count of poem passages)" },
-    { value: "poem_mcq", label: "Poem MCQ (questions per poem passage)" },
+    { value: "poem_mcq", label: "Poem questions (passage MCQs per poem passage)" },
     { value: "mcq", label: "MCQ (standalone)" },
     { value: "fill_blank_dropdown", label: "Fill Blank — Dropdown" },
     { value: "fill_missing_sentence", label: "Fill Missing Sentence" },
@@ -453,7 +453,7 @@ export default function ManageSubjectPage() {
                                 <strong>passage</strong> = number of extract passages to include.{" "}
                                 <strong>passage_mcq</strong> = MCQ questions per passage.{" "}
                                 <strong>passage_poem</strong> = number of poem passages.{" "}
-                                <strong>poem_mcq</strong> = MCQ questions per poem passage.
+                                <strong>poem_mcq</strong> = passage MCQ questions per poem passage.
                                 All other keys select standalone questions of that type.
                             </p>
                         </CardContent>

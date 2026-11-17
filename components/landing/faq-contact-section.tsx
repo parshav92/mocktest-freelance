@@ -24,7 +24,7 @@ const defaultFaqItems = [
     },
     {
         question:
-            "What is the best way to prepare for the 2026 NSW Selective High School Placement Test?",
+            "What is the best way to prepare for the NSW Selective High School Placement Test?",
         answer: "The most effective preparation involves consistent practice with materials that match the official computer-based format. This website through subscription plan provides over 3000+ NSW selective-style questions, including Reading, Mathematical Reasoning, Thinking Skills, and Writing, designed specifically for NSW and Sydney students aiming for top-tier schools.",
     },
     {
@@ -85,9 +85,6 @@ const FaqContactSection = ({
                     {/* Left Column - FAQ */}
                     <div>
                         <div className="mb-8">
-                            <span className="inline-block px-4 py-1.5 mb-6 text-md font-medium text-sky-700 bg-sky-100 rounded-full">
-                                FAQ
-                            </span>
                             <h2
                                 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4"
                                 style={{ letterSpacing: "-0.04em" }}
@@ -127,9 +124,6 @@ const FaqContactSection = ({
                     {/* Right Column - Contact Us */}
                     <div id="contact">
                         <div className="mb-8">
-                            <span className="inline-block px-4 py-1.5 mb-6 text-sm font-medium text-white bg-sky-900 rounded-full border border-sky-700/50">
-                                Get in Touch
-                            </span>
                             <h2
                                 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4"
                                 style={{ letterSpacing: "-0.04em" }}

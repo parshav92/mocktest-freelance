@@ -55,15 +55,12 @@ const TestimonialsSection = ({ testimonials }: TestimonialsSectionProps) => {
             <div className="max-w-6xl mx-auto">
                 {/* Section Header */}
                 <div className="text-center mb-16">
-                    <span className="inline-block px-4 py-1.5 mb-6 text-md font-medium text-sky-700 bg-sky-100 rounded-full">
-                        Testimonials
-                    </span>
                     <h2
                         className="text-3xl md:text-5xl font-bold text-slate-900 mb-4"
                         style={{ letterSpacing: "-0.04em" }}
                     >
-                        What Our{" "}
-                        <span className="text-sky-600">Students</span> Say
+                        What Our <span className="text-sky-600">Students</span>{" "}
+                        Say
                     </h2>
                     <p className="text-slate-600 max-w-2xl mx-auto">
                         Hear from parents and students who have achieved success

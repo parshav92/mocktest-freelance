@@ -13,7 +13,6 @@ config();
 type QuestionType =
     | "mcq"
     | "passage_mcq"
-    | "poem_mcq"
     | "fill_blank_dropdown"
     | "fill_missing_sentence"
     | "essay";
@@ -86,7 +85,6 @@ function buildRandomAnswer(question: TestQuestion): string | number[] | Record<s
     switch (question.question_type) {
         case "mcq":
         case "passage_mcq":
-        case "poem_mcq":
             return getRandomMcqOption();
 
         case "fill_blank_dropdown": {

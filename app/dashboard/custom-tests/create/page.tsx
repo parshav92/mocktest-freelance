@@ -56,7 +56,6 @@ const PICKER_PAGE_SIZE = 20;
 const QUESTION_TYPES = [
     { value: "mcq", label: "MCQ" },
     { value: "passage_mcq", label: "Passage MCQ" },
-    { value: "poem_mcq", label: "Poem MCQ" },
     { value: "fill_blank_dropdown", label: "Fill Blank" },
     { value: "fill_missing_sentence", label: "Fill Missing Sentence" },
     { value: "essay", label: "Essay" },

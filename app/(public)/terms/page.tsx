@@ -101,7 +101,7 @@ You agree that your comments will not violate any right of any third-party, incl
 We do not warrant that the results that may be obtained from the use of the service will be accurate or reliable.
 You agree that from time to time we may remove the service for indefinite periods of time or cancel the service at any time, without notice to you.
 You expressly agree that your use of, or inability to use, the service is at your sole risk. The service and all products and services delivered to you through the service are (except as expressly stated by us) provided 'as is' and 'as available' for your use, without any representation, warranties or conditions of any kind, either express or implied, including all implied warranties or conditions of merchantability, merchantable quality, fitness for a particular purpose, durability, title, and non-infringement.
-In no case shall <Company Name>, our directors, officers, employees, affiliates, agents, contractors, interns, suppliers, service providers or licensors be liable for any injury, loss, claim, or any direct, indirect, incidental, punitive, special, or consequential damages of any kind, including, without limitation lost profits, lost revenue, lost savings, loss of data, replacement costs, or any similar damages, whether based in contract, tort (including negligence), strict liability or otherwise, arising from your use of any of the service or any products procured using the service, or for any other claim related in any way to your use of the service or any product, including, but not limited to, any errors or omissions in any content, or any loss or damage of any kind incurred as a result of the use of the service or any content (or product) posted, transmitted, or otherwise made available via the service, even if advised of their possibility.
+In no case shall DEDHIA FAMILY PTY LTD. our directors, officers, employees, affiliates, agents, contractors, interns, suppliers, service providers or licensors be liable for any injury, loss, claim, or any direct, indirect, incidental, punitive, special, or consequential damages of any kind, including, without limitation lost profits, lost revenue, lost savings, loss of data, replacement costs, or any similar damages, whether based in contract, tort (including negligence), strict liability or otherwise, arising from your use of any of the service or any products procured using the service, or for any other claim related in any way to your use of the service or any product, including, but not limited to, any errors or omissions in any content, or any loss or damage of any kind incurred as a result of the use of the service or any content (or product) posted, transmitted, or otherwise made available via the service, even if advised of their possibility.
 Because some states or jurisdictions do not allow the exclusion or the limitation of liability for consequential or incidental damages, in such states or jurisdictions, our liability shall be limited to the maximum extent permitted by law.
 `,
         },
@@ -150,14 +150,12 @@ If in our sole judgment you fail, or we suspect that you have failed, to comply 
                 }}
             >
                 <div className="max-w-4xl mx-auto text-center">
-                    <span className="inline-block px-4 py-1.5 mb-6 text-sm font-medium text-sky-700 bg-sky-100 rounded-full">
-                        Legal
-                    </span>
                     <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
                         Terms & <span className="text-sky-600">Conditions</span>
                     </h1>
                     <p className="text-slate-600 max-w-2xl mx-auto">
-                        Please read these terms carefully before using our services.
+                        Please read these terms carefully before using our
+                        services.
                     </p>
                     <p className="text-sm text-slate-500 mt-4">
                         Last updated: February 2026
@@ -186,7 +184,7 @@ If in our sole judgment you fail, or we suspect that you have failed, to comply 
                             <p className="text-slate-600">
                                 If you have any questions, please{" "}
                                 <Link
-                                    href="/contact"
+                                    href="/#contact"
                                     className="text-sky-600 hover:text-sky-700 font-medium"
                                 >
                                     contact us

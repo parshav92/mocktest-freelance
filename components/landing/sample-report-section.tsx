@@ -43,16 +43,12 @@ const SampleReportSection = () => {
             <div className="max-w-6xl mx-auto">
                 {/* Section Header */}
                 <div className="text-center mb-16">
-                    <span className="inline-block px-4 py-1.5 mb-6 text-md font-medium text-sky-700 bg-sky-100 rounded-full">
-                        Sample Report
-                    </span>
                     <h2
                         className="text-3xl md:text-5xl font-bold text-slate-900 mb-4"
                         style={{ letterSpacing: "-0.04em" }}
                     >
-                        Detailed{" "}
-                        <span className="text-sky-600">Analytics</span> &
-                        Reports
+                        Detailed <span className="text-sky-600">Analytics</span>{" "}
+                        & Reports
                     </h2>
                     <p className="text-slate-600 max-w-2xl mx-auto">
                         Get comprehensive insights into your performance with

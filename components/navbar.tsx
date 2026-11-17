@@ -13,10 +13,10 @@ const navLinks = [
     { href: "/free-trial", label: "Free Trial" },
     // { href: "/#about", label: "About Us", isAnchor: true },
     { href: "/#sample-report", label: "Analytics", isAnchor: true },
-    { href: "/pricing", label: "Pricing" },
+    { href: "/#pricing", label: "Pricing", isAnchor: true },
     { href: "/#faq", label: "FAQ", isAnchor: true },
+    { href: "/#testimonials", label: "Testimonials", isAnchor: true },
     { href: "/#contact", label: "Contact Us", isAnchor: true },
-    { href: "/blog", label: "Blog" },
 ];
 
 const Navbar = () => {

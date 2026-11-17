@@ -33,6 +33,9 @@ import {
     getEssayPromptImages,
     getUnreferencedImages,
 } from "@/lib/utils/question-content";
+import { extractPassageTitleAndText } from "@/lib/utils/passage";
+import { FmsSolutionPanel } from "@/components/test/question-renderers";
+import { getFmsGapLabel } from "@/components/test/question-renderers";
 
 interface ReviewQuestion {
     question_number: number;
@@ -297,8 +300,8 @@ export default function TestReviewPage() {
         pct >= 75
             ? "bg-emerald-500"
             : pct >= 50
-                ? "bg-amber-400"
-                : "bg-rose-400";
+              ? "bg-amber-400"
+              : "bg-rose-400";
 
     if (isDetailMode && openItem && openIndex !== null) {
         return (
@@ -329,15 +332,15 @@ export default function TestReviewPage() {
                                 !openItem.was_attempted
                                     ? "bg-slate-500/40 text-white"
                                     : openItem.is_correct
-                                        ? "bg-emerald-500/90 text-white"
-                                        : "bg-rose-400/90 text-white",
+                                      ? "bg-emerald-500/90 text-white"
+                                      : "bg-rose-400/90 text-white",
                             )}
                         >
                             {!openItem.was_attempted
                                 ? "Unattempted"
                                 : openItem.is_correct
-                                    ? "Correct"
-                                    : "Incorrect"}
+                                  ? "Correct"
+                                  : "Incorrect"}
                         </Badge>
                         <span className="text-xs text-white/60 tabular-nums">
                             {openItem.marks_earned}/{openItem.question.marks} mk
@@ -364,13 +367,14 @@ export default function TestReviewPage() {
                                                 .passage_type === "poem"
                                                 ? "Poem"
                                                 : openItem.question.passages[0]
-                                                    .title || "Extract"}
+                                                      .title || "Extract"}
                                         </span>
                                     </div>
                                     <ScrollArea className="flex-1">
                                         <div className="p-6 md:p-8">
-                                            {openItem.question.passages[0].title && (
-                                                <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                            {openItem.question.passages[0]
+                                                .title && (
+                                                <h3 className="text-lg font-bold text-[#1a2744] mb-4 text-center">
                                                     {
                                                         openItem.question
                                                             .passages[0].title
@@ -379,23 +383,23 @@ export default function TestReviewPage() {
                                             )}
                                             {openItem.question.passages[0]
                                                 .image_url && (
-                                                    <div className="mb-4">
-                                                        <img
-                                                            src={
-                                                                openItem.question
-                                                                    .passages[0]
-                                                                    .image_url
-                                                            }
-                                                            alt={
-                                                                openItem.question
-                                                                    .passages[0]
-                                                                    .title ||
-                                                                "Passage image"
-                                                            }
-                                                            className="max-w-full rounded-lg"
-                                                        />
-                                                    </div>
-                                                )}
+                                                <div className="mb-4">
+                                                    <img
+                                                        src={
+                                                            openItem.question
+                                                                .passages[0]
+                                                                .image_url
+                                                        }
+                                                        alt={
+                                                            openItem.question
+                                                                .passages[0]
+                                                                .title ||
+                                                            "Passage image"
+                                                        }
+                                                        className="max-w-full rounded-lg"
+                                                    />
+                                                </div>
+                                            )}
                                             <div
                                                 className={`leading-relaxed text-gray-800 whitespace-pre-line${openItem.question.passages[0].passage_type === "poem" ? " italic" : ""}`}
                                             >
@@ -425,52 +429,58 @@ export default function TestReviewPage() {
                                                         className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
                                                     >
                                                         {p.passage_type ===
-                                                            "poem"
+                                                        "poem"
                                                             ? `Poem ${idx + 1}`
                                                             : p.title ||
-                                                            `Extract ${idx + 1}`}
+                                                              `Extract ${idx + 1}`}
                                                     </TabsTrigger>
                                                 ),
                                             )}
                                         </TabsList>
                                     </div>
-                                    {openItem.question.passages.map((p, idx) => (
-                                        <TabsContent
-                                            key={p.id}
-                                            value={`passage-${idx}`}
-                                            className="flex-1 m-0 data-[state=inactive]:hidden"
-                                        >
-                                            <ScrollArea className="h-full">
-                                                <div className="p-6 md:p-8">
-                                                    {p.title && (
-                                                        <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                            {p.title}
-                                                        </h3>
-                                                    )}
-                                                    {p.image_url && (
-                                                        <div className="mb-4">
-                                                            <img
-                                                                src={p.image_url}
-                                                                alt={
-                                                                    p.title ||
-                                                                    "Passage image"
+                                    {openItem.question.passages.map(
+                                        (p, idx) => (
+                                            <TabsContent
+                                                key={p.id}
+                                                value={`passage-${idx}`}
+                                                className="flex-1 m-0 data-[state=inactive]:hidden"
+                                            >
+                                                <ScrollArea className="h-full">
+                                                    <div className="p-6 md:p-8">
+                                                        {p.title && (
+                                                            <h3 className="text-lg font-bold text-[#1a2744] mb-4 text-center">
+                                                                {p.title}
+                                                            </h3>
+                                                        )}
+                                                        {p.image_url && (
+                                                            <div className="mb-4">
+                                                                <img
+                                                                    src={
+                                                                        p.image_url
+                                                                    }
+                                                                    alt={
+                                                                        p.title ||
+                                                                        "Passage image"
+                                                                    }
+                                                                    className="max-w-full rounded-lg"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        <div
+                                                            className={`leading-relaxed text-gray-800 whitespace-pre-line${p.passage_type === "poem" ? " italic" : ""}`}
+                                                        >
+                                                            <MathText
+                                                                content={
+                                                                    p.content
                                                                 }
-                                                                className="max-w-full rounded-lg"
+                                                                block
                                                             />
                                                         </div>
-                                                    )}
-                                                    <div
-                                                        className={`leading-relaxed text-gray-800 whitespace-pre-line${p.passage_type === "poem" ? " italic" : ""}`}
-                                                    >
-                                                        <MathText
-                                                            content={p.content}
-                                                            block
-                                                        />
                                                     </div>
-                                                </div>
-                                            </ScrollArea>
-                                        </TabsContent>
-                                    ))}
+                                                </ScrollArea>
+                                            </TabsContent>
+                                        ),
+                                    )}
                                 </Tabs>
                             )}
                         </div>
@@ -495,7 +505,9 @@ export default function TestReviewPage() {
                                 }
                                 essayEvaluation={
                                     essayEvaluations.find(
-                                        (e) => e.question_id === openItem.question.id,
+                                        (e) =>
+                                            e.question_id ===
+                                            openItem.question.id,
                                     ) || null
                                 }
                             />
@@ -529,8 +541,8 @@ export default function TestReviewPage() {
                                     !item.was_attempted
                                         ? "bg-slate-200 text-slate-500"
                                         : item.is_correct
-                                            ? "bg-emerald-500 text-white"
-                                            : "bg-rose-400 text-white",
+                                          ? "bg-emerald-500 text-white"
+                                          : "bg-rose-400 text-white",
                                 )}
                             >
                                 {item.question_number}
@@ -732,8 +744,8 @@ export default function TestReviewPage() {
                                     !item.was_attempted
                                         ? "bg-slate-200 text-slate-500"
                                         : item.is_correct
-                                            ? "bg-emerald-500 text-white"
-                                            : "bg-rose-400 text-white",
+                                          ? "bg-emerald-500 text-white"
+                                          : "bg-rose-400 text-white",
                                 )}
                             >
                                 {item.question_number}
@@ -835,7 +847,6 @@ export default function TestReviewPage() {
                                                 <ListChecks className="h-4 w-4 text-slate-400" />
                                             );
                                         case "passage_mcq":
-                                        case "poem_mcq":
                                             return (
                                                 <BookOpen className="h-4 w-4 text-slate-400" />
                                             );
@@ -952,15 +963,15 @@ export default function TestReviewPage() {
                                     !openItem.was_attempted
                                         ? "bg-slate-500/40 text-white"
                                         : openItem.is_correct
-                                            ? "bg-emerald-500/90 text-white"
-                                            : "bg-rose-400/90 text-white",
+                                          ? "bg-emerald-500/90 text-white"
+                                          : "bg-rose-400/90 text-white",
                                 )}
                             >
                                 {!openItem.was_attempted
                                     ? "Unattempted"
                                     : openItem.is_correct
-                                        ? "Correct"
-                                        : "Incorrect"}
+                                      ? "Correct"
+                                      : "Incorrect"}
                             </Badge>
                             <span className="text-xs text-white/60 tabular-nums">
                                 {openItem.marks_earned}/
@@ -999,43 +1010,43 @@ export default function TestReviewPage() {
                                                     .passage_type === "poem"
                                                     ? "Poem"
                                                     : openItem.question
-                                                        .passages[0].title ||
-                                                    "Extract"}
+                                                          .passages[0].title ||
+                                                      "Extract"}
                                             </span>
                                         </div>
                                         <ScrollArea className="flex-1">
                                             <div className="p-6 md:p-8">
                                                 {openItem.question.passages[0]
                                                     .title && (
-                                                        <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
-                                                            {
-                                                                openItem.question
-                                                                    .passages[0]
-                                                                    .title
-                                                            }
-                                                        </h3>
-                                                    )}
+                                                    <h3 className="text-lg font-bold text-[#1a2744] mb-4 text-center">
+                                                        {
+                                                            openItem.question
+                                                                .passages[0]
+                                                                .title
+                                                        }
+                                                    </h3>
+                                                )}
                                                 {openItem.question.passages[0]
                                                     .image_url && (
-                                                        <div className="mb-4">
-                                                            <img
-                                                                src={
-                                                                    openItem
-                                                                        .question
-                                                                        .passages[0]
-                                                                        .image_url
-                                                                }
-                                                                alt={
-                                                                    openItem
-                                                                        .question
-                                                                        .passages[0]
-                                                                        .title ||
-                                                                    "Passage image"
-                                                                }
-                                                                className="max-w-full rounded-lg"
-                                                            />
-                                                        </div>
-                                                    )}
+                                                    <div className="mb-4">
+                                                        <img
+                                                            src={
+                                                                openItem
+                                                                    .question
+                                                                    .passages[0]
+                                                                    .image_url
+                                                            }
+                                                            alt={
+                                                                openItem
+                                                                    .question
+                                                                    .passages[0]
+                                                                    .title ||
+                                                                "Passage image"
+                                                            }
+                                                            className="max-w-full rounded-lg"
+                                                        />
+                                                    </div>
+                                                )}
                                                 <div
                                                     className={`leading-relaxed text-gray-800 whitespace-pre-line${openItem.question.passages[0].passage_type === "poem" ? " italic" : ""}`}
                                                 >
@@ -1067,10 +1078,10 @@ export default function TestReviewPage() {
                                                             className="rounded-b-none border-b-2 border-transparent data-[state=active]:border-[#1a2744] data-[state=active]:bg-white px-4 py-2 text-sm"
                                                         >
                                                             {p.passage_type ===
-                                                                "poem"
+                                                            "poem"
                                                                 ? `Poem ${idx + 1}`
                                                                 : p.title ||
-                                                                `Extract ${idx + 1}`}
+                                                                  `Extract ${idx + 1}`}
                                                         </TabsTrigger>
                                                     ),
                                                 )}
@@ -1086,7 +1097,7 @@ export default function TestReviewPage() {
                                                     <ScrollArea className="h-full">
                                                         <div className="p-6 md:p-8">
                                                             {p.title && (
-                                                                <h3 className="text-lg font-semibold text-[#1a2744] mb-4">
+                                                                <h3 className="text-lg font-bold text-[#1a2744] mb-4 text-center">
                                                                     {p.title}
                                                                 </h3>
                                                             )}
@@ -1188,8 +1199,8 @@ export default function TestReviewPage() {
                                         !item.was_attempted
                                             ? "bg-slate-200 text-slate-500"
                                             : item.is_correct
-                                                ? "bg-emerald-500 text-white"
-                                                : "bg-rose-400 text-white",
+                                              ? "bg-emerald-500 text-white"
+                                              : "bg-rose-400 text-white",
                                     )}
                                 >
                                     {item.question_number}
@@ -1261,7 +1272,9 @@ function ReviewQuestionDisplay({
                     Q{questionNumber}
                 </span>
                 <Badge variant="outline" className="text-xs">
-                    {question.marks === 1 ? "1 mark" : `${question.marks} marks`}
+                    {question.marks === 1
+                        ? "1 mark"
+                        : `${question.marks} marks`}
                 </Badge>
             </div>
             {(question.topic || question.subtopic) && (
@@ -1318,8 +1331,7 @@ function ReviewQuestionDisplay({
 
     switch (question.question_type) {
         case "mcq":
-        case "passage_mcq":
-        case "poem_mcq": {
+        case "passage_mcq": {
             const questionText = content.question as string;
             const options = content.options as Array<{
                 label: string;
@@ -1335,8 +1347,8 @@ function ReviewQuestionDisplay({
                 (content.question_image
                     ? [content.question_image as string]
                     : content.question_image_url
-                        ? [content.question_image_url as string]
-                        : undefined);
+                      ? [content.question_image_url as string]
+                      : undefined);
 
             // Find which image indices are referenced via [img:N] syntax
             const imagePattern = /\[img:(\d+)\]/g;
@@ -1361,7 +1373,10 @@ function ReviewQuestionDisplay({
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
                         <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
-                            <ImageEnhancedText content={questionText} images={questionImages} />
+                            <ImageEnhancedText
+                                content={questionText}
+                                images={questionImages}
+                            />
                         </div>
                         {unreferencedImages.length > 0 && (
                             <div
@@ -1406,8 +1421,8 @@ function ReviewQuestionDisplay({
                                             isCorrect
                                                 ? "border-emerald-500 bg-emerald-50/80 shadow-sm"
                                                 : isWrong
-                                                    ? "border-rose-400 bg-rose-50/60"
-                                                    : "border-gray-200 bg-white",
+                                                  ? "border-rose-400 bg-rose-50/60"
+                                                  : "border-gray-200 bg-white",
                                         )}
                                     >
                                         <span
@@ -1416,8 +1431,8 @@ function ReviewQuestionDisplay({
                                                 isCorrect
                                                     ? "bg-emerald-500 text-white"
                                                     : isWrong
-                                                        ? "bg-rose-400 text-white"
-                                                        : "bg-gray-100 text-gray-600",
+                                                      ? "bg-rose-400 text-white"
+                                                      : "bg-gray-100 text-gray-600",
                                             )}
                                         >
                                             {optionLabel}
@@ -1461,8 +1476,26 @@ function ReviewQuestionDisplay({
         }
 
         case "fill_blank_dropdown": {
-            const passageText = content.passage_text as string;
-            const passageImages = content.passage_images as string[] | undefined;
+            const rawPassageText = content.passage_text as string;
+            const { title: passageTitle, text: passageText } =
+                extractPassageTitleAndText(
+                    rawPassageText,
+                    (
+                        content as unknown as {
+                            title?: string;
+                            passage_title?: string;
+                        }
+                    ).title ||
+                        (
+                            content as unknown as {
+                                title?: string;
+                                passage_title?: string;
+                            }
+                        ).passage_title,
+                );
+            const passageImages = content.passage_images as
+                | string[]
+                | undefined;
             const blanks = content.blanks as Array<{
                 correct: string;
                 options: string[];
@@ -1481,10 +1514,18 @@ function ReviewQuestionDisplay({
                     {/* Left: Passage with inline student answers + solution */}
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
-                        <div className="text-base leading-relaxed text-slate-800">
+                        {passageTitle && (
+                            <h3 className="text-lg font-bold text-[#1a2744] mb-4 text-center">
+                                {passageTitle}
+                            </h3>
+                        )}
+                        <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
                             {parts.map((part, index) => (
                                 <span key={`fb-part-${index}`}>
-                                    <ImageEnhancedText content={part} images={passageImages} />
+                                    <ImageEnhancedText
+                                        content={part}
+                                        images={passageImages}
+                                    />
                                     {index < blanks.length &&
                                         (() => {
                                             const isCorrectBlank =
@@ -1492,7 +1533,7 @@ function ReviewQuestionDisplay({
                                                 correctAnswers[index];
                                             const studentOption =
                                                 blanks[index]?.options[
-                                                studentAnswers[index]
+                                                    studentAnswers[index]
                                                 ];
 
                                             return (
@@ -1572,8 +1613,26 @@ function ReviewQuestionDisplay({
         }
 
         case "fill_missing_sentence": {
-            const passageWithGaps = content.passage_with_gaps as string;
-            const passageImages = content.passage_images as string[] | undefined;
+            const rawPassage = content.passage_with_gaps as string;
+            const { title: passageTitle, text: passageWithGaps } =
+                extractPassageTitleAndText(
+                    rawPassage,
+                    (
+                        content as unknown as {
+                            title?: string;
+                            passage_title?: string;
+                        }
+                    ).title ||
+                        (
+                            content as unknown as {
+                                title?: string;
+                                passage_title?: string;
+                            }
+                        ).passage_title,
+                );
+            const passageImages = content.passage_images as
+                | string[]
+                | undefined;
             const sentences = content.sentences as string[];
             const studentMapping =
                 (studentAnswer as Record<string, number>) || {};
@@ -1605,49 +1664,35 @@ function ReviewQuestionDisplay({
             }
 
             return (
-                <div className="grid grid-cols-2 gap-0 min-h-0">
+                <div className="mx-auto grid w-full max-w-6xl grid-cols-2 gap-0 min-h-0">
                     {/* Left: Passage with gap results + solution */}
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
-                        <div className="text-base leading-relaxed text-slate-800">
+                        {passageTitle && (
+                            <h3 className="text-lg font-bold text-[#1a2744] mb-4 text-center">
+                                {passageTitle}
+                            </h3>
+                        )}
+                        <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
                             {textParts.map((part, i) => {
                                 if (part.type === "text") {
                                     return (
                                         <span key={`fms-text-${i}`}>
-                                            <ImageEnhancedText content={part.value} images={passageImages} />
+                                            <ImageEnhancedText
+                                                content={part.value}
+                                                images={passageImages}
+                                            />
                                         </span>
                                     );
                                 }
-                                const studentIdx = studentMapping[part.value];
-                                const correctIdx = correctMapping?.[part.value];
-                                const isCorrectGap = studentIdx === correctIdx;
-                                const selectedSentence =
-                                    studentIdx !== undefined
-                                        ? sentences[studentIdx]
-                                        : null;
 
                                 return (
                                     <span
                                         key={`fms-gap-${i}`}
-                                        className={cn(
-                                            "inline-block mx-1 px-3 py-1 rounded-md text-sm font-medium border",
-                                            isCorrectGap
-                                                ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                                                : "bg-rose-50 border-rose-300 text-rose-700",
-                                        )}
+                                        className="mx-1 whitespace-nowrap text-lg font-extrabold text-slate-800"
                                     >
-                                        {selectedSentence ? (
-                                            <MathText
-                                                content={selectedSentence}
-                                            />
-                                        ) : (
-                                            "Empty"
-                                        )}
-                                        {isCorrectGap ? (
-                                            <CheckCircle className="inline h-3.5 w-3.5 ml-1 text-emerald-500" />
-                                        ) : (
-                                            <XCircle className="inline h-3.5 w-3.5 ml-1 text-rose-400" />
-                                        )}
+                                        ({getFmsGapLabel(part.value)}
+                                        )......
                                     </span>
                                 );
                             })}
@@ -1655,36 +1700,12 @@ function ReviewQuestionDisplay({
                         {solutionBlock}
                     </div>
 
-                    {/* Right: Correct placement */}
                     <div className="p-6 md:p-8">
-                        <div className="p-4 bg-emerald-50/60 rounded-lg border border-emerald-200">
-                            <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wider mb-2.5">
-                                Correct Placement
-                            </p>
-                            <div className="space-y-1.5">
-                                {Object.entries(correctMapping || {}).map(
-                                    ([gapKey, sentenceIdx]) => (
-                                        <div
-                                            key={gapKey}
-                                            className="flex items-start gap-2 text-sm"
-                                        >
-                                            <span className="text-xs font-medium text-emerald-600 w-16 shrink-0 pt-0.5">
-                                                {gapKey.replace("_", " ")}
-                                            </span>
-                                            <span className="text-emerald-700">
-                                                <MathText
-                                                    content={
-                                                        sentences[
-                                                        sentenceIdx as number
-                                                        ]
-                                                    }
-                                                />
-                                            </span>
-                                        </div>
-                                    ),
-                                )}
-                            </div>
-                        </div>
+                        <FmsSolutionPanel
+                            sentences={sentences}
+                            studentMapping={studentMapping}
+                            correctMapping={correctMapping || {}}
+                        />
                     </div>
                 </div>
             );
@@ -1707,7 +1728,10 @@ function ReviewQuestionDisplay({
                     <div className="p-6 md:p-8 border-r border-gray-200">
                         {questionBadge}
                         <div className="text-base leading-relaxed text-slate-800 whitespace-pre-line">
-                            <ImageEnhancedText content={prompt} images={promptImages} />
+                            <ImageEnhancedText
+                                content={prompt}
+                                images={promptImages}
+                            />
                         </div>
                         {unreferencedPromptImages.length > 0 && (
                             <div
@@ -1780,19 +1804,19 @@ function ReviewQuestionDisplay({
                                                     "ml-2 text-xs",
                                                     essayEvaluation.score! >=
                                                         essayEvaluation.max_score! *
-                                                        0.75
+                                                            0.75
                                                         ? "bg-emerald-100 text-emerald-700"
                                                         : essayEvaluation.score! >=
                                                             essayEvaluation.max_score! *
-                                                            0.5
-                                                            ? "bg-amber-100 text-amber-700"
-                                                            : "bg-rose-100 text-rose-700",
+                                                                0.5
+                                                          ? "bg-amber-100 text-amber-700"
+                                                          : "bg-rose-100 text-rose-700",
                                                 )}
                                             >
                                                 {Math.round(
                                                     (essayEvaluation.score! /
                                                         essayEvaluation.max_score!) *
-                                                    100,
+                                                        100,
                                                 )}
                                                 %
                                             </Badge>
@@ -1808,13 +1832,13 @@ function ReviewQuestionDisplay({
                                                         ([category, score]) => {
                                                             const maxPoints =
                                                                 rubric[
-                                                                category
+                                                                    category
                                                                 ] || score;
                                                             const pct =
                                                                 maxPoints > 0
                                                                     ? (score /
-                                                                        maxPoints) *
-                                                                    100
+                                                                          maxPoints) *
+                                                                      100
                                                                     : 0;
                                                             return (
                                                                 <div

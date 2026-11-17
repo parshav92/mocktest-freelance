@@ -104,7 +104,7 @@ export function getMcqCorrectLabel(
 }
 
 export function isMcqType(questionType: string): boolean {
-    return ["mcq", "passage_mcq", "poem_mcq"].includes(questionType);
+    return ["mcq", "passage_mcq"].includes(questionType);
 }
 
 /** Resolve essay prompt images from prompt_images or legacy question_images fields. */

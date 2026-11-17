@@ -249,8 +249,7 @@ function gradeAnswer(
 
     switch (questionType) {
         case "mcq":
-        case "passage_mcq":
-        case "poem_mcq": {
+        case "passage_mcq": {
             const isCorrect =
                 String(selected).trim().toUpperCase() ===
                 String(correctAnswer.label).trim().toUpperCase();

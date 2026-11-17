@@ -106,13 +106,7 @@ const UPLOAD_TYPES = [
     {
         value: "passage_mcq",
         label: "Passage MCQ",
-        description: "MCQ questions based on reading passages",
-        subjects: "Reading",
-    },
-    {
-        value: "poem_mcq",
-        label: "Poem MCQ",
-        description: "MCQ questions based on poems",
+        description: "MCQ questions based on reading passages or poems",
         subjects: "Reading",
     },
     {
@@ -919,11 +913,13 @@ export default function AdminUploadPage() {
                                                             Blank Options
                                                         </Label>
                                                         <div className="grid gap-2">
-                                                            {Array.from({ length: 5 }).map(
-                                                                (_, blankIndex) => {
-                                                                    const position =
-                                                                        blankIndex +
-                                                                        1;
+                                                            {Object.keys(question.data)
+                                                                .map((key) => key.match(/^blank_(\d+)_options$/)?.[1])
+                                                                .filter((position): position is string => Boolean(position))
+                                                                .map(Number)
+                                                                .sort((a, b) => a - b)
+                                                                .map(
+                                                                (position) => {
                                                                     const options =
                                                                         question.data[
                                                                         `blank_${position}_options`
