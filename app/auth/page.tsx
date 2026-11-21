@@ -39,7 +39,7 @@ function AuthPageInner() {
 
     const [selectedRole, setSelectedRole] = useState<Role>(initialRole);
     const [hasUserResetRole, setHasUserResetRole] = useState(false);
-    const [authMode, setAuthMode] = useState<AuthMode>("signin");
+    const [authMode, setAuthMode] = useState<AuthMode>(isTrialAuth ? "signup" : "signin");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [message, setMessage] = useState<string | null>(null);
